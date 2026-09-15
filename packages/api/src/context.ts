@@ -1,1 +1,1 @@
-export interface Context {}
+export type Context = Record<string, never>;

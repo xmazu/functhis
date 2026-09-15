@@ -13,6 +13,23 @@ import ConsoleHeader from '../components/console-header';
 
 import appCss from '../index.css?url';
 
+const RootDocument = () => (
+  <html lang="en" className="dark">
+    <head>
+      <HeadContent />
+    </head>
+    <body>
+      <div className="grid min-h-svh grid-rows-[auto_1fr]">
+        <ConsoleHeader />
+        <Outlet />
+      </div>
+      <Toaster richColors />
+      <TanStackRouterDevtools position="bottom-left" />
+      <Scripts />
+    </body>
+  </html>
+);
+
 export const Route = createRootRoute({
   server: {
     middleware: [createMiddleware().server(evlogErrorHandler)],
@@ -29,22 +46,3 @@ export const Route = createRootRoute({
 
   component: RootDocument,
 });
-
-function RootDocument() {
-  return (
-    <html lang="en" className="dark">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <div className="grid min-h-svh grid-rows-[auto_1fr]">
-          <ConsoleHeader />
-          <Outlet />
-        </div>
-        <Toaster richColors />
-        <TanStackRouterDevtools position="bottom-left" />
-        <Scripts />
-      </body>
-    </html>
-  );
-}

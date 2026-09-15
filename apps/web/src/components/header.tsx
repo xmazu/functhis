@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 
 import UserMenu from './user-menu';
 
-export default function Header() {
+const Header = () => {
   const links = [{ label: 'Home', to: '/' }] as const;
 
   return (
@@ -22,4 +22,6 @@ export default function Header() {
       <hr />
     </div>
   );
-}
+};
+
+export default Header;

@@ -7,16 +7,13 @@ import type { Database } from '@functhis/db';
 
 import { env } from './env.server';
 
-function parseTrustedOrigins(value: string): string[] {
-  return value
+const parseTrustedOrigins = (value: string): string[] =>
+  value
     .split(',')
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
-}
 
-export async function getDb(): Promise<Database> {
-  return await createDb(env);
-}
+export const getDb = (): Promise<Database> => createDb(env);
 
 let cliClientSeeded = false;
 let authInstance: ReturnType<typeof createConfiguredAuth> | undefined;
@@ -24,7 +21,7 @@ let authInitPromise:
   | Promise<ReturnType<typeof createConfiguredAuth>>
   | undefined;
 
-async function initAuth(database?: Database) {
+const initAuth = async (database?: Database) => {
   const db = database ?? (await getDb());
   if (!cliClientSeeded) {
     await ensureCliOAuthClient(db);
@@ -41,19 +38,20 @@ async function initAuth(database?: Database) {
     },
     db
   );
-}
+};
 
-export async function createAuth(database?: Database) {
+export const createAuth = async (database?: Database) => {
   if (authInstance) {
     return authInstance;
   }
 
   if (!authInitPromise) {
-    authInitPromise = initAuth(database).then((auth) => {
+    authInitPromise = (async () => {
+      const auth = await initAuth(database);
       authInstance = auth;
       return auth;
-    });
+    })();
   }
 
   return await authInitPromise;
-}
+};

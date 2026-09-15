@@ -5,7 +5,7 @@ import { handleAuthRequest } from '../../lib/auth-handler';
 export const Route = createFileRoute('/.well-known/openid-configuration')({
   server: {
     handlers: {
-      GET: async ({ request }) => handleAuthRequest(request),
+      GET: ({ request }) => handleAuthRequest(request),
     },
   },
 });

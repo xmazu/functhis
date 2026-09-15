@@ -4,9 +4,8 @@ import { createAuth } from '../services';
 
 export const authMiddleware = createMiddleware().server(
   async ({ next, request }) => {
-    const session = await (
-      await createAuth()
-    ).api.getSession({
+    const auth = await createAuth();
+    const session = await auth.api.getSession({
       headers: request.headers,
     });
     return next({

@@ -1,9 +1,5 @@
 import type { Context as ApiContext } from '@functhis/api/context';
 
-export async function createContext(_options?: {
-  req?: Request;
-}): Promise<ApiContext> {
-  return {};
-}
+export const createContext = (_options?: { req?: Request }): ApiContext => ({});
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = ReturnType<typeof createContext>;

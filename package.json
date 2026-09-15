@@ -39,8 +39,12 @@
     "db:generate": "turbo run db:generate -F @functhis/db --",
     "db:migrate:local": "turbo run db:migrate:local -F @functhis/infra --",
     "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/",
-    "check": "ultracite check",
+    "check": "ultracite check && knip",
+    "check:staged": "bun run ultracite:staged && bun run knip",
     "fix": "ultracite fix",
+    "ultracite:staged": "sh .husky/ultracite-staged",
+    "knip": "knip",
+    "precommit": "bun run check:staged && bun run check-types --filter='...[HEAD]' --filter='!./apps/*'",
     "prepare": "husky"
   },
   "dependencies": {
@@ -50,7 +54,8 @@
     "@cloudflare/workers-types": "^5.20260906.1",
     "@functhis/config": "workspace:*",
     "@types/node": "^26.4.1",
-    "husky": "latest",
+    "husky": "^9.1.7",
+    "knip": "^6.29.0",
     "oxfmt": "latest",
     "oxlint": "latest",
     "turbo": "^2.10.12",

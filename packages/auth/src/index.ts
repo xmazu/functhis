@@ -9,8 +9,14 @@ import { jwt, organization } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 
 import { fetchClientMetadataResource } from './cimd-fetch';
+import { allocateUniqueHandle, normalizeHandleCandidate } from './handle';
 
 export { ensureCliOAuthClient } from './seed-cli-client';
+export {
+  allocateUniqueHandle,
+  isValidHandle,
+  normalizeHandleCandidate,
+} from './handle';
 
 export interface AuthConfig {
   BETTER_AUTH_SECRET: string;
@@ -20,7 +26,7 @@ export interface AuthConfig {
   TRUSTED_ORIGINS: string[];
 }
 
-function crossSubdomainCookies(baseURL: string) {
+const crossSubdomainCookies = (baseURL: string) => {
   try {
     const { hostname } = new URL(baseURL);
     if (hostname === 'functhis.now' || hostname.endsWith('.functhis.now')) {
@@ -34,10 +40,10 @@ function crossSubdomainCookies(baseURL: string) {
   }
 
   return { enabled: false };
-}
+};
 
-export function createAuth(env: AuthConfig, database: Database) {
-  return betterAuth({
+export const createAuth = (env: AuthConfig, database: Database) =>
+  betterAuth({
     advanced: {
       crossSubDomainCookies: crossSubdomainCookies(env.BETTER_AUTH_URL),
     },
@@ -46,6 +52,27 @@ export function createAuth(env: AuthConfig, database: Database) {
       provider: 'pg',
       schema,
     }),
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (userRecord) => {
+            const preferred =
+              typeof userRecord.handle === 'string' &&
+              userRecord.handle.length > 0
+                ? userRecord.handle
+                : userRecord.name;
+            const handle = await allocateUniqueHandle(database, preferred);
+
+            return {
+              data: {
+                ...userRecord,
+                handle,
+              },
+            };
+          },
+        },
+      },
+    },
     disabledPaths: ['/token'],
     emailAndPassword: { enabled: false },
     plugins: [
@@ -76,6 +103,7 @@ export function createAuth(env: AuthConfig, database: Database) {
           return {
             email: profile.email,
             emailVerified: true,
+            handle: normalizeHandleCandidate(profile.login),
             image: profile.avatar_url,
             name: profile.name ?? profile.login,
           };
@@ -83,7 +111,15 @@ export function createAuth(env: AuthConfig, database: Database) {
       },
     },
     trustedOrigins: env.TRUSTED_ORIGINS,
+    user: {
+      additionalFields: {
+        handle: {
+          input: false,
+          required: true,
+          type: 'string',
+        },
+      },
+    },
   });
-}
 
 export type Auth = ReturnType<typeof createAuth>;

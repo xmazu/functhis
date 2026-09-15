@@ -5,8 +5,8 @@ import viteReact from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import type { UserConfig } from 'vite';
 
-export function createTanstackAppViteConfig(port: number): UserConfig {
-  return defineConfig({
+export const createTanstackAppViteConfig = (port: number): UserConfig =>
+  defineConfig({
     build: {
       rollupOptions: {
         external: ['cloudflare:workers'],
@@ -25,4 +25,3 @@ export function createTanstackAppViteConfig(port: number): UserConfig {
       port,
     },
   });
-}

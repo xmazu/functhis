@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 
 import { createContext } from '../context';
 
-export function createQueryClient() {
-  return new QueryClient({
+export const createQueryClient = () =>
+  new QueryClient({
     defaultOptions: { queries: { staleTime: 60 * 1000 } },
     queryCache: new QueryCache({
       onError: (error, query) => {
@@ -27,12 +27,11 @@ export function createQueryClient() {
       },
     }),
   });
-}
 
 const getORPCClient = createIsomorphicFn()
   .server(() =>
     createRouterClient(appRouter, {
-      context: async () => createContext({ req: getRequest() }),
+      context: () => createContext({ req: getRequest() }),
     })
   )
   .client((): RouterClient<typeof appRouter> => {

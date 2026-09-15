@@ -13,23 +13,7 @@ import { toast } from 'sonner';
 import { getUser } from '@/functions/get-user';
 import { authClient } from '@/lib/auth-client';
 
-export const Route = createFileRoute('/consent')({
-  component: ConsentPage,
-  beforeLoad: async () => {
-    const session = await getUser();
-    if (!session) {
-      throw redirect({ to: '/login' });
-    }
-  },
-  validateSearch: (search: Record<string, unknown>) => ({
-    client_id: typeof search.client_id === 'string' ? search.client_id : '',
-    oauth_query:
-      typeof search.oauth_query === 'string' ? search.oauth_query : undefined,
-    scope: typeof search.scope === 'string' ? search.scope : '',
-  }),
-});
-
-function buildOauthQuery({
+const buildOauthQuery = ({
   client_id,
   oauth_query,
   scope,
@@ -37,7 +21,7 @@ function buildOauthQuery({
   client_id: string;
   oauth_query?: string;
   scope: string;
-}) {
+}) => {
   if (oauth_query) {
     return oauth_query;
   }
@@ -50,9 +34,9 @@ function buildOauthQuery({
   }
   const query = params.toString();
   return query.length > 0 ? query : undefined;
-}
+};
 
-function ConsentPage() {
+const ConsentPage = () => {
   const navigate = useNavigate();
   const { client_id, oauth_query, scope } = Route.useSearch();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +45,39 @@ function ConsentPage() {
     oauth_query,
     scope,
   });
+
+  const handleAllow = async () => {
+    setIsSubmitting(true);
+    try {
+      await authClient.oauth2.consent({
+        accept: true,
+        oauth_query: resolvedOauthQuery,
+        scope,
+      });
+      navigate({ to: '/' });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Could not complete consent'
+      );
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDeny = async () => {
+    setIsSubmitting(true);
+    try {
+      await authClient.oauth2.consent({
+        accept: false,
+        oauth_query: resolvedOauthQuery,
+      });
+      navigate({ to: '/' });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Could not deny consent'
+      );
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <main className="mx-auto flex max-w-lg flex-1 items-center p-6">
@@ -90,25 +107,7 @@ function ConsentPage() {
             <Button
               className="flex-1"
               disabled={isSubmitting}
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await authClient.oauth2.consent({
-                    accept: true,
-                    oauth_query: resolvedOauthQuery,
-                    scope,
-                  });
-                  navigate({ to: '/' });
-                } catch (error) {
-                  toast.error(
-                    error instanceof Error
-                      ? error.message
-                      : 'Could not complete consent'
-                  );
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
+              onClick={handleAllow}
             >
               Allow
             </Button>
@@ -116,24 +115,7 @@ function ConsentPage() {
               className="flex-1"
               disabled={isSubmitting}
               variant="outline"
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await authClient.oauth2.consent({
-                    accept: false,
-                    oauth_query: resolvedOauthQuery,
-                  });
-                  navigate({ to: '/' });
-                } catch (error) {
-                  toast.error(
-                    error instanceof Error
-                      ? error.message
-                      : 'Could not deny consent'
-                  );
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
+              onClick={handleDeny}
             >
               Deny
             </Button>
@@ -142,4 +124,20 @@ function ConsentPage() {
       </Card>
     </main>
   );
-}
+};
+
+export const Route = createFileRoute('/consent')({
+  component: ConsentPage,
+  beforeLoad: async () => {
+    const session = await getUser();
+    if (!session) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  validateSearch: (search: Record<string, unknown>) => ({
+    client_id: typeof search.client_id === 'string' ? search.client_id : '',
+    oauth_query:
+      typeof search.oauth_query === 'string' ? search.oauth_query : undefined,
+    scope: typeof search.scope === 'string' ? search.scope : '',
+  }),
+});

@@ -5,14 +5,14 @@ export interface DeviceVerification {
   user_code: string;
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
+const readErrorMessage = async (response: Response): Promise<string> => {
   const message = await response.text();
   return message.length > 0 ? message : response.statusText;
-}
+};
 
-export async function lookupDeviceCode(
+export const lookupDeviceCode = async (
   userCode: string
-): Promise<DeviceVerification> {
+): Promise<DeviceVerification> => {
   const response = await fetch(
     `/api/auth/device?user_code=${encodeURIComponent(userCode)}`,
     { credentials: 'include' }
@@ -21,12 +21,12 @@ export async function lookupDeviceCode(
     throw new Error(await readErrorMessage(response));
   }
   return (await response.json()) as DeviceVerification;
-}
+};
 
-export async function postDeviceAction(
+export const postDeviceAction = async (
   path: '/api/auth/device/approve' | '/api/auth/device/deny',
   userCode: string
-): Promise<void> {
+): Promise<void> => {
   const response = await fetch(path, {
     body: JSON.stringify({ userCode }),
     credentials: 'include',
@@ -36,4 +36,4 @@ export async function postDeviceAction(
   if (!response.ok) {
     throw new Error(await readErrorMessage(response));
   }
-}
+};

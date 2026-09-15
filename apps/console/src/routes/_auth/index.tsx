@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_auth/')({
-  component: DashboardPage,
-});
-
-function DashboardPage() {
+const DashboardPage = () => {
   const { session } = Route.useRouteContext();
 
   return (
@@ -25,4 +21,8 @@ function DashboardPage() {
       </section>
     </main>
   );
-}
+};
+
+export const Route = createFileRoute('/_auth/')({
+  component: DashboardPage,
+});

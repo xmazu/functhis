@@ -16,21 +16,19 @@ import { getUser } from '@/functions/get-user';
 import { lookupDeviceCode, postDeviceAction } from '@/lib/device-api';
 import type { DeviceVerification } from '@/lib/device-api';
 
-function normalizeUserCode(code: string): string {
-  return code.trim();
-}
+const normalizeUserCode = (code: string): string => code.trim();
 
-function canDecideOnCode(
+const canDecideOnCode = (
   verification: DeviceVerification | null,
   userCode: string
-): boolean {
+): boolean => {
   if (!verification) {
     return false;
   }
   return (
     normalizeUserCode(verification.user_code) === normalizeUserCode(userCode)
   );
-}
+};
 
 const DevicePage = () => {
   const { user_code: initialUserCode } = Route.useSearch();

@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+
+set -u
+
+set --
+while IFS= read -r file; do
+  case "$file" in
+    *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.json|*.jsonc|*.css)
+      if [ -f "$file" ]; then
+        set -- "$@" "$file"
+      fi
+      ;;
+  esac
+done <<EOF
+$(git diff --cached --name-only --diff-filter=ACMR)
+EOF
+
+if [ "$#" -eq 0 ]; then
+  exit 0
+fi
+
+FORMAT_EXIT_CODE=0
+bun x ultracite fix "$@" || FORMAT_EXIT_CODE=$?
+git add -- "$@"
+
+if [ "$FORMAT_EXIT_CODE" -ne 0 ]; then
+  echo "Ultracite found issues that could not be auto-fixed."
+  exit "$FORMAT_EXIT_CODE"
+fi
+
+echo "✨ Files formatted by Ultracite"

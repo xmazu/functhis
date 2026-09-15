@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-const DB_ENV_PATH = join(import.meta.dirname, '../packages/db/.env');
+const DB_ENV_PATH = path.join(import.meta.dirname, '../packages/db/.env');
 
-export function parseEnvFile(contents: string): Record<string, string> {
+export const parseEnvFile = (contents: string): Record<string, string> => {
   const env: Record<string, string> = {};
 
   for (const line of contents.split('\n')) {
@@ -37,9 +36,9 @@ export function parseEnvFile(contents: string): Record<string, string> {
   }
 
   return env;
-}
+};
 
-export function loadLocalDatabaseUrl(): string | undefined {
+export const loadLocalDatabaseUrl = (): string | undefined => {
   try {
     const contents = readFileSync(DB_ENV_PATH, 'utf-8');
     const databaseUrl = parseEnvFile(contents).DATABASE_URL;
@@ -47,4 +46,4 @@ export function loadLocalDatabaseUrl(): string | undefined {
   } catch {
     return undefined;
   }
-}
+};

@@ -2,19 +2,19 @@ const MAX_METADATA_BYTES = 5 * 1024;
 const FETCH_TIMEOUT_MS = 10_000;
 
 const SPECIAL_USE_IPV4_PATTERNS = [
-  /^127\./,
-  /^10\./,
-  /^192\.168\./,
-  /^169\.254\./,
-  /^0\./,
-  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
-  /^198\.1[89]\./,
-  /^192\.0\.0\./,
-  /^192\.0\.2\./,
-  /^198\.51\.100\./,
-  /^203\.0\.113\./,
-  /^224\./,
-  /^240\./,
+  /^127\./u,
+  /^10\./u,
+  /^192\.168\./u,
+  /^169\.254\./u,
+  /^0\./u,
+  /^100\.(?<octet>6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./u,
+  /^198\.1[89]\./u,
+  /^192\.0\.0\./u,
+  /^192\.0\.2\./u,
+  /^198\.51\.100\./u,
+  /^203\.0\.113\./u,
+  /^224\./u,
+  /^240\./u,
 ];
 
 const SPECIAL_USE_HOSTNAMES = new Set([
@@ -28,11 +28,10 @@ const SPECIAL_USE_HOSTNAMES = new Set([
   'lan',
 ]);
 
-function isSpecialUseIpv4(hostname: string): boolean {
-  return SPECIAL_USE_IPV4_PATTERNS.some((pattern) => pattern.test(hostname));
-}
+const isSpecialUseIpv4 = (hostname: string): boolean =>
+  SPECIAL_USE_IPV4_PATTERNS.some((pattern) => pattern.test(hostname));
 
-function isSpecialUseIpv6(hostname: string): boolean {
+const isSpecialUseIpv6 = (hostname: string): boolean => {
   const normalized = hostname.toLowerCase();
   return (
     normalized === '::1' ||
@@ -42,9 +41,9 @@ function isSpecialUseIpv6(hostname: string): boolean {
     normalized.startsWith('::ffff:127.') ||
     normalized.startsWith('100::')
   );
-}
+};
 
-export function validateCimdUrl(url: string): URL {
+export const validateCimdUrl = (url: string): URL => {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -79,35 +78,9 @@ export function validateCimdUrl(url: string): URL {
   }
 
   return parsed;
-}
+};
 
-async function readLimitedBody(response: Response): Promise<ArrayBuffer> {
-  const reader = response.body?.getReader();
-  if (!reader) {
-    return new ArrayBuffer(0);
-  }
-
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-
-    if (!value) {
-      continue;
-    }
-
-    total += value.byteLength;
-    if (total > MAX_METADATA_BYTES) {
-      throw new Error('CIMD metadata response exceeds size limit');
-    }
-
-    chunks.push(value);
-  }
-
+const mergeChunks = (chunks: Uint8Array[], total: number): ArrayBuffer => {
   const merged = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) {
@@ -116,12 +89,43 @@ async function readLimitedBody(response: Response): Promise<ArrayBuffer> {
   }
 
   return merged.buffer;
-}
+};
 
-export async function fetchClientMetadataResource(
+const readLimitedBody = (response: Response): Promise<ArrayBuffer> => {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return Promise.resolve(new ArrayBuffer(0));
+  }
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  const readNext = async (): Promise<ArrayBuffer> => {
+    const { done, value } = await reader.read();
+    if (done) {
+      return mergeChunks(chunks, total);
+    }
+
+    if (!value) {
+      return readNext();
+    }
+
+    total += value.byteLength;
+    if (total > MAX_METADATA_BYTES) {
+      throw new Error('CIMD metadata response exceeds size limit');
+    }
+
+    chunks.push(value);
+    return readNext();
+  };
+
+  return readNext();
+};
+
+export const fetchClientMetadataResource = async (
   input: RequestInfo | URL,
   init?: RequestInit
-): Promise<Response> {
+): Promise<Response> => {
   const url = typeof input === 'string' ? input : input.toString();
   validateCimdUrl(url);
 
@@ -154,4 +158,4 @@ export async function fetchClientMetadataResource(
   } finally {
     clearTimeout(timeout);
   }
-}
+};

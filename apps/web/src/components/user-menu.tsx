@@ -1,12 +1,17 @@
 import { Button } from '@functhis/ui/components/button';
 import { useRouteContext } from '@tanstack/react-router';
 
-export default function UserMenu() {
+const UserMenu = () => {
   const { consoleUrl } = useRouteContext({ from: '__root__' });
 
   return (
-    <Button render={<a href={`${consoleUrl}/login`} />} variant="outline">
+    <Button
+      render={<a aria-label="Sign in" href={`${consoleUrl}/login`} />}
+      variant="outline"
+    >
       Sign in
     </Button>
   );
-}
+};
+
+export default UserMenu;

@@ -67,12 +67,9 @@ describe('fetchClientMetadataResource', () => {
 
   test('uses redirect error and returns HEAD responses unchanged', async () => {
     let fetchInit: RequestInit | undefined;
-    globalThis.fetch = (async (
-      _input: RequestInfo | URL,
-      init?: RequestInit
-    ) => {
+    globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) => {
       fetchInit = init;
-      return new Response(null, { status: 200 });
+      return Promise.resolve(new Response(null, { status: 200 }));
     }) as typeof fetch;
 
     const response = await fetchClientMetadataResource(
@@ -87,15 +84,17 @@ describe('fetchClientMetadataResource', () => {
 
   test('rejects metadata larger than the size cap', async () => {
     const largeChunk = new Uint8Array(6 * 1024);
-    globalThis.fetch = (async () =>
-      new Response(
-        new ReadableStream({
-          start(controller) {
-            controller.enqueue(largeChunk);
-            controller.close();
-          },
-        }),
-        { status: 200 }
+    globalThis.fetch = (() =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(largeChunk);
+              controller.close();
+            },
+          }),
+          { status: 200 }
+        )
       )) as typeof fetch;
 
     await expect(

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "treatConfigHintsAsErrors": false,
+  "ignore": [
+    "**/routeTree.gen.ts",
+    "**/cloudflare-env.d.ts",
+    "**/worker-configuration.d.ts"
+  ],
+  "ignoreDependencies": [
+    "@cloudflare/vite-plugin",
+    "@tailwindcss/vite",
+    "@tanstack/react-form",
+    "@tanstack/react-router-devtools",
+    "@testing-library/dom",
+    "@testing-library/react",
+    "@vitejs/plugin-react",
+    "jsdom",
+    "lucide-react",
+    "next-themes",
+    "tailwindcss",
+    "web-vitals"
+  ],
+  "ignoreUnresolved": ["./routeTree.gen"],
+  "ignoreIssues": {
+    "apps/**/src/env.server.ts": ["unlisted"],
+    "apps/fumadocs/src/components/mdx.tsx": ["duplicates"],
+    "packages/api/src/index.ts": ["duplicates"]
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["package.json", "scripts/**/*.ts"],
+      "ignoreDependencies": ["zod"]
+    },
+    "apps/web": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "vite": false,
+      "ignoreDependencies": ["zod"]
+    },
+    "apps/console": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "vite": false,
+      "ignoreDependencies": ["zod"]
+    },
+    "apps/fumadocs": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "vite": false
+    },
+    "packages/auth": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["zod"]
+    },
+    "packages/api": {
+      "entry": ["src/index.ts", "src/routers/index.ts"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "@functhis/db",
+        "@orpc/client",
+        "@orpc/openapi",
+        "@orpc/zod",
+        "zod"
+      ],
+      "ignoreIssues": {
+        "src/index.ts": ["duplicates"]
+      }
+    },
+    "packages/db": {
+      "entry": ["src/index.ts", "drizzle.config.ts"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["zod"]
+    },
+    "packages/ui": {
+      "entry": [
+        "src/components/**/*.{ts,tsx}",
+        "src/lib/*.ts",
+        "src/styles/*.css"
+      ]
+    },
+    "packages/infra": {
+      "entry": ["package.json"]
+    },
+    "packages/config": {
+      "entry": ["vite.tanstack-app.ts"],
+      "project": ["**/*.ts"]
+    }
+  }
+}

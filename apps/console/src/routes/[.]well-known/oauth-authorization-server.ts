@@ -6,7 +6,7 @@ export const Route = createFileRoute('/.well-known/oauth-authorization-server')(
   {
     server: {
       handlers: {
-        GET: async ({ request }) => handleAuthRequest(request),
+        GET: ({ request }) => handleAuthRequest(request),
       },
     },
   }
