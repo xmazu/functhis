@@ -10,6 +10,37 @@ This project uses **Ultracite**, a zero-config preset that enforces strict code 
 
 Oxlint + Oxfmt (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
 
+## Git Commits
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/). Every commit message:
+
+```text
+<type>(<optional scope>): <description>
+```
+
+- Use lowercase `type` and imperative description (what the commit does, not what you did)
+- Keep the description under 72 characters; put detail in the body
+- Do not end the subject with a period
+- Use a body when the why is not obvious from the subject
+- Breaking changes: `BREAKING CHANGE:` in the body, or `!` after the type/scope (`feat(api)!: ...`)
+
+Types:
+
+| Type       | Use for                                  |
+| ---------- | ---------------------------------------- |
+| `feat`     | New user-facing capability               |
+| `fix`      | Bug fix                                  |
+| `docs`     | Documentation only                       |
+| `style`    | Formatting; no behavior change           |
+| `refactor` | Behavior-preserving code change          |
+| `perf`     | Performance improvement                  |
+| `test`     | Tests only                               |
+| `build`    | Build system or dependencies             |
+| `ci`       | CI configuration                         |
+| `chore`    | Maintenance that does not fit the others |
+
+Examples: `feat(cli): add device login`, `fix(auth): reject special-use CIMD hosts`, `docs: describe terraform and wrangler split`.
+
 ---
 
 ## Core Principles
@@ -123,4 +154,4 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 
 ---
 
-Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance.
+Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance. Commit with a Conventional Commits subject as above.

@@ -28,9 +28,9 @@ bun install
 
 This project uses Cloudflare D1 (SQLite) with Drizzle ORM.
 
-Runtime database access uses the Cloudflare `DB` binding from `packages/infra/alchemy.run.ts`. If a local `DATABASE_URL` is present, it is only for database tooling.
+Runtime database access uses the Cloudflare `DB` binding declared in Wrangler and provisioned by Terraform in `packages/infra`. If a local `DATABASE_URL` is present, it is only for database tooling.
 
-Alchemy provisions the D1 database and applies migrations during `deploy`.
+Terraform creates the D1 database. Wrangler applies migrations (`bun run db:migrate` / `wrangler d1 migrations apply`).
 
 1. Generate migration files:
 
@@ -78,27 +78,22 @@ Each app owns its environment schema in `.env.schema`. Varlock generates `src/en
 
 Import the generated `ENV` accessor in application code. Shared database and auth packages receive configuration or initialized clients from the application. See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
 
-For Cloudflare, Alchemy loads and validates deployment inputs with `varlock/auto-load` in its Node/Bun deployment process. Worker code reads native bindings; web clients use the framework's public env API through `src/env.public.ts` where needed. Alchemy supplies resource URLs and managed database credentials. In-Worker Varlock protections are deferred until an official Alchemy integration is available; see [the non-Wrangler deployment guidance](https://varlock.dev/integrations/cloudflare/#non-wrangler-deploy-tools-alchemy-sst-pulumi).
+For Cloudflare, Varlock validates local and CI inputs. Worker code reads native bindings from Wrangler; web clients use the framework's public env API through `src/env.public.ts` where needed. Terraform outputs resource ids into Wrangler config. Platform secrets live in Cloudflare Secrets Store, not in Terraform state.
 
 Bun's automatic env loading is disabled in `bunfig.toml`; the framework integration or server bootstrap loads Varlock. Node deployments must include Varlock and its dependencies alongside the app schema.
 
 ## Deployment
 
-### Alchemy
+Infrastructure is Terraform. First-party Worker code is Wrangler. See [architecture.md](architecture.md).
 
-- Target: web on Cloudflare
-- Configure provider accounts: `cd packages/infra && bunx alchemy profile edit`
-- Dev: bun run dev
-- Deploy: bun run deploy
-- Destroy: bun run destroy
+- Target: `functhis-web` + `functhis-runtime` on Cloudflare
+- Auth: `CLOUDFLARE_API_TOKEN` (never a global API key)
+- Dev: `bun run dev` (both Workers in one Miniflare)
+- Infra: `cd packages/infra/terraform/environments/production && terraform apply`
+- Code: `wrangler deploy` per Worker after Terraform outputs are wired
+- Migrations: `wrangler d1 migrations apply`
 
-`alchemy profile edit` stores the selected Axiom, Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; no provider-specific setup command is required by this scaffold.
-
-Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
-
-```bash
-cd packages/infra && bunx alchemy deploy --stage production
-```
+Do not create customer packages, Artifacts repos, or dispatch namespaces in Terraform. Package deploys go through the deploy API: Artifacts commit, KV bundle, D1 version row.
 
 ## Git Hooks and Formatting
 

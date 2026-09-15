@@ -123,9 +123,9 @@ The hosted product at `functhis.now` should own managed execution, stable URLs, 
 
 ## Business model
 
-The free plan should make the first successful deployment easy while containing abuse through small project, execution, CPU, and retention limits. Paid individual plans can increase private projects, executions, history, and limits. Managed artifact storage belongs to a later version. Team plans can later add shared ownership, access policies, audit retention, service identities, and consolidated billing.
+The free plan should make the first successful deployment easy while containing abuse through small package, execution, CPU, and retention limits. Paid individual plans can increase private packages, executions, history, and limits. Managed storage for execution outputs (PDFs, archives, and similar files) belongs to a later version. Team plans can later add shared ownership, access policies, audit retention, service identities, and consolidated billing.
 
-Pricing should be tied primarily to projects, executions, compute, retention, and collaboration—not to the number of logical function definitions alone. A project may contain many cheap functions, while one heavily used function can create most of the infrastructure cost.
+Pricing should be tied primarily to packages, executions, compute, retention, and collaboration—not to the number of logical function definitions alone. A package may contain many cheap functions, while one heavily used function can create most of the infrastructure cost.
 
 Functhis must enforce hard quotas before billing sophistication. A free public endpoint can be attacked or scraped, so request, CPU, concurrency, response-size, and artifact limits must fail closed rather than generate an uncontrolled bill.
 
