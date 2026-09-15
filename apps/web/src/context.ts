@@ -1,9 +1,12 @@
-import type { Context as ApiContext } from "@functhis/api/context";
+import type { Context as ApiContext } from '@functhis/api/context';
 
-import { getDb } from "./services";
-import { createAuth } from "./services";
+import { getDb, createAuth } from './services';
 
-export async function createContext({ req }: { req: Request }): Promise<ApiContext> {
+export async function createContext({
+  req,
+}: {
+  req: Request;
+}): Promise<ApiContext> {
   const db = await getDb();
   const session = await (
     await createAuth(db)
@@ -11,8 +14,8 @@ export async function createContext({ req }: { req: Request }): Promise<ApiConte
     headers: req.headers,
   });
   return {
-    db,
     auth: null,
+    db,
     session,
   };
 }

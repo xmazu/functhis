@@ -1,4 +1,4 @@
-import { Button } from "@functhis/ui/components/button";
+import { Button } from '@functhis/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,11 +7,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@functhis/ui/components/dropdown-menu";
-import { Skeleton } from "@functhis/ui/components/skeleton";
-import { Link, useNavigate } from "@tanstack/react-router";
+} from '@functhis/ui/components/dropdown-menu';
+import { Skeleton } from '@functhis/ui/components/skeleton';
+import { Link, useNavigate } from '@tanstack/react-router';
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from '@/lib/auth-client';
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export default function UserMenu() {
                 fetchOptions: {
                   onSuccess: () => {
                     navigate({
-                      to: "/",
+                      to: '/',
                     });
                   },
                 },

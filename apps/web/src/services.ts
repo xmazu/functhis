@@ -1,7 +1,8 @@
-import { createAuth as createConfiguredAuth } from "@functhis/auth";
-import { type Database, createDb } from "@functhis/db";
+import { createAuth as createConfiguredAuth } from '@functhis/auth';
+import { createDb } from '@functhis/db';
+import type { Database } from '@functhis/db';
 
-import { env } from "./env.server";
+import { env } from './env.server';
 
 export function getDb(): Database {
   return createDb(env);

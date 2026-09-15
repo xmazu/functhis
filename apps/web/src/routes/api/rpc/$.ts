@@ -1,12 +1,12 @@
-import { appRouter } from "@functhis/api/routers/index";
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { onError } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { createFileRoute } from "@tanstack/react-router";
+import { appRouter } from '@functhis/api/routers/index';
+import { OpenAPIHandler } from '@orpc/openapi/fetch';
+import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
+import { onError } from '@orpc/server';
+import { RPCHandler } from '@orpc/server/fetch';
+import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
+import { createFileRoute } from '@tanstack/react-router';
 
-import { createContext } from "../../../context";
+import { createContext } from '../../../context';
 
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
@@ -31,21 +31,25 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 
 async function handle({ request }: { request: Request }) {
   const rpcResult = await rpcHandler.handle(request, {
-    prefix: "/api/rpc",
+    prefix: '/api/rpc',
     context: await createContext({ req: request }),
   });
-  if (rpcResult.response) return rpcResult.response;
+  if (rpcResult.response) {
+    return rpcResult.response;
+  }
 
   const apiResult = await apiHandler.handle(request, {
-    prefix: "/api/rpc/api-reference",
+    prefix: '/api/rpc/api-reference',
     context: await createContext({ req: request }),
   });
-  if (apiResult.response) return apiResult.response;
+  if (apiResult.response) {
+    return apiResult.response;
+  }
 
-  return new Response("Not found", { status: 404 });
+  return new Response('Not found', { status: 404 });
 }
 
-export const Route = createFileRoute("/api/rpc/$")({
+export const Route = createFileRoute('/api/rpc/$')({
   server: {
     handlers: {
       HEAD: handle,

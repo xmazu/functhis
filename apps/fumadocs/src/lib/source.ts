@@ -1,11 +1,11 @@
-import { llms, loader } from "fumadocs-core/source";
-import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
-import { defineDocs } from "fumadocs-mdx/macro";
+import { llms, loader } from 'fumadocs-core/source';
+import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
+import { defineDocs } from 'fumadocs-mdx/macro';
 
-import { docsRoute } from "./shared";
+import { docsRoute } from './shared';
 
 export const docs = defineDocs({
-  dir: "content/docs",
+  dir: 'content/docs',
   docs: {
     async: true,
     postprocess: {
@@ -23,5 +23,5 @@ export const source = loader({
 export const docsLlms = llms(source, {
   renderPage: async (page) => `# ${page.data.title} (${page.url})
 
-${await page.data.getText("processed")}`,
+${await page.data.getText('processed')}`,
 });
