@@ -14,4 +14,48 @@
     "NODE_ENV": "development",
     "CONSOLE_URL": "http://localhost:3002",
   },
+  "env": {
+    "preview": {
+      "name": "functhis-web-preview",
+      "compatibility_date": "2025-09-15",
+      "compatibility_flags": ["nodejs_compat"],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000010",
+        },
+      ],
+      "artifacts": [
+        {
+          "binding": "ARTIFACTS",
+          "namespace": "functhis-preview",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "CONSOLE_URL": "https://console.preview.functhis.now",
+      },
+    },
+    "production": {
+      "name": "functhis-web",
+      "compatibility_date": "2025-09-15",
+      "compatibility_flags": ["nodejs_compat"],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000011",
+        },
+      ],
+      "artifacts": [
+        {
+          "binding": "ARTIFACTS",
+          "namespace": "functhis-production",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "CONSOLE_URL": "https://console.functhis.now",
+      },
+    },
+  },
 }

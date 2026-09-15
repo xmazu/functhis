@@ -20,6 +20,8 @@ export type Database = Awaited<ReturnType<typeof connectDatabase>>;
 
 let cachedDb: { connectionString: string; db: Database } | undefined;
 
+export { resolveSecret, type SecretBinding } from './resolve-secret';
+
 export const createDb = async (env: DatabaseConfig) => {
   const { connectionString } = env.HYPERDRIVE;
   if (cachedDb?.connectionString === connectionString) {

@@ -56,3 +56,11 @@ coverage
 .cache
 tmp
 temp
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example

@@ -109,31 +109,31 @@ Do not put Durable Object classes on `functhis-web` or `functhis-console`. If a 
 Terraform owns account-level resources. Wrangler owns first-party Worker **code** and Hyperdrive binding ids. Never manage the same resource in both. **No Alchemy.**
 
 ```text
-packages/infra/terraform     Cloudflare provider v5, R2 remote state (later)
-apps/web/wrangler.jsonc      functhis-web
-apps/console/wrangler.jsonc  functhis-console
+packages/infra/*.tf          Cloudflare provider v5, R2 remote state (preview/production tfvars)
+apps/web/wrangler.jsonc      functhis-web (+ preview/production env blocks)
+apps/console/wrangler.jsonc  functhis-console (+ preview/production env blocks)
 apps/runtime/wrangler.jsonc  functhis-runtime (later)
 ```
 
-**Terraform** (per env `preview` / `production`):
+**Terraform** (`packages/infra`, apply with `preview.tfvars` or `production.tfvars`):
 
-- Zone `functhis.now`, DNS, Worker routes for the three hostnames
-- Neon Postgres project (connection string in Secrets Store; Hyperdrive configs point at Neon **direct** / unpooled host)
-- Hyperdrive `functhis-auth` (caching disabled — auth, sessions, OAuth). Add a second cache-enabled Hyperdrive when catalog tables land.
-- KV `functhis-bundles`
-- R2 `functhis-tf-state` (state backend) and later execution-output buckets
-- Secrets Store (platform secrets: `BETTER_AUTH_SECRET`, GitHub OAuth)
-- Analytics Engine datasets for executions / quota hits
-- Observability destinations
+- Zone `functhis.now` (data source), Workers custom domains for the three hostnames (`enable_domains` after first deploy)
+- Neon Postgres project stays in the dashboard; connection string in Secrets Store and Hyperdrive origin (Neon **direct** / unpooled host)
+- Hyperdrive `functhis-auth-{env}` (caching disabled — console) and `functhis-catalog-{env}` (cache enabled — web)
+- KV `functhis-bundles-{env}`
+- R2 `functhis-tf-state` (state backend only — create once with `wrangler r2 bucket create`; not a Terraform resource)
+- Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
+- Analytics Engine datasets and observability destinations: later with `functhis-runtime`
 
-**Wrangler** (CI after `terraform apply`):
+**Wrangler** (after `terraform apply`, paste output IDs into env blocks in `apps/*/wrangler.jsonc`):
 
-- `wrangler deploy` per Worker
+- `bun run --filter @functhis/infra deploy:preview` or `deploy:production`
 - `drizzle-kit migrate` against Neon (direct URL; not through Hyperdrive)
-- `wrangler types`
-- Optional: `wrangler dev -c apps/web/wrangler.jsonc -c apps/console/wrangler.jsonc`
+- `wrangler types` / `bun run cf-typegen`
+- Artifacts namespaces: `functhis-preview`, `functhis-production` via `wrangler artifacts namespaces create`
+- Optional: `bun run --filter @functhis/infra dev:workers`
 
-Pin `cloudflare/cloudflare` to `~> 5`. Auth via `CLOUDFLARE_API_TOKEN`. State backend is R2 (S3-compatible). Environments are directories, not Terraform modules — v5 resources do not compose cleanly.
+Pin `cloudflare/cloudflare` to `~> 5`. Auth via `CLOUDFLARE_API_TOKEN`. State backend is R2 (S3-compatible); treat state as confidential (origin passwords and secret values). One Terraform root; preview and production differ by var-file and backend state key, not separate module trees. Commit `.terraform.lock.hcl` after `terraform init`.
 
 **Not Terraform:** customer packages, Artifacts repos, bundle KV keys, Postgres catalog rows. Those are the deploy API.
 
@@ -226,7 +226,7 @@ packages/api      shared oRPC / business logic (see below)
 packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
 packages/mcp      search/execute handlers (later)
-packages/infra    Wrangler dev/migrate wiring; Terraform later
+packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts
 packages/ui       existing
 ```
 

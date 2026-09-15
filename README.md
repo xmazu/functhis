@@ -125,18 +125,12 @@ bun run --filter @functhis/infra dev:workers
 
 ## Production database (Neon + Hyperdrive)
 
-Local Docker is enough for day-to-day dev. Deployed Workers use Neon through a cache-disabled Hyperdrive binding.
+Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyperdrive (auth: cache disabled on console; catalog: cache enabled on web).
 
 1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
-2. Create Hyperdrive once and paste the id into `apps/console/wrangler.jsonc` (console is the only Worker that talks to Postgres in this phase):
+2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc` and `apps/web/wrangler.jsonc` before deploy.
 
-```bash
-bun run --filter @functhis/infra db:hyperdrive:create
-```
-
-Auth queries must not use a cached Hyperdrive config.
-
-3. Override console Worker `vars` / secrets for production — committed `apps/console/wrangler.jsonc` defaults to local URLs (`BETTER_AUTH_URL=http://localhost:3002`). Set `BETTER_AUTH_URL=https://console.functhis.now`, `BETTER_AUTH_SECRET`, and GitHub OAuth credentials via `wrangler secret put` (or env-specific Wrangler config) before deploy.
+Auth queries must not use a cached Hyperdrive config on the console Worker.
 
 ## Database (reference)
 
@@ -182,13 +176,37 @@ See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
 
 ## Deployment
 
-Infrastructure is Terraform (later). First-party Worker code is Wrangler. See [architecture.md](architecture.md).
+Terraform in [`packages/infra`](packages/infra) owns account-level Cloudflare resources. Wrangler deploys first-party Worker code. See [architecture.md](architecture.md).
+
+**Prerequisites:** [Terraform](https://www.terraform.io/) CLI, `CLOUDFLARE_API_TOKEN`, R2 API keys for remote state, Neon **direct** URL, GitHub OAuth app (production callback `https://console.functhis.now/api/auth/callback/github`).
+
+**One-time:** create the state bucket (not managed by Terraform):
+
+```bash
+wrangler r2 bucket create functhis-tf-state
+```
+
+**Per environment** (preview or production):
+
+```bash
+cd packages/infra
+cp preview.tfvars.example preview.tfvars   # or production.tfvars.example
+
+terraform init -reconfigure \
+  -backend-config="key=preview/terraform.tfstate" \
+  -backend-config="access_key=$R2_ACCESS_KEY_ID" \
+  -backend-config="secret_key=$R2_SECRET_ACCESS_KEY" \
+  -backend-config="endpoints={s3=\"https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com\"}"
+
+bun run --filter @functhis/infra tf:preview
+```
+
+After apply: update Hyperdrive and Secrets Store IDs in Wrangler `preview` / `production` env blocks, create Artifacts namespaces (`bun run --filter @functhis/infra artifacts:namespace:preview`), deploy Workers (`deploy:preview`), then set `enable_domains = true` in tfvars and apply again for custom domains.
 
 - Workers: `functhis-web` + `functhis-console` (+ `functhis-runtime` later)
-- Auth issuer: `https://console.functhis.now`
-- Auth: `CLOUDFLARE_API_TOKEN` (never a global API key)
+- Auth issuer: `https://console.functhis.now` (preview: `https://console.preview.functhis.now`)
 - Dev: `bun run dev` (web 3001 + console 3002)
-- Migrations: `bun run db:migrate:local` (Neon via drizzle-kit) / Hyperdrive binding for runtime queries
+- Migrations: `bun run db:migrate:local` (Neon direct URL; never through Hyperdrive)
 
 Do not create customer packages, Artifacts repos, or dispatch namespaces in Terraform. Package deploys go through the deploy API: Artifacts commit, KV bundle, Postgres version row.
 

@@ -21,4 +21,72 @@
     "BETTER_AUTH_URL": "http://localhost:3002",
     "TRUSTED_ORIGINS": "http://localhost:3002,http://localhost:3001,https://functhis.now,https://console.functhis.now",
   },
+  "env": {
+    "preview": {
+      "name": "functhis-console-preview",
+      "compatibility_date": "2025-09-15",
+      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000012",
+        },
+      ],
+      "secrets_store_secrets": [
+        {
+          "binding": "BETTER_AUTH_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "BETTER_AUTH_SECRET",
+        },
+        {
+          "binding": "GITHUB_CLIENT_ID",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "GITHUB_CLIENT_ID",
+        },
+        {
+          "binding": "GITHUB_CLIENT_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "GITHUB_CLIENT_SECRET",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "BETTER_AUTH_URL": "https://console.preview.functhis.now",
+        "TRUSTED_ORIGINS": "https://console.preview.functhis.now,https://preview.functhis.now,https://mcp.preview.functhis.now",
+      },
+    },
+    "production": {
+      "name": "functhis-console",
+      "compatibility_date": "2025-09-15",
+      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000013",
+        },
+      ],
+      "secrets_store_secrets": [
+        {
+          "binding": "BETTER_AUTH_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "BETTER_AUTH_SECRET",
+        },
+        {
+          "binding": "GITHUB_CLIENT_ID",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "GITHUB_CLIENT_ID",
+        },
+        {
+          "binding": "GITHUB_CLIENT_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "GITHUB_CLIENT_SECRET",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "BETTER_AUTH_URL": "https://console.functhis.now",
+        "TRUSTED_ORIGINS": "https://console.functhis.now,https://functhis.now,https://mcp.functhis.now",
+      },
+    },
+  },
 }
