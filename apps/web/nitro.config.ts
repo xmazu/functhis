@@ -10,5 +10,4 @@ export default defineConfig({
       env: { service: 'functhis-web' },
     }),
   ],
-  serverDir: './server',
 });

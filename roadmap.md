@@ -11,8 +11,8 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
 1. **Auth**
    - GitHub login
    - `jwt()` + `mcp()` + `cimd()` + `organization()` schema
-   - Console login, consent, device pages
-   - CIMD-safe fetch on Workers
+   - Console login, consent, device pages (`apps/console`, issuer `console.functhis.now`)
+   - CIMD-safe fetch on Workers (`global_fetch_strictly_public` + URL policy)
    - `.functhis.now` cookies
    - Well-known routes on the issuer
 
@@ -24,8 +24,8 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
    - ACL: owner only
 
 3. **Infra**
-   - Terraform: zone, DNS, routes, D1, KV, Secrets Store, Analytics Engine
-   - Wrangler: `functhis-web` + `functhis-runtime`, D1 migrations
+   - Terraform: zone, DNS, routes, Neon connection secret, Hyperdrive configs, KV, Secrets Store, Analytics Engine
+   - Wrangler: `functhis-web` + `functhis-console` + `functhis-runtime`, Hyperdrive bindings
    - Artifacts namespace per env (`functhis-preview`, `functhis-production`)
    - R2 remote state. Never manage the same resource in Terraform and Wrangler.
 

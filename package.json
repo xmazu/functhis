@@ -16,8 +16,6 @@
       "react-dom": "^19.2.8",
       "sonner": "^2.0.8",
       "tailwindcss": "^4.3.3",
-      "@libsql/client": "0.18.0",
-      "libsql": "0.5.29",
       "@orpc/server": "^1.15.0",
       "@orpc/client": "^1.15.0",
       "@orpc/openapi": "^1.15.0",
@@ -29,16 +27,18 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F web -F console --parallel",
     "build": "turbo run build",
     "check-types": "turbo run check-types",
-    "postinstall": "tsc -b packages/api && varlock codegen --path ./apps/web/ && varlock codegen --path ./packages/db/",
+    "postinstall": "tsc -b packages/api && varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/ && bun run cf-typegen",
+    "cf-typegen": "turbo run cf-typegen -F web -F console --",
+    "test": "bun test packages/auth scripts apps/console/src/lib",
     "dev:types": "tsc -b packages/api --watch",
-    "dev:web": "turbo run dev:bare -F web --",
+    "dev:web": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F web --",
+    "dev:console": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F console --",
     "db:generate": "turbo run db:generate -F @functhis/db --",
-    "deploy": "turbo run deploy -F @functhis/infra --",
-    "destroy": "turbo run destroy -F @functhis/infra --",
-    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./packages/db/",
+    "db:migrate:local": "turbo run db:migrate:local -F @functhis/infra --",
+    "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "husky"
@@ -56,13 +56,8 @@
     "turbo": "^2.10.12",
     "typescript": "catalog:",
     "ultracite": "7.11.0",
-    "varlock": "catalog:"
-  },
-  "overrides": {
-    "@effect/platform-node-shared": "4.0.0-rc.112",
-    "@effect/sql-d1": "4.0.0-rc.112",
-    "@effect/sql-sqlite-do": "4.0.0-rc.112",
-    "@effect/vitest": "4.0.0-rc.112"
+    "varlock": "catalog:",
+    "wrangler": "^4.40.2"
   },
   "packageManager": "bun@1.4.0"
 }

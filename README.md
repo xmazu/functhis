@@ -10,41 +10,137 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Shared UI package** - shadcn/ui primitives live in `packages/ui`
 - **oRPC** - End-to-end type-safe APIs with OpenAPI integration
 - **Drizzle** - TypeScript-first ORM
-- **Cloudflare D1** - Database engine
-- **Authentication** - Better-Auth
+- **Neon Postgres + Hyperdrive** - Database engine
+- **Authentication** - Better Auth on `apps/console` (OAuth issuer)
 - **Husky** - Git hooks for code quality
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
 
-## Getting Started
+## Run locally
 
-First, install the dependencies:
+### Prerequisites
+
+- [Bun](https://bun.sh) (see root `packageManager`)
+- [Docker](https://www.docker.com/) for local Postgres (recommended), or Neon unpooled URL if you prefer remote DB
+- GitHub OAuth app for console login (see below)
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) logged in (`wrangler login`) only when creating Hyperdrive for **deployed** Workers
+
+### 1. Install
 
 ```bash
 bun install
 ```
 
-## Database Setup
+### 2. Local Postgres (Docker)
 
-This project uses Cloudflare D1 (SQLite) with Drizzle ORM.
+```bash
+docker compose up -d
+cp packages/db/.env.example packages/db/.env
+```
 
-Runtime database access uses the Cloudflare `DB` binding declared in Wrangler and provisioned by Terraform in `packages/infra`. If a local `DATABASE_URL` is present, it is only for database tooling.
+**`packages/db/.env`** — one URL for migrations **and** local dev (no separate Hyperdrive export):
 
-Terraform creates the D1 database. Wrangler applies migrations (`bun run db:migrate` / `wrangler d1 migrations apply`).
+```bash
+DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
+```
 
-1. Generate migration files:
+`bun run dev` reads this file and wires the Worker `HYPERDRIVE` binding to the same URL locally. Hyperdrive service itself is **not** used on your machine.
+
+### 3. App secrets
+
+**`apps/console/.env`** — OAuth issuer:
+
+```bash
+BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+BETTER_AUTH_URL=http://localhost:3002
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+TRUSTED_ORIGINS=http://localhost:3002,http://localhost:3001
+```
+
+**`apps/web/.env`** — optional; defaults in `.env.schema` are enough for local dev:
+
+```bash
+CONSOLE_URL=http://localhost:3002
+```
+
+After editing any `.env.schema`, regenerate types:
+
+```bash
+bun run env:generate
+```
+
+### 4. GitHub OAuth app
+
+Create a GitHub OAuth app (Settings → Developer settings → OAuth Apps):
+
+| Field | Value |
+| --- | --- |
+| Homepage URL | `http://localhost:3002` |
+| Authorization callback URL | `http://localhost:3002/api/auth/callback/github` |
+
+Copy the client ID and secret into `apps/console/.env`.
+
+### 5. Database migrations
+
+```bash
+bun run db:migrate:local
+```
+
+After schema changes:
 
 ```bash
 bun run db:generate
+bun run db:migrate:local
 ```
 
-Then, run the development server:
+### 6. Start dev servers
 
 ```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
+| App | URL | Role |
+| --- | --- | --- |
+| Web | [http://localhost:3001](http://localhost:3001) | Marketing, public pages |
+| Console | [http://localhost:3002](http://localhost:3002) | OAuth issuer, login, consent, device |
+
+Run a single app:
+
+```bash
+bun run dev:web       # port 3001
+bun run dev:console   # port 3002
+```
+
+Optional: both Workers in one Wrangler dev session (exercises Hyperdrive bindings when configured):
+
+```bash
+bun run --filter @functhis/infra dev:workers
+```
+
+### 7. Verify
+
+- Open [http://localhost:3002/login](http://localhost:3002/login) and sign in with GitHub
+- Run `bun run check-types` and `bun run check` before pushing
+
+## Production database (Neon + Hyperdrive)
+
+Local Docker is enough for day-to-day dev. Deployed Workers use Neon through a cache-disabled Hyperdrive binding.
+
+1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
+2. Create Hyperdrive once and paste the id into `apps/console/wrangler.jsonc` (console is the only Worker that talks to Postgres in this phase):
+
+```bash
+bun run --filter @functhis/infra db:hyperdrive:create
+```
+
+Auth queries must not use a cached Hyperdrive config.
+
+3. Override console Worker `vars` / secrets for production — committed `apps/console/wrangler.jsonc` defaults to local URLs (`BETTER_AUTH_URL=http://localhost:3002`). Set `BETTER_AUTH_URL=https://console.functhis.now`, `BETTER_AUTH_SECRET`, and GitHub OAuth credentials via `wrangler secret put` (or env-specific Wrangler config) before deploy.
+
+## Database (reference)
+
+Postgres + Drizzle. Local: Docker + `packages/db/.env` `DATABASE_URL`. Production runtime: `env.HYPERDRIVE.connectionString`. Migrations always use `DATABASE_URL` from `packages/db/.env`, never through Hyperdrive.
 
 ## UI Customization
 
@@ -68,32 +164,33 @@ Import shared components like this:
 import { Button } from '@functhis/ui/components/button';
 ```
 
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
 ## Environment Configuration
 
-Each app owns its environment schema in `.env.schema`. Varlock generates `src/env.ts` during installation; run `bun run env:generate` after changing a schema. Commit schemas, and keep secrets in ignored env files or your deployment platform.
+Each app owns its environment schema in `.env.schema`. Varlock generates `src/env.ts` on `bun install` and via `bun run env:generate`. Commit schemas; keep secrets in ignored `.env` files.
 
-Import the generated `ENV` accessor in application code. Shared database and auth packages receive configuration or initialized clients from the application. See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
+| Package | `.env` path | Purpose |
+| --- | --- | --- |
+| `packages/db` | `packages/db/.env` | `DATABASE_URL` — migrations + local dev DB |
+| `apps/console` | `apps/console/.env` | Better Auth + GitHub OAuth |
+| `apps/web` | `apps/web/.env` | `CONSOLE_URL` (optional locally) |
 
-For Cloudflare, Varlock validates local and CI inputs. Worker code reads native bindings from Wrangler; web clients use the framework's public env API through `src/env.public.ts` where needed. Terraform outputs resource ids into Wrangler config. Platform secrets live in Cloudflare Secrets Store, not in Terraform state.
+Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` — no manual `CLOUDFLARE_HYPERDRIVE_*` export.
 
-Bun's automatic env loading is disabled in `bunfig.toml`; the framework integration or server bootstrap loads Varlock. Node deployments must include Varlock and its dependencies alongside the app schema.
+CIMD metadata fetch runs only on the **console** Worker. `apps/console/wrangler.jsonc` sets `global_fetch_strictly_public` so `fetch()` blocks private targets after DNS; `packages/auth` also validates HTTPS URLs before fetch. Regenerate Worker types after Wrangler changes: `bun run cf-typegen` (also runs on `bun install`).
+
+See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
 
 ## Deployment
 
-Infrastructure is Terraform. First-party Worker code is Wrangler. See [architecture.md](architecture.md).
+Infrastructure is Terraform (later). First-party Worker code is Wrangler. See [architecture.md](architecture.md).
 
-- Target: `functhis-web` + `functhis-runtime` on Cloudflare
+- Workers: `functhis-web` + `functhis-console` (+ `functhis-runtime` later)
+- Auth issuer: `https://console.functhis.now`
 - Auth: `CLOUDFLARE_API_TOKEN` (never a global API key)
-- Dev: `bun run dev` (both Workers in one Miniflare)
-- Infra: `cd packages/infra/terraform/environments/production && terraform apply`
-- Code: `wrangler deploy` per Worker after Terraform outputs are wired
-- Migrations: `wrangler d1 migrations apply`
+- Dev: `bun run dev` (web 3001 + console 3002)
+- Migrations: `bun run db:migrate:local` (Neon via drizzle-kit) / Hyperdrive binding for runtime queries
 
-Do not create customer packages, Artifacts repos, or dispatch namespaces in Terraform. Package deploys go through the deploy API: Artifacts commit, KV bundle, D1 version row.
+Do not create customer packages, Artifacts repos, or dispatch namespaces in Terraform. Package deploys go through the deploy API: Artifacts commit, KV bundle, Postgres version row.
 
 ## Git Hooks and Formatting
 
@@ -105,20 +202,23 @@ Do not create customer packages, Artifacts repos, or dispatch namespaces in Terr
 ```
 functhis/
 ├── apps/
-│   └── web/         # Fullstack application (React + TanStack Start)
+│   ├── web/         # Marketing + public pages (functhis.now)
+│   └── console/     # OAuth issuer + dashboard (console.functhis.now)
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
+│   ├── api/         # Shared oRPC / business logic (multi-app only)
+│   ├── auth/        # createAuth, CIMD fetch, CLI client seed
 │   └── db/          # Database schema & queries
 ```
 
 ## Available Scripts
 
-- `bun run dev`: Start all applications in development mode
+- `bun run dev`: Start web (3001) and console (3002) in parallel
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
+- `bun run dev:console`: Start only the console application
 - `bun run check-types`: Check TypeScript types across all apps
-- `bun run dev:types`: Watch API and dependency declarations when running an app individually. The root `dev` command already starts this watcher; installation and builds generate declarations automatically.
-- `bun run db:generate`: Generate database client/types
+- `bun run dev:types`: Watch API declarations when running an app individually
+- `bun run db:generate`: Generate Drizzle migrations from schema
+- `bun run db:migrate:local`: Apply Drizzle migrations to Neon
 - `bun run check`: Run Oxlint and Oxfmt

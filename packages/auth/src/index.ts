@@ -1,24 +1,89 @@
+import { cimd } from '@better-auth/cimd';
+import { mcp } from '@better-auth/mcp';
+import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
 import type { Database } from '@functhis/db';
 import * as schema from '@functhis/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { jwt, organization } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 
+import { fetchClientMetadataResource } from './cimd-fetch';
+
+export { ensureCliOAuthClient } from './seed-cli-client';
+
 export interface AuthConfig {
-  BETTER_AUTH_URL: string;
   BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  TRUSTED_ORIGINS: string[];
+}
+
+function crossSubdomainCookies(baseURL: string) {
+  try {
+    const { hostname } = new URL(baseURL);
+    if (hostname === 'functhis.now' || hostname.endsWith('.functhis.now')) {
+      return {
+        domain: 'functhis.now',
+        enabled: true,
+      };
+    }
+  } catch {
+    return { enabled: false };
+  }
+
+  return { enabled: false };
 }
 
 export function createAuth(env: AuthConfig, database: Database) {
   return betterAuth({
+    advanced: {
+      crossSubDomainCookies: crossSubdomainCookies(env.BETTER_AUTH_URL),
+    },
     baseURL: env.BETTER_AUTH_URL,
     database: drizzleAdapter(database, {
-      provider: 'sqlite',
+      provider: 'pg',
       schema,
     }),
-    emailAndPassword: { enabled: true },
-    plugins: [tanstackStartCookies()],
+    disabledPaths: ['/token'],
+    emailAndPassword: { enabled: false },
+    plugins: [
+      jwt({ disableSettingJwtHeader: true }),
+      mcp({
+        consentPage: '/consent',
+        loginPage: '/login',
+        resource: 'https://mcp.functhis.now',
+        resources: ['https://mcp.functhis.now', 'https://functhis.now'],
+      }),
+      cimd({
+        fetchClientMetadataResource,
+        metadataProfile: 'mcp-2026-07-28',
+      }),
+      oauthDeviceAuthorization({ verificationUri: '/device' }),
+      organization(),
+      tanstackStartCookies(),
+    ],
+    rateLimit: {
+      storage: 'database',
+    },
     secret: env.BETTER_AUTH_SECRET,
-    trustedOrigins: [env.BETTER_AUTH_URL],
+    socialProviders: {
+      github: {
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+        mapProfileToUser(profile) {
+          return {
+            email: profile.email,
+            emailVerified: true,
+            image: profile.avatar_url,
+            name: profile.name ?? profile.login,
+          };
+        },
+      },
+    },
+    trustedOrigins: env.TRUSTED_ORIGINS,
   });
 }
+
+export type Auth = ReturnType<typeof createAuth>;

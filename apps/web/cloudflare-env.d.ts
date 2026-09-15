@@ -1,9 +1,7 @@
-import type { WebEnv as ServerEnv } from '@functhis/infra/alchemy.run';
-
-// This file infers types for the cloudflare:workers environment from your Alchemy Worker.
-// @see https://alchemy.run/cloudflare/compute/workers
-
-export type CloudflareEnv = ServerEnv;
+interface CloudflareEnv {
+  CONSOLE_URL: string;
+  NODE_ENV: string;
+}
 
 declare global {
   type Env = CloudflareEnv;
@@ -11,6 +9,8 @@ declare global {
 
 declare module 'cloudflare:workers' {
   namespace Cloudflare {
-    export interface Env extends CloudflareEnv {}
+    export type Env = CloudflareEnv;
   }
 }
+
+export type { CloudflareEnv };

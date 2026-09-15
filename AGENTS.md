@@ -154,4 +154,10 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 
 ---
 
+## Shared API boundary
+
+[`packages/api`](packages/api) holds **shared** oRPC procedures and types for logic that **more than one app** will call (web, console, MCP HTTP later). Do not add app-only procedures there. Keep single-app API code in that app until a second consumer exists, then extract. See [architecture.md](architecture.md) for the full rule.
+
+---
+
 Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance. Commit with a Conventional Commits subject as above.

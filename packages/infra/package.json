@@ -3,21 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check-types": "tsc --noEmit",
-    "dev": "alchemy dev",
-    "deploy": "alchemy deploy",
-    "destroy": "alchemy destroy"
-  },
-  "dependencies": {
-    "zod": "catalog:"
+    "check-types": "echo 'no types'",
+    "db:hyperdrive:create": "wrangler hyperdrive create functhis-auth --connection-string=\"${DATABASE_URL}\" --caching-disabled",
+    "dev:workers": "wrangler dev -c ../../apps/web/wrangler.jsonc -c ../../apps/console/wrangler.jsonc",
+    "db:migrate:local": "bun run --filter @functhis/db db:migrate:deploy"
   },
   "devDependencies": {
-    "@effect/platform-bun": "4.0.0-rc.112",
-    "@effect/platform-node": "4.0.0-rc.112",
     "@functhis/config": "workspace:*",
-    "alchemy": "2.0.0-beta.77",
-    "effect": "4.0.0-rc.112",
     "typescript": "catalog:",
-    "varlock": "catalog:"
+    "wrangler": "^4.40.2"
   }
 }

@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "functhis-web",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true,
+  },
+  "dev": {
+    "inspector_port": 9229,
+  },
+  "vars": {
+    "NODE_ENV": "development",
+    "CONSOLE_URL": "http://localhost:3002",
+  },
+}

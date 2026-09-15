@@ -1,0 +1,13 @@
+/node_modules
+/.output
+/.tanstack
+/.nitro
+/.wrangler
+.dev.vars*
+.env*
+!.env.schema
+.DS_Store
+worker-configuration.d.ts
+*.log
+*.tsbuildinfo
+/src/env.ts

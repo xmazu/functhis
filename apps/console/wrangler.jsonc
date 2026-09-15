@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "functhis-console",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true,
+  },
+  "dev": {
+    "inspector_port": 9230,
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000-0000-0000-0000-000000000002",
+    },
+  ],
+  "vars": {
+    "NODE_ENV": "development",
+    "BETTER_AUTH_URL": "http://localhost:3002",
+    "TRUSTED_ORIGINS": "http://localhost:3002,http://localhost:3001,https://functhis.now,https://console.functhis.now",
+  },
+}

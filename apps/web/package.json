@@ -7,14 +7,12 @@
     "serve": "vite preview",
     "check-types": "tsc -b ../../packages/api && vite build && tsc --noEmit",
     "dev:bare": "vite dev",
-    "env:generate": "varlock codegen"
+    "env:generate": "varlock codegen",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@functhis/api": "workspace:*",
-    "@functhis/auth": "workspace:*",
-    "@functhis/db": "workspace:*",
     "@functhis/ui": "workspace:*",
-    "@libsql/client": "catalog:",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
@@ -26,9 +24,7 @@
     "@tanstack/react-router": "^1.170.32",
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "^1.168.49",
-    "better-auth": "catalog:",
     "evlog": "^2.28.1",
-    "libsql": "catalog:",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
     "nitro": "3.0.260903-beta",
@@ -40,8 +36,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.12.2",
     "@functhis/config": "workspace:*",
-    "@functhis/infra": "workspace:*",
     "@tanstack/react-query-devtools": "^5.102.8",
     "@tanstack/react-router-devtools": "^1.167.1",
     "@testing-library/dom": "^10.4.1",

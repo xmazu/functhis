@@ -17,7 +17,6 @@
     "dev": "tsc -b --watch"
   },
   "dependencies": {
-    "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

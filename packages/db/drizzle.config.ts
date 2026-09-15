@@ -1,10 +1,13 @@
 import { defineConfig } from 'drizzle-kit';
 import 'varlock/auto-load';
 
+import { ENV } from './src/env';
+
 export default defineConfig({
-  schema: './src/schema',
+  dbCredentials: {
+    url: ENV.DATABASE_URL,
+  },
+  dialect: 'postgresql',
   out: './src/migrations',
-  // DOCS: https://orm.drizzle.team/docs/guides/d1-http-with-drizzle-kit
-  dialect: 'sqlite',
-  driver: 'd1-http',
+  schema: './src/schema',
 });

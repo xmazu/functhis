@@ -18,11 +18,16 @@ import Header from '../components/header';
 import appCss from '../index.css?url';
 
 export interface RouterAppContext {
+  consoleUrl: string;
   orpc: typeof orpc;
   queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
+  beforeLoad: async () => {
+    const { getConsoleUrl } = await import('../functions/get-console-url');
+    return { consoleUrl: await getConsoleUrl() };
+  },
   server: {
     middleware: [createMiddleware().server(evlogErrorHandler)],
   },
@@ -37,7 +42,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'My App',
+        title: 'Functhis',
       },
     ],
     links: [

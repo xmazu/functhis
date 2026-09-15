@@ -10,13 +10,13 @@ One Cloudflare account.
 
 | Host | Role |
 | --- | --- |
-| `https://functhis.now` | Marketing, OAuth issuer (`baseURL`), public registry |
-| `https://console.functhis.now` | Owner dashboard; login, consent, device approval |
+| `https://functhis.now` | Marketing, public registry, deploy API audience |
+| `https://console.functhis.now` | OAuth issuer, owner dashboard; login, consent, device approval |
 | `https://mcp.functhis.now` | MCP resource. Tools: `search`, `execute`. Token `aud`. |
 
-No `run.` host. Cookies: `.functhis.now`. `trustedOrigins`: both `functhis.now` and `console.functhis.now`.
+No `run.` host. Cookies: `.functhis.now`. `trustedOrigins`: apex + console.
 
-Alpha ships two first-party Workers on those hostnames (see [Fleet](#fleet)). Do not add a package-app zone.
+Alpha ships two first-party Workers on web + console hostnames (see [Fleet](#fleet)). Do not add a package-app zone.
 
 ## Public URLs
 
@@ -38,16 +38,16 @@ Compute identity is the package version id (`ver_{versionId}`). Slugs can change
 
 ## Auth
 
-GitHub is the IdP (`socialProviders.github`). Functhis is the OAuth 2.1 authorization server.
+GitHub is the IdP (`socialProviders.github`). Functhis is the OAuth 2.1 authorization server at **`https://console.functhis.now`**.
 
 Mount **`mcp()`**, not `oauthProvider()`. `mcp()` is that provider with MCP defaults. Do not register both.
 
 ```text
 GitHub           → session into Functhis
-Functhis (mcp()) → AS
+Functhis (mcp()) → AS on console.functhis.now
 mcp.functhis.now → MCP resource
 deploy API       → CLI resource (same AS, different audience)
-console          → session cookies
+console          → session cookies + issuer pages
 ```
 
 `createAuth` plugins:
@@ -55,13 +55,13 @@ console          → session cookies
 - `jwt()`
 - `mcp({ loginPage, consentPage, resource: "https://mcp.functhis.now" })`
 - `cimd({ metadataProfile: "mcp-2026-07-28", fetchClientMetadataResource })` — no DCR unless an old client requires it
-- `oauthDeviceAuthorization({ verificationUri: "https://console.functhis.now/device" })`
+- `oauthDeviceAuthorization({ verificationUri: "/device" })`
 - `organization()` — schema only in alpha
 - `crossSubDomainCookies` on `.functhis.now`
 
-Login / consent / device pages: `https://console.functhis.now/...`. Issuer stays `https://functhis.now`.
+Login / consent / device pages: `https://console.functhis.now/...`. Issuer: `https://console.functhis.now`.
 
-Workers: do not use the Node CIMD transport. Fetch must resolve DNS once, reject RFC 6890 special-use addresses, pin the IP, refuse redirects.
+Workers: do not use the Node CIMD transport. Use `global_fetch_strictly_public` on `functhis-console` so `fetch()` refuses private/special-use IPs after DNS. `fetchClientMetadataResource` enforces HTTPS, no credentials/fragments, GET/HEAD only, `redirect: "error"`, timeout + size cap. No userland IP pinning.
 
 Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 
@@ -70,13 +70,13 @@ Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 - `mcp.functhis.now/.well-known/oauth-protected-resource`
 - `/oauth2/authorize`, `/oauth2/token`, `/oauth2/userinfo`, JWKS
 
-MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI device token is bound to the deploy API resource, not MCP.
+MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI device token is bound to the deploy API resource (`https://functhis.now`), not MCP.
 
 ## Console
 
-Thin owner app. Not the shareable object.
+Thin owner app at `apps/console`. Not the shareable object.
 
-Alpha: GitHub login, MCP consent, device approval, package list, live URL, copy MCP URL + function id, recent executions.
+Alpha: GitHub login, MCP consent, device approval, signed-in home. No package list yet.
 
 Try-it lives on the public function page. No billing, org admin, or catalog in alpha.
 
@@ -90,33 +90,36 @@ Try-it lives on the public function page. No billing, org admin, or catalog in a
 
 ## Fleet
 
-Two product scripts. Untrusted package code must not share a failure domain with login or MCP HTTP.
+Two product scripts today (web + console). Runtime worker arrives later. Untrusted package code must not share a failure domain with login or MCP HTTP.
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now`, `console.functhis.now`, `mcp.functhis.now` | TanStack Start, OAuth, MCP HTTP, deploy API, public GET pages | D1, Artifacts, bundle KV, Secrets Store, `RUNTIME` |
-| `functhis-runtime` | none | Worker Loader execution, execution rows | D1, bundle KV, `LOADER` |
+| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API (later) | Neon via Hyperdrive |
+| `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive, `global_fetch_strictly_public` |
+| `functhis-runtime` | none (later) | Worker Loader execution, execution rows | Neon via Hyperdrive, bundle KV, `LOADER` |
 
-Local `bun run dev` attaches both in one Miniflare. Production deploys them independently. UI-only changes upload web and skip runtime.
+Local `bun run dev` runs web (3001) and console (3002) with the same Hyperdrive binding config. `bun run db:migrate:local` applies Drizzle migrations to Neon. Production deploys Workers independently.
 
-Cross-worker calls use service bindings. Do not proxy D1 through RPC; both scripts bind the same database.
+Cross-worker calls use service bindings. Do not proxy Postgres through RPC; scripts that need the database bind the same Hyperdrive config.
 
-Do not put Durable Object classes on `functhis-web`. If a DO is needed later, add a third script rather than attaching it to origin.
+Do not put Durable Object classes on `functhis-web` or `functhis-console`. If a DO is needed later, add a third script rather than attaching it to origin.
 
 ## Infra
 
-Terraform owns account-level resources. Wrangler owns first-party Worker **code** and D1 migrations. Never manage the same resource in both.
+Terraform owns account-level resources. Wrangler owns first-party Worker **code** and Hyperdrive binding ids. Never manage the same resource in both. **No Alchemy.**
 
 ```text
-packages/infra/terraform     Cloudflare provider v5, R2 remote state
+packages/infra/terraform     Cloudflare provider v5, R2 remote state (later)
 apps/web/wrangler.jsonc      functhis-web
-apps/runtime/wrangler.jsonc  functhis-runtime
+apps/console/wrangler.jsonc  functhis-console
+apps/runtime/wrangler.jsonc  functhis-runtime (later)
 ```
 
 **Terraform** (per env `preview` / `production`):
 
 - Zone `functhis.now`, DNS, Worker routes for the three hostnames
-- D1 `functhis` (id only; schema via Wrangler migrations)
+- Neon Postgres project (connection string in Secrets Store; Hyperdrive configs point at Neon **direct** / unpooled host)
+- Hyperdrive `functhis-auth` (caching disabled — auth, sessions, OAuth). Add a second cache-enabled Hyperdrive when catalog tables land.
 - KV `functhis-bundles`
 - R2 `functhis-tf-state` (state backend) and later execution-output buckets
 - Secrets Store (platform secrets: `BETTER_AUTH_SECRET`, GitHub OAuth)
@@ -125,18 +128,14 @@ apps/runtime/wrangler.jsonc  functhis-runtime
 
 **Wrangler** (CI after `terraform apply`):
 
-- `wrangler deploy` for `functhis-web` and `functhis-runtime`
-- `wrangler d1 migrations apply`
+- `wrangler deploy` per Worker
+- `drizzle-kit migrate` against Neon (direct URL; not through Hyperdrive)
 - `wrangler types`
-- Local `wrangler dev`
+- Optional: `wrangler dev -c apps/web/wrangler.jsonc -c apps/console/wrangler.jsonc`
 
 Pin `cloudflare/cloudflare` to `~> 5`. Auth via `CLOUDFLARE_API_TOKEN`. State backend is R2 (S3-compatible). Environments are directories, not Terraform modules — v5 resources do not compose cleanly.
 
-**Not Terraform:** customer packages, Artifacts repos, bundle KV keys, D1 rows. Those are the deploy API.
-
-Artifacts namespaces (`functhis-preview`, `functhis-production`) are bound by name in Wrangler. Create them with Wrangler or the Artifacts API if the Terraform provider has no namespace resource. Namespaces auto-create on first repo; still pin the name in config.
-
-Cloudflare Artifacts is closed beta. Production requires account access.
+**Not Terraform:** customer packages, Artifacts repos, bundle KV keys, Postgres catalog rows. Those are the deploy API.
 
 ## Runtime
 
@@ -160,7 +159,7 @@ Three layers. Do not collapse them.
 ```text
 Artifacts repo     versioned source tree (git-compatible). One repo per package.
 KV bundle          compiled Worker Loader modules, keyed by content hash.
-D1 catalog         ACL, slugs, currentVersionId, execution rows.
+Postgres catalog   ACL, slugs, currentVersionId, execution rows.
 ```
 
 Deploy:
@@ -190,7 +189,7 @@ R2 is not the source of truth for package trees. Use it later for large executio
 
 ## Data
 
-D1 metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. After plugins: `oauthClient`, tokens, consent, JWT keys, `organization` / `member` / `invitation`.
+Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. After plugins: `oauthClient`, tokens, consent, JWT keys, `organization` / `member` / `invitation`.
 
 | Table | Notes |
 | --- | --- |
@@ -216,19 +215,22 @@ Quotas fail closed from day one: CPU, concurrency, request/response size.
 ## Repo
 
 ```text
-apps/web          hosted origin: public pages + POST, console, /mcp, deploy API
-apps/runtime      hosted: Worker Loader, execute path
-apps/cli          OSS: login, deploy, local run
+apps/web          hosted origin: public pages + POST (later)
+apps/console      OAuth issuer + thin dashboard
+apps/runtime      hosted: Worker Loader, execute path (later)
+apps/cli          OSS: login, deploy, local run (later)
 apps/fumadocs     existing
-packages/auth     createAuth
+packages/auth     createAuth, CIMD fetch, CLI client seed
 packages/db       schema
-packages/api      oRPC
-packages/runtime  OSS: discover, contracts, bundle, worker template
-packages/protocol OSS: contract + search/execute types
-packages/mcp      search/execute handlers
-packages/infra    Terraform + Wrangler wiring
+packages/api      shared oRPC / business logic (see below)
+packages/runtime  OSS: discover, contracts, bundle, worker template (later)
+packages/protocol OSS: contract + search/execute types (later)
+packages/mcp      search/execute handlers (later)
+packages/infra    Wrangler dev/migrate wiring; Terraform later
 packages/ui       existing
 ```
+
+**`packages/api` sharing rule:** shared oRPC and business logic for code that **more than one app** will call (web, console, MCP HTTP later). Do **not** put procedures or types that only one app uses there. App-only API stays in that app until a second consumer appears; then extract. Console does not depend on `@functhis/api` in the auth phase.
 
 OSS: CLI, `runtime`, `protocol`. Hosted: auth, ACL, Artifacts, Dynamic Workers, URLs, quotas, history.
 
@@ -237,7 +239,7 @@ CLI: `functhis login` (device), `functhis deploy`, `functhis run` / `dev`. No Do
 ## Flows
 
 ```text
-Agent:  OAuth at functhis.now → consent on console
+Agent:  OAuth at console.functhis.now → consent on console
         POST mcp.functhis.now/mcp execute { id: "@xmazu/pkg/fn", arguments }
         → ACL → functhis-runtime → Dynamic Worker
 

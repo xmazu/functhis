@@ -18,13 +18,26 @@
       "cache": false,
       "persistent": true
     },
+    "dev:bare": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:migrate:local": {
+      "cache": false
+    },
     "db:generate": {
       "cache": false,
       "interactive": true
     },
+    "cf-typegen": {
+      "cache": false
+    },
     "deploy": {
       "cache": false,
       "interactive": true
+    },
+    "test": {
+      "cache": false
     },
     "destroy": {
       "cache": false,
@@ -35,12 +48,21 @@
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
     "CI",
+    "CONSOLE_URL",
+    "DATABASE_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "DATABASE_URL_UNPOOLED",
     "NODE_ENV",
+    "TRUSTED_ORIGINS",
     "VERCEL",
     "VERCEL_ENV",
     "VERCEL_PROJECT_PRODUCTION_URL",
     "VERCEL_URL",
     "_VARLOCK_ENV_KEY"
+  ],
+  "globalPassThroughEnv": [
+    "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE"
   ],
   "globalDependencies": [".env*", "apps/*/.env*", "packages/*/.env*"]
 }

@@ -1,6 +1,6 @@
 {
   "extends": "@functhis/config/tsconfig.base.json",
-  "include": ["alchemy.run.ts"],
+  "include": [],
   "compilerOptions": {
     "strictNullChecks": true
   }
