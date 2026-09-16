@@ -1,0 +1,22 @@
+{
+  "name": "@functhis/runtime-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "dev:bare": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@functhis/db": "workspace:*",
+    "@functhis/deploy": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260906.1",
+    "@functhis/config": "workspace:*",
+    "typescript": "catalog:",
+    "wrangler": "^4.40.2"
+  }
+}

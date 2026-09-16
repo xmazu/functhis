@@ -10,9 +10,28 @@
   "dev": {
     "inspector_port": 9229,
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000-0000-0000-0000-000000000001",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "BUNDLES",
+      "id": "00000000-0000-0000-0000-000000000030",
+    },
+  ],
+  "services": [
+    {
+      "binding": "RUNTIME",
+      "service": "functhis-runtime",
+    },
+  ],
   "vars": {
     "NODE_ENV": "development",
     "CONSOLE_URL": "http://localhost:3002",
+    "RUNTIME_EXECUTE_SECRET": "local-dev-runtime-secret",
   },
   "env": {
     "preview": {
@@ -25,10 +44,16 @@
           "id": "00000000-0000-0000-0000-000000000010",
         },
       ],
-      "artifacts": [
+      "kv_namespaces": [
         {
-          "binding": "ARTIFACTS",
-          "namespace": "functhis-preview",
+          "binding": "BUNDLES",
+          "id": "00000000-0000-0000-0000-000000000010",
+        },
+      ],
+      "services": [
+        {
+          "binding": "RUNTIME",
+          "service": "functhis-runtime-preview",
         },
       ],
       "vars": {
@@ -46,10 +71,16 @@
           "id": "00000000-0000-0000-0000-000000000011",
         },
       ],
-      "artifacts": [
+      "kv_namespaces": [
         {
-          "binding": "ARTIFACTS",
-          "namespace": "functhis-production",
+          "binding": "BUNDLES",
+          "id": "00000000-0000-0000-0000-000000000011",
+        },
+      ],
+      "services": [
+        {
+          "binding": "RUNTIME",
+          "service": "functhis-runtime",
         },
       ],
       "vars": {

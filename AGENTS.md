@@ -154,9 +154,26 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 
 ---
 
-## Shared API boundary
+## Monorepo placement
 
-[`packages/api`](packages/api) holds **shared** oRPC procedures and types for logic that **more than one app** will call (web, console, MCP HTTP later). Do not add app-only procedures there. Keep single-app API code in that app until a second consumer exists, then extract. See [architecture.md](architecture.md) for the full rule.
+Put code in [`packages/`](packages) **only when it is shared** — imported from **more than one** app or package (e.g. web + console, or `packages/auth` + `apps/web`). If a module has a **single** consumer, keep it under that app (e.g. `apps/web/src/server/…`) until a second consumer exists, then extract.
+
+| Location | Use for |
+| --- | --- |
+| `apps/<app>/src/…` | Routes, server handlers, UI, and helpers used **only** by that app |
+| `packages/*` | Schema, auth, UI kit, CLI, and other **cross-cutting** libraries with real multi-consumer use |
+
+[`packages/api`](packages/api) is the shared **oRPC** surface: procedures and types that **more than one app** will call (web, console, MCP HTTP later). Do not add app-only procedures there. See [architecture.md](architecture.md) for the full rule.
+
+Do not add to `packages/` “for organization” or “might be reused later” without a second consumer today — that spreads coupling and makes ownership unclear.
+
+### Unused and barrel-only code
+
+Remove dead code; do not grow public surfaces “just in case.”
+
+- Run **`bun run knip`** (also part of **`bun run check`**) before finishing a change. Fix or delete what it reports: unused files, unused exports, unused dependencies.
+- **Barrel files** (`index.ts` that re-export symbols) must not be the _only_ reason something exists. If a symbol is exported from a package entry or barrel but **never imported** outside that barrel chain, delete the symbol (and trim the barrel), not “leave it for the API.”
+- Prefer **direct imports** to the defining module over re-exporting through barrels when only one app needs the code (see also **Avoid barrel files** under Performance above).
 
 ---
 

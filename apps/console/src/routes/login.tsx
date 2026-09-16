@@ -8,7 +8,7 @@ import {
 } from '@functhis/ui/components/card';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
-import { getUser } from '@/functions/get-user';
+import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
 
 const LoginPage = () => (
@@ -41,7 +41,7 @@ const LoginPage = () => (
 export const Route = createFileRoute('/login')({
   component: LoginPage,
   beforeLoad: async () => {
-    const session = await getUser();
+    const session = await resolveSession();
     if (session) {
       throw redirect({ to: '/' });
     }

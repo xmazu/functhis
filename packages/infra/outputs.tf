@@ -28,7 +28,7 @@ output "secrets_store_id" {
 
 output "artifacts_namespace" {
   value       = local.artifacts_namespace
-  description = "Wrangler artifacts binding namespace (create via wrangler artifacts namespaces create)"
+  description = "Wrangler artifacts binding namespace (auto-created on first repo; verify with wrangler artifacts namespaces get)"
 }
 
 output "worker_names" {

@@ -1,0 +1,22 @@
+{
+  "name": "@functhis/deploy",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "typescript": "catalog:"
+  }
+}

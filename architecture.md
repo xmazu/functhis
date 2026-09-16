@@ -130,12 +130,11 @@ apps/runtime/wrangler.jsonc  functhis-runtime (later)
 - `bun run --filter @functhis/infra deploy:preview` or `deploy:production`
 - `drizzle-kit migrate` against Neon (direct URL; not through Hyperdrive)
 - `wrangler types` / `bun run cf-typegen`
-- Artifacts namespaces: `functhis-preview`, `functhis-production` via `wrangler artifacts namespaces create`
 - Optional: `bun run --filter @functhis/infra dev:workers`
 
 Pin `cloudflare/cloudflare` to `~> 5`. Auth via `CLOUDFLARE_API_TOKEN`. State backend is R2 (S3-compatible); treat state as confidential (origin passwords and secret values). One Terraform root; preview and production differ by var-file and backend state key, not separate module trees. Commit `.terraform.lock.hcl` after `terraform init`.
 
-**Not Terraform:** customer packages, Artifacts repos, bundle KV keys, Postgres catalog rows. Those are the deploy API.
+**Not Terraform:** customer packages, bundle KV keys, Postgres catalog rows. Those are the deploy API.
 
 ## Runtime
 
@@ -157,7 +156,7 @@ Do not add a Workers for Platforms dispatch namespace unless custom-domain hostn
 Three layers. Do not collapse them.
 
 ```text
-Artifacts repo     versioned source tree (git-compatible). One repo per package.
+Source hash        deterministic hash of the deployed source tree (metadata only in alpha).
 KV bundle          compiled Worker Loader modules, keyed by content hash.
 Postgres catalog   ACL, slugs, currentVersionId, execution rows.
 ```
@@ -166,7 +165,7 @@ Deploy:
 
 ```text
 CLI → deploy API
-  → write files to the package’s Artifacts repo (commit)
+  → record source hash from the CLI
   → bundle for Workers (esbuild / worker-bundler; no Node builtins)
   → PUT modules to KV under the bundle hash
   → insert immutable package_version, point package.currentVersionId
@@ -183,7 +182,7 @@ ACL + quota on functhis-web
   → execution row
 ```
 
-Rollback is `currentVersionId = previous`. The loader id is the version id, so the isolate changes immediately. Slug rename does not recreate the repo.
+Rollback is `currentVersionId = previous`. The loader id is the version id, so the isolate changes immediately.
 
 R2 is not the source of truth for package trees. Use it later for large execution outputs (PDFs, archives), not for source or the hot-path bundle.
 
@@ -193,9 +192,9 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 
 | Table | Notes |
 | --- | --- |
-| `package` | `slug`, `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `artifactsRepoName`, `currentVersionId` |
+| `package` | `slug`, `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
 | `function` | `packageId`, `exportName`, `path`, `slug`, contract JSON. Unique `(packageId, slug)` |
-| `package_version` | Immutable: Artifacts commit, bundle hash, contracts, createdBy |
+| `package_version` | Immutable: source hash, bundle hash, contracts, createdBy |
 | `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
 
 Owner handle (`@xmazu`) is unique. Default from GitHub username.
@@ -232,7 +231,7 @@ packages/ui       existing
 
 **`packages/api` sharing rule:** shared oRPC and business logic for code that **more than one app** will call (web, console, MCP HTTP later). Do **not** put procedures or types that only one app uses there. App-only API stays in that app until a second consumer appears; then extract. Console does not depend on `@functhis/api` in the auth phase.
 
-OSS: CLI, `runtime`, `protocol`. Hosted: auth, ACL, Artifacts, Dynamic Workers, URLs, quotas, history.
+OSS: CLI, `runtime`, `protocol`. Hosted: auth, ACL, Dynamic Workers, URLs, quotas, history.
 
 CLI: `functhis login` (device), `functhis deploy`, `functhis run` / `dev`. No Docker. No author wrangler.toml.
 
@@ -247,7 +246,7 @@ Human:  GET  functhis.now/@xmazu/pkg/fn  page
         POST functhis.now/@xmazu/pkg/fn  run
 
 CLI:    login → console.functhis.now/device
-        deploy → Artifacts commit + KV bundle + package_version
+        deploy → source hash + KV bundle + package_version
         → https://functhis.now/@xmazu/package/function
 ```
 

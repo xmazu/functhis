@@ -4,9 +4,8 @@ import {
   oauthClientResource,
   oauthResource,
 } from '@functhis/db/schema/auth';
+import { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy';
 
-const CLI_CLIENT_ID = 'functhis-cli';
-const DEPLOY_API_RESOURCE = 'https://functhis.now';
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
 export const ensureCliOAuthClient = async (

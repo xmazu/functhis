@@ -10,6 +10,7 @@ const schema = { ...authSchema, ...catalogSchema };
 const connectDatabase = async (connectionString: string) => {
   const client = new Client({
     connectionString,
+    connectionTimeoutMillis: 10_000,
   });
   await client.connect();
 
@@ -18,17 +19,8 @@ const connectDatabase = async (connectionString: string) => {
 
 export type Database = Awaited<ReturnType<typeof connectDatabase>>;
 
-let cachedDb: { connectionString: string; db: Database } | undefined;
-
 export { resolveSecret, type SecretBinding } from './resolve-secret';
 
-export const createDb = async (env: DatabaseConfig) => {
-  const { connectionString } = env.HYPERDRIVE;
-  if (cachedDb?.connectionString === connectionString) {
-    return cachedDb.db;
-  }
-
-  const db = await connectDatabase(connectionString);
-  cachedDb = { connectionString, db };
-  return db;
-};
+/** New pool client per call — required for Workers + Hyperdrive (do not cache across requests). */
+export const createDb = (env: DatabaseConfig) =>
+  connectDatabase(env.HYPERDRIVE.connectionString);

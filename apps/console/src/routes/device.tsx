@@ -12,7 +12,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { getUser } from '@/functions/get-user';
+import { resolveSession } from '@/functions/resolve-session';
 import { lookupDeviceCode, postDeviceAction } from '@/lib/device-api';
 import type { DeviceVerification } from '@/lib/device-api';
 
@@ -186,7 +186,7 @@ const DevicePage = () => {
 export const Route = createFileRoute('/device')({
   component: DevicePage,
   beforeLoad: async () => {
-    const session = await getUser();
+    const session = await resolveSession();
     if (!session) {
       throw redirect({ to: '/login' });
     }

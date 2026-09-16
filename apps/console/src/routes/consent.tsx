@@ -10,7 +10,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { getUser } from '@/functions/get-user';
+import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
 
 const buildOauthQuery = ({
@@ -129,7 +129,7 @@ const ConsentPage = () => {
 export const Route = createFileRoute('/consent')({
   component: ConsentPage,
   beforeLoad: async () => {
-    const session = await getUser();
+    const session = await resolveSession();
     if (!session) {
       throw redirect({ to: '/login' });
     }

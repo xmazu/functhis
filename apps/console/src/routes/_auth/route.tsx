@@ -1,13 +1,13 @@
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
-import { getUser } from '@/functions/get-user';
+import { resolveSession } from '@/functions/resolve-session';
 
 const AuthLayout = () => <Outlet />;
 
 export const Route = createFileRoute('/_auth')({
   component: AuthLayout,
   beforeLoad: async () => {
-    const session = await getUser();
+    const session = await resolveSession();
     if (!session) {
       throw redirect({
         to: '/login',

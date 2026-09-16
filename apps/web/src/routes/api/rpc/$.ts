@@ -6,7 +6,7 @@ import { RPCHandler } from '@orpc/server/fetch';
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 import { createFileRoute } from '@tanstack/react-router';
 
-import { createContext } from '../../../context';
+import { createContext } from '#/context';
 
 const logHandlerError = (error: unknown) => {
   console.error(error);

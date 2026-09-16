@@ -78,11 +78,25 @@
       ]
     },
     "packages/infra": {
-      "entry": ["package.json"]
+      "entry": ["package.json"],
+      "ignoreBinaries": ["terraform"]
     },
     "packages/config": {
       "entry": ["vite.tanstack-app.ts"],
       "project": ["**/*.ts"]
+    },
+    "packages/cli": {
+      "entry": ["src/cli.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/deploy": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["zod"]
+    },
+    "apps/runtime": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
     }
   }
 }

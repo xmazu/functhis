@@ -19,7 +19,7 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
 - [x] **2. Schema**
   - [x] `package`, `function`, `package_version`, `execution`
   - [x] `ownerUserId`, optional `organizationId`, `visibility`
-  - [x] `artifactsRepoName`, bundle hash, `currentVersionId`
+  - [x] `sourceHash`, bundle hash, `currentVersionId`
   - [x] Unique handle (`@xmazu`)
   - [x] ACL: owner only
 
@@ -28,12 +28,11 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
   - [ ] Analytics Engine datasets (with `functhis-runtime`, roadmap 4)
   - [x] Wrangler: `functhis-web` + `functhis-console` preview/production envs and Hyperdrive bindings
   - [ ] `functhis-runtime` Worker (roadmap 4)
-  - [x] Artifacts namespace per env (`functhis-preview`, `functhis-production`) — `wrangler artifacts namespaces create`
   - [x] R2 remote state. Never manage the same resource in Terraform and Wrangler.
 
 - [ ] **4. Runtime**
   - [ ] Worker Loader on `functhis-runtime` (`LOADER.get(versionId)`)
-  - [ ] Deploy API: Artifacts commit → bundle → KV → `package_version`
+  - [ ] Deploy API: source hash → bundle → KV → `package_version`
   - [ ] Quotas fail closed (`cpuMs`, `subRequests`, size)
   - [ ] Service binding web → runtime
 

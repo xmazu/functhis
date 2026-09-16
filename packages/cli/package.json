@@ -1,0 +1,23 @@
+{
+  "name": "@functhis/cli",
+  "version": "0.0.0",
+  "bin": {
+    "functhis": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/cli.ts --outdir dist --target bun",
+    "check-types": "tsc --noEmit",
+    "dev": "bun run src/cli.ts"
+  },
+  "dependencies": {
+    "@functhis/deploy": "workspace:*",
+    "esbuild": "^0.25.12",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "typescript": "catalog:"
+  }
+}

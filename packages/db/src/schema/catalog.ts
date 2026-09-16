@@ -21,7 +21,6 @@ export const packageVisibility = pgEnum('package_visibility', [
 export const pkg = pgTable(
   'package',
   {
-    artifactsRepoName: text('artifacts_repo_name'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     currentVersionId: text('current_version_id'),
     id: text('id')
@@ -49,7 +48,6 @@ export const pkg = pgTable(
       table.ownerUserId,
       table.slug
     ),
-    uniqueIndex('package_artifacts_repo_name_uidx').on(table.artifactsRepoName),
     index('package_owner_user_id_idx').on(table.ownerUserId),
     index('package_organization_id_idx').on(table.organizationId),
   ]
@@ -58,7 +56,6 @@ export const pkg = pgTable(
 export const packageVersion = pgTable(
   'package_version',
   {
-    artifactsCommit: text('artifacts_commit').notNull(),
     bundleHash: text('bundle_hash').notNull(),
     contracts: jsonb('contracts').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -71,6 +68,7 @@ export const packageVersion = pgTable(
     packageId: text('package_id')
       .notNull()
       .references(() => pkg.id, { onDelete: 'cascade' }),
+    sourceHash: text('source_hash').notNull(),
   },
   (table) => [index('package_version_package_id_idx').on(table.packageId)]
 );

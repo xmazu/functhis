@@ -1,0 +1,78 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "functhis-runtime",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "vars": {
+    "RUNTIME_EXECUTE_SECRET": "local-dev-runtime-secret",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "dev": {
+    "inspector_port": 9231,
+  },
+  "worker_loaders": [
+    {
+      "binding": "LOADER",
+    },
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000-0000-0000-0000-000000000001",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "BUNDLES",
+      "id": "00000000-0000-0000-0000-000000000030",
+    },
+  ],
+  "env": {
+    "preview": {
+      "name": "functhis-runtime-preview",
+      "workers_dev": false,
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000010",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "BUNDLES",
+          "id": "00000000-0000-0000-0000-000000000010",
+        },
+      ],
+      "worker_loaders": [
+        {
+          "binding": "LOADER",
+        },
+      ],
+    },
+    "production": {
+      "name": "functhis-runtime",
+      "workers_dev": false,
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "00000000-0000-0000-0000-000000000011",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "BUNDLES",
+          "id": "00000000-0000-0000-0000-000000000011",
+        },
+      ],
+      "worker_loaders": [
+        {
+          "binding": "LOADER",
+        },
+      ],
+    },
+  },
+}

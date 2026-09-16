@@ -21,8 +21,10 @@
     "@better-auth/mcp": "1.7.3",
     "@better-auth/oauth-provider": "1.7.3",
     "@functhis/db": "workspace:*",
+    "@functhis/deploy": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.1.0",
     "zod": "catalog:"
   },
   "devDependencies": {

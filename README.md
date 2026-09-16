@@ -94,6 +94,8 @@ bun run db:generate
 bun run db:migrate:local
 ```
 
+**Squashed migrations:** If a database already applied older Drizzle migrations (`0000_silly_red_wolf` … `0002_funny_wolverine`), reset that branch or recreate the database before applying the current single `0000_crazy_johnny_storm` migration. Greenfield local Docker is unaffected.
+
 ### 6. Start dev servers
 
 ```bash
@@ -104,6 +106,8 @@ bun run dev
 | --- | --- | --- |
 | Web | [http://localhost:3001](http://localhost:3001) | Marketing, public pages |
 | Console | [http://localhost:3002](http://localhost:3002) | OAuth issuer, login, consent, device |
+
+`functhis deploy` stores a **content hash** of the source tree in Postgres and puts the runnable bundle in KV.
 
 Run a single app:
 
@@ -129,6 +133,7 @@ Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyp
 
 1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
 2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc` and `apps/web/wrangler.jsonc` before deploy.
+3. Set the same `RUNTIME_EXECUTE_SECRET` on **web** and **runtime** Workers (`wrangler secret put RUNTIME_EXECUTE_SECRET` for preview/production). Local dev uses the placeholder in root `apps/web/wrangler.jsonc` and `apps/runtime/wrangler.jsonc`. The runtime worker has `workers_dev: false` and only accepts `/execute` when the secret header is present.
 
 Auth queries must not use a cached Hyperdrive config on the console Worker.
 
@@ -201,14 +206,24 @@ terraform init -reconfigure \
 bun run --filter @functhis/infra tf:preview
 ```
 
-After apply: update Hyperdrive and Secrets Store IDs in Wrangler `preview` / `production` env blocks, create Artifacts namespaces (`bun run --filter @functhis/infra artifacts:namespace:preview`), deploy Workers (`deploy:preview`), then set `enable_domains = true` in tfvars and apply again for custom domains.
+After apply: update Hyperdrive and Secrets Store IDs in Wrangler `preview` / `production` env blocks, deploy Workers (`deploy:preview`), then set `enable_domains = true` in tfvars and apply again for custom domains.
 
-- Workers: `functhis-web` + `functhis-console` (+ `functhis-runtime` later)
+- Workers: `functhis-web` + `functhis-console` + `functhis-runtime` (Dynamic Workers LOADER)
 - Auth issuer: `https://console.functhis.now` (preview: `https://console.preview.functhis.now`)
 - Dev: `bun run dev` (web 3001 + console 3002)
 - Migrations: `bun run db:migrate:local` (Neon direct URL; never through Hyperdrive)
 
-Do not create customer packages, Artifacts repos, or dispatch namespaces in Terraform. Package deploys go through the deploy API: Artifacts commit, KV bundle, Postgres version row.
+Do not create customer packages or dispatch namespaces in Terraform. Package deploys go through the deploy API: source hash, KV bundle, Postgres version row.
+
+### Alpha smoke (CLI deploy + execute)
+
+Use the repo example package [`examples/hello-world`](examples/hello-world) (see [examples/README.md](examples/README.md)).
+
+1. Start stack: `bun run dev` (web + console). For execute via service binding, also run `bun run --filter @functhis/runtime-worker dev:bare` in another terminal.
+2. Log in: `bun run --filter @functhis/cli dev -- login` (device flow against console; tokens in `~/.config/functhis/config.json`).
+3. `bun run example:hello:dev` then `bun run example:hello:deploy` (see [`examples/hello-world`](examples/hello-world)).
+4. Execute: `POST /api/deploy/execute` with Bearer token and `{ "versionId", "functionSlug": "hello", "input" }` (curl in the example README).
+5. Deploy again for v2; rollback by updating `package.currentVersionId` in Postgres to the prior version id (no rebuild if that version’s KV key still exists).
 
 ## Git Hooks and Formatting
 
@@ -219,13 +234,17 @@ Do not create customer packages, Artifacts repos, or dispatch namespaces in Terr
 
 ```
 functhis/
+├── examples/
+│   └── hello-world/ # Sample package for CLI smoke tests
 ├── apps/
-│   ├── web/         # Marketing + public pages (functhis.now)
-│   └── console/     # OAuth issuer + dashboard (console.functhis.now)
+│   ├── web/         # Marketing + deploy API (functhis.now)
+│   ├── console/     # OAuth issuer + dashboard (console.functhis.now)
+│   └── runtime/     # Dynamic Workers execute (LOADER + KV bundles)
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # Shared oRPC / business logic (multi-app only)
-│   ├── auth/        # createAuth, CIMD fetch, CLI client seed
+│   ├── auth/        # createAuth, CIMD fetch, CLI client seed, deploy bearer
+│   ├── cli/         # functhis login, deploy, local dev stub
 │   └── db/          # Database schema & queries
 ```
 
@@ -239,4 +258,6 @@ functhis/
 - `bun run dev:types`: Watch API declarations when running an app individually
 - `bun run db:generate`: Generate Drizzle migrations from schema
 - `bun run db:migrate:local`: Apply Drizzle migrations to Neon
+- `bun run example:hello:dev`: Run [`examples/hello-world`](examples/hello-world) locally (no Cloudflare)
+- `bun run example:hello:deploy`: Deploy hello-world via CLI (`functhis login` + `bun run dev`)
 - `bun run check`: Run Oxlint and Oxfmt

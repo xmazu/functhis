@@ -9,7 +9,7 @@ import { createIsomorphicFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { toast } from 'sonner';
 
-import { createContext } from '../context';
+import { createContext } from '#/context';
 
 export const createQueryClient = () =>
   new QueryClient({

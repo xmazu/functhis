@@ -1,11 +1,21 @@
 import { cloudflare } from '@cloudflare/vite-plugin';
+import type { PluginConfig } from '@cloudflare/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import type { UserConfig } from 'vite';
 
-export const createTanstackAppViteConfig = (port: number): UserConfig =>
+type CloudflarePluginOptions = Omit<
+  PluginConfig,
+  'inspectorPort' | 'viteEnvironment'
+>;
+
+export const createTanstackAppViteConfig = (
+  port: number,
+  inspectorPort: number,
+  cloudflareOptions?: CloudflarePluginOptions
+): UserConfig =>
   defineConfig({
     build: {
       rollupOptions: {
@@ -13,7 +23,11 @@ export const createTanstackAppViteConfig = (port: number): UserConfig =>
       },
     },
     plugins: [
-      cloudflare({ viteEnvironment: { name: 'ssr' } }),
+      cloudflare({
+        inspectorPort,
+        viteEnvironment: { name: 'ssr' },
+        ...cloudflareOptions,
+      }),
       tailwindcss(),
       tanstackStart(),
       viteReact(),

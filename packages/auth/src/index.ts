@@ -11,6 +11,13 @@ import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { fetchClientMetadataResource } from './cimd-fetch';
 import { allocateUniqueHandle, normalizeHandleCandidate } from './handle';
 
+export {
+  DEPLOY_API_RESOURCE,
+  parseBearerToken,
+  validateDeployBearerToken,
+  type DeployAuthResult,
+  type DeployAuthOptions,
+} from './deploy-token';
 export { ensureCliOAuthClient } from './seed-cli-client';
 export {
   allocateUniqueHandle,

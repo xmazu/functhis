@@ -3,8 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "artifacts:namespace:preview": "wrangler artifacts namespaces create functhis-preview",
-    "artifacts:namespace:production": "wrangler artifacts namespaces create functhis-production",
     "check-types": "echo 'no types'",
     "db:migrate:local": "bun run --filter @functhis/db db:migrate:deploy",
     "deploy:preview": "wrangler deploy --env preview -c ../../apps/web/wrangler.jsonc && wrangler deploy --env preview -c ../../apps/console/wrangler.jsonc",
