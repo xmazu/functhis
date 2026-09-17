@@ -1,15 +1,16 @@
-import { Button } from '@functhis/ui/components/button';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { AuthCanvas } from '@/components/auth-canvas';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@functhis/ui/components/card';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import { toast } from 'sonner';
-
+} from '@/components/ui/card';
 import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
 
@@ -80,16 +81,18 @@ const ConsentPage = () => {
   };
 
   return (
-    <main className="mx-auto flex max-w-lg flex-1 items-center p-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Authorize application</CardTitle>
-          <CardDescription>
+    <AuthCanvas>
+      <Card className="w-full max-w-lg">
+        <CardHeader className="p-4">
+          <CardTitle className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+            Authorize application
+          </CardTitle>
+          <CardDescription className="text-[length:var(--app-font-size-ui,12px)]">
             Review what this client is requesting before you continue.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-md border p-4 text-sm">
+        <CardContent className="space-y-4 px-4 pb-4">
+          <div className="rounded-md border p-3 text-[length:var(--app-font-size-ui,12px)]">
             <p>
               <span className="font-medium">Client:</span>{' '}
               {client_id || 'Unknown client'}
@@ -99,7 +102,7 @@ const ConsentPage = () => {
               {scope || 'Default scopes'}
             </p>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
             Only approve access for applications you trust. Functhis will issue
             tokens bound to the requested resource audience.
           </p>
@@ -114,7 +117,7 @@ const ConsentPage = () => {
             <Button
               className="flex-1"
               disabled={isSubmitting}
-              variant="outline"
+              variant="destructive-outline"
               onClick={handleDeny}
             >
               Deny
@@ -122,7 +125,7 @@ const ConsentPage = () => {
           </div>
         </CardContent>
       </Card>
-    </main>
+    </AuthCanvas>
   );
 };
 

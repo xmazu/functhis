@@ -1,0 +1,16 @@
+---
+description: Functhis console native design system. Apply when editing apps/console UI, CSS, routes, or components.
+globs: apps/console/**
+alwaysApply: false
+---
+
+# Console UI
+
+Read [apps/console/DESIGN.md](../../apps/console/DESIGN.md) before changing console visuals. That file is the source of truth.
+
+- Forced dark native desktop: `#0e0e0e`, 12px system UI, 4% hairlines, no drop shadows, ~28px rows
+- Primitives from `@coss` into `apps/console/src/components/ui`. Overlay Functhis tokens. Never `@coss/style` or dump `@coss/ui`
+- Signed-in `/_auth`: `AppShell` (frosted sidebar + `app-content-card`). Login / device / consent: `AuthCanvas`, no sidebar
+- Import `@/components/ui/*`. Keep `Toaster` from `@functhis/ui/components/sonner` until `@coss/toast`
+- Do not restyle `apps/web` or `packages/ui`. Do not fake product nav. Do not add Inter/Geist or a theme toggle
+- Add later primitives with `bunx --bun shadcn@latest add @coss/<name>` from `apps/console`, then flatten shadows and convert CLI `function` components to arrows

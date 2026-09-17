@@ -74,7 +74,7 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 ## Console
 
-Thin owner app at `apps/console`. Not the shareable object.
+Thin owner app at `apps/console`. Not the shareable object. Visual system: [apps/console/DESIGN.md](apps/console/DESIGN.md).
 
 Alpha: GitHub login, MCP consent, device approval, signed-in home. No package list yet.
 

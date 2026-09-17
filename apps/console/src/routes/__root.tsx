@@ -9,8 +9,6 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
-import ConsoleHeader from '../components/console-header';
-
 import appCss from '../index.css?url';
 
 const RootDocument = () => (
@@ -19,10 +17,7 @@ const RootDocument = () => (
       <HeadContent />
     </head>
     <body>
-      <div className="grid min-h-svh grid-rows-[auto_1fr]">
-        <ConsoleHeader />
-        <Outlet />
-      </div>
+      <Outlet />
       <Toaster richColors />
       <TanStackRouterDevtools position="bottom-left" />
       <Scripts />

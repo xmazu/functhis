@@ -1,17 +1,18 @@
-import { Button } from '@functhis/ui/components/button';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+import { AuthCanvas } from '@/components/auth-canvas';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@functhis/ui/components/card';
-import { Input } from '@functhis/ui/components/input';
-import { Label } from '@functhis/ui/components/label';
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { resolveSession } from '@/functions/resolve-session';
 import { lookupDeviceCode, postDeviceAction } from '@/lib/device-api';
 import type { DeviceVerification } from '@/lib/device-api';
@@ -55,19 +56,22 @@ const DevicePage = () => {
   }, [initialUserCode]);
 
   return (
-    <main className="mx-auto flex max-w-lg flex-1 items-center p-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Authorize a device</CardTitle>
-          <CardDescription>
+    <AuthCanvas>
+      <Card className="w-full max-w-lg">
+        <CardHeader className="p-4">
+          <CardTitle className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+            Authorize a device
+          </CardTitle>
+          <CardDescription className="text-[length:var(--app-font-size-ui,12px)]">
             Enter the code shown by the CLI or other device you are authorizing.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-4 pb-4">
           <div className="space-y-2">
             <Label htmlFor="user_code">User code</Label>
             <Input
               autoComplete="off"
+              className="font-mono tracking-widest"
               id="user_code"
               onChange={(event) => {
                 setUserCode(event.target.value);
@@ -78,7 +82,7 @@ const DevicePage = () => {
             />
           </div>
           {verification ? (
-            <div className="rounded-md border p-4 text-sm">
+            <div className="rounded-md border p-3 text-[length:var(--app-font-size-ui,12px)]">
               <p>
                 <span className="font-medium">Client:</span>{' '}
                 {verification.client_id ?? 'Unknown client'}
@@ -93,11 +97,11 @@ const DevicePage = () => {
               </p>
             </div>
           ) : null}
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
             Only approve codes from devices in your possession. Do not enter
             codes sent by email, chat, or phone calls.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               className="flex-1"
               disabled={isSubmitting || userCode.trim().length === 0}
@@ -153,7 +157,7 @@ const DevicePage = () => {
               disabled={
                 isSubmitting || userCode.trim().length === 0 || !decisionAllowed
               }
-              variant="outline"
+              variant="destructive-outline"
               onClick={async () => {
                 setIsSubmitting(true);
                 try {
@@ -179,7 +183,7 @@ const DevicePage = () => {
           </div>
         </CardContent>
       </Card>
-    </main>
+    </AuthCanvas>
   );
 };
 

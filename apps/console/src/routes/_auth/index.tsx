@@ -4,21 +4,22 @@ const DashboardPage = () => {
   const { session } = Route.useRouteContext();
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-      <section className="rounded-lg border p-6">
-        <h1 className="text-2xl font-semibold">Welcome back</h1>
-        <p className="text-muted-foreground mt-2">
+    <main className="flex min-h-0 flex-1 flex-col">
+      <header className="border-b px-4 py-2.5">
+        <h1 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+          Home
+        </h1>
+      </header>
+      <div className="flex flex-col gap-2 p-4">
+        <p className="text-[length:var(--app-font-size-ui,12px)]">
           Signed in as {session?.user.name} ({session?.user.email})
         </p>
-      </section>
-      <section className="rounded-lg border p-6">
-        <h2 className="font-medium">Console</h2>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
           Package management, MCP snippets, and execution history arrive in a
           later phase. This console already hosts GitHub login, OAuth consent,
           and CLI device approval.
         </p>
-      </section>
+      </div>
     </main>
   );
 };

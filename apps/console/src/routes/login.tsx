@@ -1,27 +1,30 @@
-import { Button } from '@functhis/ui/components/button';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+
+import { AuthCanvas } from '@/components/auth-canvas';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@functhis/ui/components/card';
-import { createFileRoute, redirect } from '@tanstack/react-router';
-
+} from '@/components/ui/card';
 import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
 
 const LoginPage = () => (
-  <main className="mx-auto flex max-w-md flex-1 items-center p-6">
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Sign in to Functhis</CardTitle>
-        <CardDescription>
+  <AuthCanvas>
+    <Card className="w-full max-w-md">
+      <CardHeader className="p-4">
+        <CardTitle className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+          Sign in to Functhis
+        </CardTitle>
+        <CardDescription className="text-[length:var(--app-font-size-ui,12px)]">
           Use GitHub to access the owner console, approve MCP clients, and
           authorize the CLI.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4">
         <Button
           className="w-full"
           onClick={() => {
@@ -35,7 +38,7 @@ const LoginPage = () => (
         </Button>
       </CardContent>
     </Card>
-  </main>
+  </AuthCanvas>
 );
 
 export const Route = createFileRoute('/login')({
