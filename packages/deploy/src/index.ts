@@ -8,18 +8,48 @@ export {
 } from './bundle';
 export type { WorkerLoaderBundleShape } from './bundle';
 export {
+  StoredBundleLoadError,
+  type BundleLoadErrorCode,
+} from './bundle-load-error';
+export {
+  formatFunctionId,
+  parseFunctionId,
+  type ParsedFunctionId,
+} from './function-id';
+export {
+  finalizeExecute,
+  insertExecutionRow,
+  loadStoredBundle,
+  runDynamicWorker,
+  writeExecutionAnalytics,
+  type DynamicRunResult,
+  type ExecuteAnalyticsBinding,
+  type ExecuteBundlesKv,
+  type ExecuteWorkerLoader,
+  type WorkerExecuteBindings,
+} from './worker-execute';
+export {
   BUNDLE_KV_PREFIX,
+  EXECUTE_CPU_MS,
+  EXECUTE_SUB_REQUESTS,
   MAX_BUNDLE_BYTES,
+  MAX_EXECUTE_REQUEST_BYTES,
+  MAX_EXECUTE_RESPONSE_BYTES,
   MAX_SOURCE_MANIFEST_BYTES,
   MAX_SOURCE_MANIFEST_FILES,
-  RUNTIME_EXECUTE_SECRET_HEADER,
   WORKER_COMPATIBILITY_DATE,
 } from './constants';
-export { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from './oauth';
 export {
-  isRuntimeExecuteAuthorized,
-  runtimeExecuteSecretHeaders,
-} from './runtime-auth';
+  assertExecuteRequestSize,
+  assertExecuteResponseSize,
+  executeRequestByteLength,
+  ExecutePayloadTooLargeError,
+} from './quotas';
+export {
+  CLI_CLIENT_ID,
+  DEPLOY_API_RESOURCE,
+  MCP_RESOURCE_PRODUCTION,
+} from './oauth';
 export {
   deployFinalizeBodySchema,
   deployFunctionContractSchema,

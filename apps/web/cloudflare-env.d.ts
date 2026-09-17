@@ -3,8 +3,6 @@ interface CloudflareEnv {
   CONSOLE_URL: string;
   HYPERDRIVE: Hyperdrive;
   NODE_ENV: string;
-  RUNTIME: Fetcher;
-  RUNTIME_EXECUTE_SECRET: string;
 }
 
 declare global {

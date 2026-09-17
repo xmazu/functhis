@@ -3,6 +3,7 @@ import { mcp } from '@better-auth/mcp';
 import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
 import type { Database } from '@functhis/db';
 import * as schema from '@functhis/db/schema/auth';
+import { DEPLOY_API_RESOURCE } from '@functhis/deploy';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { jwt, organization } from 'better-auth/plugins';
@@ -30,6 +31,7 @@ export interface AuthConfig {
   BETTER_AUTH_URL: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  MCP_RESOURCE: string;
   TRUSTED_ORIGINS: string[];
 }
 
@@ -87,8 +89,8 @@ export const createAuth = (env: AuthConfig, database: Database) =>
       mcp({
         consentPage: '/consent',
         loginPage: '/login',
-        resource: 'https://mcp.functhis.now',
-        resources: ['https://mcp.functhis.now', 'https://functhis.now'],
+        resource: env.MCP_RESOURCE,
+        resources: [env.MCP_RESOURCE, DEPLOY_API_RESOURCE],
       }),
       cimd({
         fetchClientMetadataResource,
@@ -121,8 +123,10 @@ export const createAuth = (env: AuthConfig, database: Database) =>
     user: {
       additionalFields: {
         handle: {
+          // OAuth profile fields with input:false are stripped before validation;
+          // the create hook assigns a unique handle before insert.
           input: false,
-          required: true,
+          required: false,
           type: 'string',
         },
       },

@@ -2,7 +2,6 @@ import { validateDeployBearerToken } from '@functhis/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import {
   bundleKvKey,
-  runtimeExecuteSecretHeaders,
   sha256Hex,
   stableBundlePayload,
   utf8ByteLength,
@@ -17,11 +16,7 @@ import {
   MAX_SOURCE_MANIFEST_BYTES,
   MAX_SOURCE_MANIFEST_FILES,
 } from './constants';
-import {
-  deployFinalizeBodySchema,
-  deployStartBodySchema,
-  executeBodySchema,
-} from './schemas';
+import { deployFinalizeBodySchema, deployStartBodySchema } from './schemas';
 import type { WorkerLoaderBundle } from './schemas';
 
 const json = (body: unknown, status = 200): Response =>
@@ -178,71 +173,75 @@ export const handleDeployFinalize = async (
     modules: parsed.data.bundle.modules,
   });
 
-  const version = await database.transaction(async (tx) => {
-    const [insertedVersion] = await tx
-      .insert(packageVersion)
-      .values({
-        bundleHash: parsed.data.bundleHash,
-        contracts: parsed.data.contracts,
-        createdBy: auth.userId,
-        packageId: packageRow.id,
-        sourceHash: parsed.data.sourceHash.toLowerCase(),
-      })
-      .returning();
-
-    if (!insertedVersion) {
-      throw new Error('Failed to create package version');
-    }
-
-    const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
-
-    await Promise.all(
-      parsed.data.contracts.map((fn) =>
-        tx
-          .insert(pkgFunction)
-          .values({
-            contract: fn.contract,
-            exportName: fn.exportName,
-            packageId: packageRow.id,
-            path: fn.path,
-            slug: fn.slug,
-          })
-          .onConflictDoUpdate({
-            set: {
-              contract: fn.contract,
-              exportName: fn.exportName,
-              path: fn.path,
-              updatedAt: new Date(),
-            },
-            target: [pkgFunction.packageId, pkgFunction.slug],
-          })
-      )
-    );
-
-    await tx
-      .delete(pkgFunction)
-      .where(
-        and(
-          eq(pkgFunction.packageId, packageRow.id),
-          notInArray(pkgFunction.slug, deployedSlugs)
-        )
-      );
-
-    await tx
-      .update(pkg)
-      .set({ currentVersionId: insertedVersion.id })
-      .where(eq(pkg.id, packageRow.id));
-
-    return insertedVersion;
-  });
-
   try {
     await env.BUNDLES.put(kvKey, kvPayload);
   } catch {
-    return new Response(
-      'Version recorded but bundle storage failed; retry finalize with the same bundle',
-      { status: 503 }
-    );
+    return new Response('Bundle storage failed; retry finalize', {
+      status: 503,
+    });
+  }
+
+  let version;
+  try {
+    version = await database.transaction(async (tx) => {
+      const [insertedVersion] = await tx
+        .insert(packageVersion)
+        .values({
+          bundleHash: parsed.data.bundleHash,
+          contracts: parsed.data.contracts,
+          createdBy: auth.userId,
+          packageId: packageRow.id,
+          sourceHash: parsed.data.sourceHash.toLowerCase(),
+        })
+        .returning();
+
+      if (!insertedVersion) {
+        throw new Error('Failed to create package version');
+      }
+
+      const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
+
+      await Promise.all(
+        parsed.data.contracts.map((fn) =>
+          tx
+            .insert(pkgFunction)
+            .values({
+              contract: fn.contract,
+              exportName: fn.exportName,
+              packageId: packageRow.id,
+              path: fn.path,
+              slug: fn.slug,
+            })
+            .onConflictDoUpdate({
+              set: {
+                contract: fn.contract,
+                exportName: fn.exportName,
+                path: fn.path,
+                updatedAt: new Date(),
+              },
+              target: [pkgFunction.packageId, pkgFunction.slug],
+            })
+        )
+      );
+
+      await tx
+        .delete(pkgFunction)
+        .where(
+          and(
+            eq(pkgFunction.packageId, packageRow.id),
+            notInArray(pkgFunction.slug, deployedSlugs)
+          )
+        );
+
+      await tx
+        .update(pkg)
+        .set({ currentVersionId: insertedVersion.id })
+        .where(eq(pkg.id, packageRow.id));
+
+      return insertedVersion;
+    });
+  } catch {
+    return new Response('Failed to record package version', { status: 500 });
   }
 
   return json({
@@ -251,79 +250,5 @@ export const handleDeployFinalize = async (
     currentVersionId: version.id,
     packageId: packageRow.id,
     versionId: version.id,
-  });
-};
-
-export const handleExecuteSmoke = async (
-  request: Request,
-  runtime: Fetcher
-): Promise<Response> => {
-  if (request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
-
-  const database = await getDb();
-  const auth = await deployAuth(request, database);
-  if (!auth.ok) {
-    return auth.response;
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return badRequest('Invalid JSON body');
-  }
-
-  const parsed = executeBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return badRequest(parsed.error.message);
-  }
-
-  const [version] = await database
-    .select()
-    .from(packageVersion)
-    .where(eq(packageVersion.id, parsed.data.versionId))
-    .limit(1);
-
-  if (!version) {
-    return new Response('Not Found', { status: 404 });
-  }
-
-  const [packageRow] = await database
-    .select()
-    .from(pkg)
-    .where(and(eq(pkg.id, version.packageId), eq(pkg.ownerUserId, auth.userId)))
-    .limit(1);
-
-  if (!packageRow) {
-    return new Response('Not Found', { status: 404 });
-  }
-
-  const runtimeSecret = env.RUNTIME_EXECUTE_SECRET;
-  if (!runtimeSecret) {
-    return new Response('Runtime execute is not configured', { status: 503 });
-  }
-
-  const runtimeResponse = await runtime.fetch(
-    new Request('https://runtime/execute', {
-      body: JSON.stringify({
-        bundleHash: version.bundleHash,
-        callerUserId: auth.userId,
-        functionSlug: parsed.data.functionSlug,
-        input: parsed.data.input,
-        versionId: version.id,
-      }),
-      headers: {
-        'content-type': 'application/json',
-        ...runtimeExecuteSecretHeaders(runtimeSecret),
-      },
-      method: 'POST',
-    })
-  );
-
-  return new Response(runtimeResponse.body, {
-    headers: runtimeResponse.headers,
-    status: runtimeResponse.status,
   });
 };

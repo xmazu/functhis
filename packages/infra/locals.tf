@@ -37,10 +37,14 @@ locals {
   worker_names = var.env == "production" ? {
     web     = "functhis-web"
     console = "functhis-console"
+    mcp     = "functhis-mcp"
     } : {
     web     = "functhis-web-preview"
     console = "functhis-console-preview"
+    mcp     = "functhis-mcp-preview"
   }
+
+  analytics_execution_dataset = var.env == "production" ? "functhis_executions" : "functhis_executions_preview"
 
   artifacts_namespace = var.env == "production" ? "functhis-production" : "functhis-preview"
 
@@ -55,7 +59,7 @@ locals {
     }
     mcp = {
       hostname = local.hostnames.mcp
-      service  = local.worker_names.web
+      service  = local.worker_names.mcp
     }
   }
 }

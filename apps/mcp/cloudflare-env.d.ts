@@ -1,8 +1,10 @@
 interface CloudflareEnv {
+  ANALYTICS: AnalyticsEngineDataset;
   BUNDLES: KVNamespace;
+  CONSOLE_URL: string;
   HYPERDRIVE: Hyperdrive;
   LOADER: WorkerLoader;
-  RUNTIME_EXECUTE_SECRET: string;
+  MCP_RESOURCE: string;
 }
 
 declare global {

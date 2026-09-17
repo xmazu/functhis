@@ -1,16 +1,20 @@
 {
-  "name": "@functhis/runtime-worker",
+  "name": "@functhis/mcp",
   "private": true,
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev:bare": "wrangler dev",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test": "bun test src"
   },
   "dependencies": {
+    "@better-auth/mcp": "1.7.3",
     "@functhis/db": "workspace:*",
     "@functhis/deploy": "workspace:*",
+    "@modelcontextprotocol/server": "2.0.0",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.1.0",
     "zod": "catalog:"
   },
   "devDependencies": {

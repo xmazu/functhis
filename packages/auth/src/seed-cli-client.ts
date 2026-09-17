@@ -4,12 +4,17 @@ import {
   oauthClientResource,
   oauthResource,
 } from '@functhis/db/schema/auth';
-import { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy';
+import {
+  CLI_CLIENT_ID,
+  DEPLOY_API_RESOURCE,
+  MCP_RESOURCE_PRODUCTION,
+} from '@functhis/deploy';
 
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
 export const ensureCliOAuthClient = async (
-  database: Database
+  database: Database,
+  mcpResourceIdentifier: string = MCP_RESOURCE_PRODUCTION
 ): Promise<void> => {
   const now = new Date();
 
@@ -20,6 +25,17 @@ export const ensureCliOAuthClient = async (
       disabled: false,
       identifier: DEPLOY_API_RESOURCE,
       name: 'Functhis deploy API',
+      updatedAt: now,
+    })
+    .onConflictDoNothing({ target: oauthResource.identifier });
+
+  await database
+    .insert(oauthResource)
+    .values({
+      createdAt: now,
+      disabled: false,
+      identifier: mcpResourceIdentifier,
+      name: 'Functhis MCP',
       updatedAt: now,
     })
     .onConflictDoNothing({ target: oauthResource.identifier });

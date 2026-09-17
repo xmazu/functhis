@@ -4,6 +4,7 @@ interface CloudflareEnv {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   HYPERDRIVE: Hyperdrive;
+  MCP_RESOURCE: string;
   NODE_ENV: string;
   TRUSTED_ORIGINS: string;
 }

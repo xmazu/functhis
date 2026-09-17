@@ -11,7 +11,7 @@ export const bundleKvKey = (bundleHash: string): string =>
 export const stableBundlePayload = (
   bundle: WorkerLoaderBundleShape
 ): string => {
-  const moduleKeys = Object.keys(bundle.modules).sort();
+  const moduleKeys = Object.keys(bundle.modules).toSorted();
   const modules: Record<string, string> = {};
   for (const key of moduleKeys) {
     modules[key] = bundle.modules[key] ?? '';
@@ -36,7 +36,7 @@ export const sha256Hex = async (input: string): Promise<string> => {
 };
 
 export const stableSourcePayload = (files: Record<string, string>): string => {
-  const paths = Object.keys(files).sort();
+  const paths = Object.keys(files).toSorted();
   return JSON.stringify(
     paths.map((filePath) => [filePath, files[filePath] ?? ''])
   );

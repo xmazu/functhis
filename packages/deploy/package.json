@@ -12,6 +12,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@functhis/db": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

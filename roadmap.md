@@ -25,25 +25,27 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
 
 - [x] **3. Infra**
   - [x] Terraform: zone, custom domains, Neon connection secret, Hyperdrive configs, KV, Secrets Store
-  - [ ] Analytics Engine datasets (with `functhis-runtime`, roadmap 4)
-  - [x] Wrangler: `functhis-web` + `functhis-console` preview/production envs and Hyperdrive bindings
-  - [ ] `functhis-runtime` Worker (roadmap 4)
+  - [x] `mcp.functhis.now` → `functhis-mcp` (not web)
+  - [x] Wrangler: `functhis-web` + `functhis-console` + `functhis-mcp` preview/production env blocks
   - [x] R2 remote state. Never manage the same resource in Terraform and Wrangler.
 
-- [ ] **4. Runtime**
-  - [ ] Worker Loader on `functhis-runtime` (`LOADER.get(versionId)`)
-  - [ ] Deploy API: source hash → bundle → KV → `package_version`
-  - [ ] Quotas fail closed (`cpuMs`, `subRequests`, size)
-  - [ ] Service binding web → runtime
+- [x] **4. Deploy**
+  - [x] Deploy API: `POST /api/deploy/start` + `POST /api/deploy/finalize` on web
+  - [x] Source hash → bundle → KV → `package_version`
+  - [x] Quota constants (`cpuMs`, `subRequests`, request/response size) in `@functhis/deploy`
+  - [ ] Hosted execute (phase 5 POST; phase 6 MCP done)
 
 - [ ] **5. Public URLs + console**
   - [ ] `GET` / `POST` `functhis.now/@owner/package[/function]`
   - [ ] Thin console: list, URL, MCP snippet, executions
 
-- [ ] **6. MCP**
-  - [ ] `search` + `execute` at `mcp.functhis.now`
-  - [ ] Ids = `@owner/package/function`
-  - [ ] `mine` only
+- [ ] **6. MCP** (`apps/mcp`)
+  - [x] Worker app: `functhis-mcp`, Wrangler bindings (Hyperdrive, bundle KV, `LOADER`, Analytics Engine)
+  - [x] Dynamic Worker execute helpers in `apps/mcp/src/execute.ts`
+  - [x] `POST mcp.functhis.now/mcp` + OAuth protected resource
+  - [x] Tools: `search` + `execute`
+  - [x] Wire `execute` → `LOADER.get(versionId)` + execution rows + AE
+  - [x] Ids = `@owner/package/function`; `mine` only
 
 - [ ] **7. CLI**
   - [ ] `functhis login` (device)

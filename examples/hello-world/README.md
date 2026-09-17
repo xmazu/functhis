@@ -28,19 +28,18 @@ bun run example:hello:dev
 
 ## Deploy
 
-Deploy hashes the source tree, uploads the compiled bundle to KV, and records a version in Postgres.
+Deploy hashes the source tree, uploads the compiled bundle to KV, and records a version in Postgres. Each default export can include JSDoc (search text) and an `input` parameter whose type is stored as `contract.inputSchema` for MCP `execute`.
 
 ```bash
 bun run example:hello:deploy
 ```
 
-## Execute
+## Execute (hosted)
 
-With runtime dev running (`bun run --filter @functhis/runtime-worker dev:bare` from repo root):
+After deploy:
 
-```bash
-curl -sS -X POST http://localhost:3001/api/deploy/execute \
-  -H "Authorization: Bearer $(jq -r .accessToken ~/.config/functhis/config.json)" \
-  -H 'content-type: application/json' \
-  -d '{"versionId":"<from deploy>","functionSlug":"hello","input":{"name":"functhis"}}'
-```
+- **MCP (local):** `bun run dev` includes `functhis-mcp` on `http://localhost:3003/mcp`. Connect MCP Inspector, complete OAuth against console (`http://localhost:3002`), then `search` (try query `greet` or `hello`) and `execute` with the returned `@handle/hello-world/hello` id.
+- **HTTP (phase 5):** `POST functhis.now/@owner/package/function`
+- **MCP (production):** `https://mcp.functhis.now/mcp`
+
+Until phase 5 ships, use `bun run example:hello:dev` for local runs without MCP.

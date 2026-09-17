@@ -132,8 +132,7 @@ bun run --filter @functhis/infra dev:workers
 Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyperdrive (auth: cache disabled on console; catalog: cache enabled on web).
 
 1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
-2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc` and `apps/web/wrangler.jsonc` before deploy.
-3. Set the same `RUNTIME_EXECUTE_SECRET` on **web** and **runtime** Workers (`wrangler secret put RUNTIME_EXECUTE_SECRET` for preview/production). Local dev uses the placeholder in root `apps/web/wrangler.jsonc` and `apps/runtime/wrangler.jsonc`. The runtime worker has `workers_dev: false` and only accepts `/execute` when the secret header is present.
+2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, `kv_bundles_namespace_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc`, `apps/web/wrangler.jsonc`, and `apps/mcp/wrangler.jsonc` before deploy.
 
 Auth queries must not use a cached Hyperdrive config on the console Worker.
 
@@ -206,11 +205,11 @@ terraform init -reconfigure \
 bun run --filter @functhis/infra tf:preview
 ```
 
-After apply: update Hyperdrive and Secrets Store IDs in Wrangler `preview` / `production` env blocks, deploy Workers (`deploy:preview`), then set `enable_domains = true` in tfvars and apply again for custom domains.
+After apply: paste Hyperdrive, KV, and Secrets Store IDs into Wrangler `preview` / `production` env blocks, then deploy Workers in order — **`functhis-mcp` first** (MCP host must serve traffic before Terraform routes `mcp.*`), then web, then console. Only after MCP is live, set `enable_domains = true` in tfvars and apply again for custom domains.
 
-- Workers: `functhis-web` + `functhis-console` + `functhis-runtime` (Dynamic Workers LOADER)
+- Workers: `functhis-web` + `functhis-console` + `functhis-mcp` (MCP + Dynamic Workers LOADER, phase 6)
 - Auth issuer: `https://console.functhis.now` (preview: `https://console.preview.functhis.now`)
-- Dev: `bun run dev` (web 3001 + console 3002)
+- Dev: `bun run dev` (web 3001 + console 3002 + MCP 3003)
 - Migrations: `bun run db:migrate:local` (Neon direct URL; never through Hyperdrive)
 
 Do not create customer packages or dispatch namespaces in Terraform. Package deploys go through the deploy API: source hash, KV bundle, Postgres version row.
@@ -219,10 +218,10 @@ Do not create customer packages or dispatch namespaces in Terraform. Package dep
 
 Use the repo example package [`examples/hello-world`](examples/hello-world) (see [examples/README.md](examples/README.md)).
 
-1. Start stack: `bun run dev` (web + console). For execute via service binding, also run `bun run --filter @functhis/runtime-worker dev:bare` in another terminal.
+1. Start stack: `bun run dev` (web + console + MCP on port 3003).
 2. Log in: `bun run --filter @functhis/cli dev -- login` (device flow against console; tokens in `~/.config/functhis/config.json`).
 3. `bun run example:hello:dev` then `bun run example:hello:deploy` (see [`examples/hello-world`](examples/hello-world)).
-4. Execute: `POST /api/deploy/execute` with Bearer token and `{ "versionId", "functionSlug": "hello", "input" }` (curl in the example README).
+4. Hosted execute: MCP `search` / `execute` at `http://localhost:3003/mcp` (OAuth via console); public `POST` (phase 5).
 5. Deploy again for v2; rollback by updating `package.currentVersionId` in Postgres to the prior version id (no rebuild if that version’s KV key still exists).
 
 ## Git Hooks and Formatting
@@ -239,7 +238,7 @@ functhis/
 ├── apps/
 │   ├── web/         # Marketing + deploy API (functhis.now)
 │   ├── console/     # OAuth issuer + dashboard (console.functhis.now)
-│   └── runtime/     # Dynamic Workers execute (LOADER + KV bundles)
+│   └── mcp/         # mcp.functhis.now — MCP + Dynamic Workers (phase 6)
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # Shared oRPC / business logic (multi-app only)
@@ -250,7 +249,7 @@ functhis/
 
 ## Available Scripts
 
-- `bun run dev`: Start web (3001) and console (3002) in parallel
+- `bun run dev`: Start web (3001), console (3002), and MCP (3003) in parallel
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
 - `bun run dev:console`: Start only the console application

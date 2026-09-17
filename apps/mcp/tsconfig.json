@@ -7,5 +7,6 @@
     "noEmit": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src/**/*.ts", "cloudflare-env.d.ts"]
+  "include": ["src/**/*.ts", "cloudflare-env.d.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }

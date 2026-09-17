@@ -19,6 +19,7 @@ const connectDatabase = async (connectionString: string) => {
 
 export type Database = Awaited<ReturnType<typeof connectDatabase>>;
 
+export { type DatabaseConfig } from './config';
 export { resolveSecret, type SecretBinding } from './resolve-secret';
 
 /** New pool client per call — required for Workers + Hyperdrive (do not cache across requests). */

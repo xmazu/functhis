@@ -16,7 +16,7 @@ One Cloudflare account.
 
 No `run.` host. Cookies: `.functhis.now`. `trustedOrigins`: apex + console.
 
-Alpha ships two first-party Workers on web + console hostnames (see [Fleet](#fleet)). Do not add a package-app zone.
+Alpha ships three first-party Workers: web, console, mcp (see [Fleet](#fleet)). Do not add a package-app zone.
 
 ## Public URLs
 
@@ -90,15 +90,15 @@ Try-it lives on the public function page. No billing, org admin, or catalog in a
 
 ## Fleet
 
-Two product scripts today (web + console). Runtime worker arrives later. Untrusted package code must not share a failure domain with login or MCP HTTP.
+Three product Workers (web, console, mcp). Untrusted package code must not share a failure domain with login or OAuth issuer HTTP.
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API (later) | Neon via Hyperdrive |
+| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive, bundle KV (deploy) |
 | `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive, `global_fetch_strictly_public` |
-| `functhis-runtime` | none (later) | Worker Loader execution, execution rows | Neon via Hyperdrive, bundle KV, `LOADER` |
+| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution (phase 6) | Neon via Hyperdrive, bundle KV, `LOADER`, Analytics Engine |
 
-Local `bun run dev` runs web (3001) and console (3002) with the same Hyperdrive binding config. `bun run db:migrate:local` applies Drizzle migrations to Neon. Production deploys Workers independently.
+Local `bun run dev` runs web (3001), console (3002), and MCP (3003). `bun run db:migrate:local` applies Drizzle migrations to Neon. Production deploys Workers independently (**mcp first**, then web, then console) before Terraform custom domains point `mcp.*` at `functhis-mcp`.
 
 Cross-worker calls use service bindings. Do not proxy Postgres through RPC; scripts that need the database bind the same Hyperdrive config.
 
@@ -112,7 +112,7 @@ Terraform owns account-level resources. Wrangler owns first-party Worker **code*
 packages/infra/*.tf          Cloudflare provider v5, R2 remote state (preview/production tfvars)
 apps/web/wrangler.jsonc      functhis-web (+ preview/production env blocks)
 apps/console/wrangler.jsonc  functhis-console (+ preview/production env blocks)
-apps/runtime/wrangler.jsonc  functhis-runtime (later)
+apps/mcp/wrangler.jsonc      functhis-mcp (+ preview/production env blocks)
 ```
 
 **Terraform** (`packages/infra`, apply with `preview.tfvars` or `production.tfvars`):
@@ -123,7 +123,7 @@ apps/runtime/wrangler.jsonc  functhis-runtime (later)
 - KV `functhis-bundles-{env}`
 - R2 `functhis-tf-state` (state backend only — create once with `wrangler r2 bucket create`; not a Terraform resource)
 - Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
-- Analytics Engine datasets and observability destinations: later with `functhis-runtime`
+- Analytics Engine execution metrics: Wrangler-bound on `functhis-mcp` (`functhis_executions` / `functhis_executions_preview`; dataset names in Terraform output `analytics_execution_dataset`)
 
 **Wrangler** (after `terraform apply`, paste output IDs into env blocks in `apps/*/wrangler.jsonc`):
 
@@ -140,14 +140,14 @@ Pin `cloudflare/cloudflare` to `~> 5`. Auth via `CLOUDFLARE_API_TOKEN`. State ba
 
 Not Workers for Platforms. Customer packages are not persisted as account scripts and are not uploaded into a dispatch namespace.
 
-Package code runs as a **Dynamic Worker** on `functhis-runtime` via a Worker Loader binding (`env.LOADER`).
+Package code runs as a **Dynamic Worker** on `functhis-mcp` via a Worker Loader binding (`env.LOADER`). Implementation lives in `apps/mcp` (`src/execute.ts`); HTTP `search` / `execute` tools ship in phase 6.
 
 - Authors write ordinary TypeScript; no Functhis SDK. No author `wrangler.toml`.
 - One isolate per **package version**. `LOADER.get(versionId, () => bundle)` reuses a warm isolate; `load()` is only for one-off try-it of unpublished code.
 - Isolation: no parent `env`. Bindings the Dynamic Worker receives are explicit and empty in alpha.
 - Limits on `getEntrypoint()`: `cpuMs` and `subRequests` from the caller’s plan. Fail closed.
-- Network: `globalOutbound` allowed in alpha (tools wrap APIs). Later: host allowlist / intercept. Never inherit origin secrets.
-- Observability: Tail Worker / traces on `functhis-runtime` capture isolate logs.
+- Network: omit `globalOutbound` in the loader config so Dynamic Workers use default outbound (tools wrap APIs in alpha). Later: host allowlist / intercept. Never inherit origin secrets (`env: {}`).
+- Observability: Workers Analytics Engine data points per execute; Tail Worker / traces on `functhis-mcp` capture isolate logs.
 
 Do not add a Workers for Platforms dispatch namespace unless custom-domain hostname routing later needs it. Dynamic Workers already cover isolation, per-invoke limits, warm reuse, and egress control.
 
@@ -174,17 +174,22 @@ CLI → deploy API
 Execute (public POST and MCP `execute`):
 
 ```text
-ACL + quota on functhis-web
-  → RUNTIME service binding
-  → LOADER.get(versionId, () => KV bundle)
+ACL + quota on functhis-web (POST @…) or functhis-mcp (MCP execute tool)
+  → functhis-mcp: LOADER.get(versionId, () => KV bundle)
   → getEntrypoint(null, { limits })
   → fetch()
-  → execution row
+  → execution row (+ Analytics Engine on mcp)
 ```
+
+Phase 5 may call the same execute path on `functhis-mcp` via a service binding from web; phase 6 exposes it to agents at `mcp.functhis.now`.
 
 Rollback is `currentVersionId = previous`. The loader id is the version id, so the isolate changes immediately.
 
-R2 is not the source of truth for package trees. Use it later for large execution outputs (PDFs, archives), not for source or the hot-path bundle.
+Canonical source stays with the author (local tree / their Git). Functhis stores a deployed snapshot hash and the KV bundle. Reuse is `execute` (or HTTP POST) of a published function, not importing or forking source. Do not use Cloudflare Artifacts. Do not stand up a Git host for package trees.
+
+R2 is not the source of truth. Use it later for optional read-only source snapshots on the function page and for large execution outputs (PDFs, archives), not for the hot-path bundle.
+
+Do not copy Kody’s in-platform Git workspace or Gram’s third-party MCP Registry catalog. Functhis `search` domain `library` is later discovery of **our** published functions, not proxying other MCP servers.
 
 ## Data
 
@@ -214,9 +219,9 @@ Quotas fail closed from day one: CPU, concurrency, request/response size.
 ## Repo
 
 ```text
-apps/web          hosted origin: public pages + POST (later)
+apps/web          hosted origin: public pages + deploy API + POST (public URLs later)
 apps/console      OAuth issuer + thin dashboard
-apps/runtime      hosted: Worker Loader, execute path (later)
+apps/mcp          hosted: mcp.functhis.now, MCP tools + Worker Loader execute
 apps/cli          OSS: login, deploy, local run (later)
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
@@ -224,7 +229,6 @@ packages/db       schema
 packages/api      shared oRPC / business logic (see below)
 packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
-packages/mcp      search/execute handlers (later)
 packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts
 packages/ui       existing
 ```
@@ -240,7 +244,7 @@ CLI: `functhis login` (device), `functhis deploy`, `functhis run` / `dev`. No Do
 ```text
 Agent:  OAuth at console.functhis.now → consent on console
         POST mcp.functhis.now/mcp execute { id: "@xmazu/pkg/fn", arguments }
-        → ACL → functhis-runtime → Dynamic Worker
+        → ACL → functhis-mcp → Dynamic Worker
 
 Human:  GET  functhis.now/@xmazu/pkg/fn  page
         POST functhis.now/@xmazu/pkg/fn  run
@@ -252,4 +256,4 @@ CLI:    login → console.functhis.now/device
 
 ## Defer
 
-Billing, marketplace, library UX, org admin, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, embeddings, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage.
+Billing, marketplace, library UX, org admin, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, embeddings, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.

@@ -1,18 +1,20 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "functhis-runtime",
+  "name": "functhis-mcp",
   "main": "src/index.ts",
   "compatibility_date": "2025-09-15",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
-    "RUNTIME_EXECUTE_SECRET": "local-dev-runtime-secret",
+    "CONSOLE_URL": "http://localhost:3002",
+    "MCP_RESOURCE": "http://localhost:3003",
   },
   "observability": {
     "enabled": true,
   },
   "dev": {
     "inspector_port": 9231,
+    "port": 3003,
   },
   "worker_loaders": [
     {
@@ -31,10 +33,20 @@
       "id": "00000000-0000-0000-0000-000000000030",
     },
   ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "functhis_executions",
+    },
+  ],
   "env": {
     "preview": {
-      "name": "functhis-runtime-preview",
+      "name": "functhis-mcp-preview",
       "workers_dev": false,
+      "vars": {
+        "CONSOLE_URL": "https://console.preview.functhis.now",
+        "MCP_RESOURCE": "https://mcp.preview.functhis.now",
+      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
@@ -50,12 +62,22 @@
       "worker_loaders": [
         {
           "binding": "LOADER",
+        },
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "ANALYTICS",
+          "dataset": "functhis_executions_preview",
         },
       ],
     },
     "production": {
-      "name": "functhis-runtime",
+      "name": "functhis-mcp",
       "workers_dev": false,
+      "vars": {
+        "CONSOLE_URL": "https://console.functhis.now",
+        "MCP_RESOURCE": "https://mcp.functhis.now",
+      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
@@ -71,6 +93,12 @@
       "worker_loaders": [
         {
           "binding": "LOADER",
+        },
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "ANALYTICS",
+          "dataset": "functhis_executions",
         },
       ],
     },

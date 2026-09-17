@@ -2,6 +2,7 @@ import {
   createAuth as createConfiguredAuth,
   ensureCliOAuthClient,
 } from '@functhis/auth';
+import type { AuthConfig } from '@functhis/auth';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
 
@@ -18,46 +19,51 @@ const parseTrustedOrigins = (value: string): string[] =>
 export const getDb = (): Promise<Database> => createDb(env);
 
 let cliClientSeeded = false;
-let authInstance: AuthInstance | null = null;
-let authInitPromise: Promise<AuthInstance> | null = null;
+let cliSeedPromise: Promise<void> | null = null;
+let authConfigPromise: Promise<AuthConfig> | null = null;
 
-const initAuth = async (database?: Database): Promise<AuthInstance> => {
-  const db = database ?? (await getDb());
-  if (!cliClientSeeded) {
-    await ensureCliOAuthClient(db);
-    cliClientSeeded = true;
+const ensureCliClientSeeded = (): Promise<void> => {
+  if (cliClientSeeded) {
+    return Promise.resolve();
   }
 
-  const [betterAuthSecret, githubClientId, githubClientSecret] =
-    await Promise.all([
-      resolveSecret(env.BETTER_AUTH_SECRET),
-      resolveSecret(env.GITHUB_CLIENT_ID),
-      resolveSecret(env.GITHUB_CLIENT_SECRET),
-    ]);
+  cliSeedPromise ??= (async () => {
+    const db = await getDb();
+    await ensureCliOAuthClient(db, env.MCP_RESOURCE);
+    cliClientSeeded = true;
+  })();
 
-  return createConfiguredAuth(
-    {
+  return cliSeedPromise;
+};
+
+const resolveAuthConfig = (): Promise<AuthConfig> => {
+  authConfigPromise ??= (async () => {
+    const [betterAuthSecret, githubClientId, githubClientSecret] =
+      await Promise.all([
+        resolveSecret(env.BETTER_AUTH_SECRET),
+        resolveSecret(env.GITHUB_CLIENT_ID),
+        resolveSecret(env.GITHUB_CLIENT_SECRET),
+      ]);
+
+    return {
       BETTER_AUTH_SECRET: betterAuthSecret,
       BETTER_AUTH_URL: env.BETTER_AUTH_URL,
       GITHUB_CLIENT_ID: githubClientId,
       GITHUB_CLIENT_SECRET: githubClientSecret,
+      MCP_RESOURCE: env.MCP_RESOURCE,
       TRUSTED_ORIGINS: parseTrustedOrigins(env.TRUSTED_ORIGINS),
-    },
-    db
-  );
+    };
+  })();
+
+  return authConfigPromise;
 };
 
-export const createAuth = (database?: Database): Promise<AuthInstance> => {
-  if (database) {
-    return initAuth(database);
-  }
-  if (authInstance) {
-    return Promise.resolve(authInstance);
-  }
-  authInitPromise ??= (async () => {
-    const auth = await initAuth();
-    authInstance = auth;
-    return auth;
-  })();
-  return authInitPromise;
+/** Fresh Hyperdrive client per call — do not cache Better Auth across requests. */
+export const createAuth = async (
+  database?: Database
+): Promise<AuthInstance> => {
+  await ensureCliClientSeeded();
+  const config = await resolveAuthConfig();
+  const db = database ?? (await getDb());
+  return createConfiguredAuth(config, db);
 };

@@ -1,6 +1,9 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import { buildFunctionContract } from './discover-contract';
+import type { FunctionContract } from './discover-contract';
+
 const FUNCTIONS_DIR = 'functions';
 
 const ignoredDirectories = new Set([
@@ -11,7 +14,7 @@ const ignoredDirectories = new Set([
 ]);
 
 export interface DiscoveredFunction {
-  contract: { description: string };
+  contract: FunctionContract;
   exportName: string;
   path: string;
   slug: string;
@@ -99,15 +102,21 @@ export const discoverProject = async (
 
   for (const { content, relativePath } of fileEntries) {
     files[relativePath] = content;
-    if (!/\bexport\s+default\b/u.test(content)) {
-      continue;
-    }
     const slug = slugFromPath(relativePath);
     if (!slug) {
       continue;
     }
+    const contract = buildFunctionContract({
+      content,
+      projectRoot: absoluteRoot,
+      relativePath,
+      slug,
+    });
+    if (!contract) {
+      continue;
+    }
     functions.push({
-      contract: { description: slug },
+      contract,
       exportName: 'default',
       path: relativePath,
       slug,

@@ -18,7 +18,12 @@ output "hyperdrive_catalog_id" {
 
 output "kv_bundles_namespace_id" {
   value       = cloudflare_workers_kv_namespace.bundles.id
-  description = "KV namespace for compiled bundles; bind on functhis-runtime when roadmap 4 ships"
+  description = "KV namespace for compiled bundles; bind BUNDLES on functhis-web and functhis-mcp"
+}
+
+output "analytics_execution_dataset" {
+  value       = local.analytics_execution_dataset
+  description = "Workers Analytics Engine dataset name; bind ANALYTICS on functhis-mcp via apps/mcp/wrangler.jsonc (Wrangler only, not Terraform)"
 }
 
 output "secrets_store_id" {
