@@ -1,4 +1,9 @@
-import { IconDeviceDesktop, IconHome, IconMenu2 } from '@tabler/icons-react';
+import {
+  IconDeviceDesktop,
+  IconHome,
+  IconMenu2,
+  IconPackage,
+} from '@tabler/icons-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -16,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { icon: IconHome, label: 'Home', to: '/' },
+  { icon: IconPackage, label: 'Packages', to: '/packages' },
   { icon: IconDeviceDesktop, label: 'Authorize device', to: '/device' },
 ] as const;
 
@@ -30,7 +36,10 @@ const SidebarNav = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <nav className="flex flex-col gap-0.5 px-2">
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.to;
+        const isActive =
+          item.to === '/'
+            ? pathname === '/'
+            : pathname === item.to || pathname.startsWith(`${item.to}/`);
         const Icon = item.icon;
 
         return (

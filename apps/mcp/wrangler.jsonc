@@ -7,6 +7,7 @@
   "workers_dev": false,
   "vars": {
     "CONSOLE_URL": "http://localhost:3002",
+    "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
     "MCP_RESOURCE": "http://localhost:3003",
   },
   "observability": {
@@ -45,6 +46,7 @@
       "workers_dev": false,
       "vars": {
         "CONSOLE_URL": "https://console.preview.functhis.now",
+        "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
         "MCP_RESOURCE": "https://mcp.preview.functhis.now",
       },
       "hyperdrive": [
@@ -76,6 +78,7 @@
       "workers_dev": false,
       "vars": {
         "CONSOLE_URL": "https://console.functhis.now",
+        "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
         "MCP_RESOURCE": "https://mcp.functhis.now",
       },
       "hyperdrive": [

@@ -21,6 +21,7 @@
     "BETTER_AUTH_URL": "http://localhost:3002",
     "MCP_RESOURCE": "http://localhost:3003",
     "TRUSTED_ORIGINS": "http://localhost:3002,http://localhost:3001,http://localhost:3003,https://functhis.now,https://console.functhis.now",
+    "WEB_URL": "http://localhost:3001",
   },
   "env": {
     "preview": {
@@ -55,6 +56,7 @@
         "BETTER_AUTH_URL": "https://console.preview.functhis.now",
         "MCP_RESOURCE": "https://mcp.preview.functhis.now",
         "TRUSTED_ORIGINS": "https://console.preview.functhis.now,https://preview.functhis.now,https://mcp.preview.functhis.now",
+        "WEB_URL": "https://preview.functhis.now",
       },
     },
     "production": {
@@ -89,6 +91,7 @@
         "BETTER_AUTH_URL": "https://console.functhis.now",
         "MCP_RESOURCE": "https://mcp.functhis.now",
         "TRUSTED_ORIGINS": "https://console.functhis.now,https://functhis.now,https://mcp.functhis.now",
+        "WEB_URL": "https://functhis.now",
       },
     },
   },

@@ -25,7 +25,14 @@
   "vars": {
     "NODE_ENV": "development",
     "CONSOLE_URL": "http://localhost:3002",
+    "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
   },
+  "services": [
+    {
+      "binding": "MCP",
+      "service": "functhis-mcp",
+    },
+  ],
   "env": {
     "preview": {
       "name": "functhis-web-preview",
@@ -46,7 +53,14 @@
       "vars": {
         "NODE_ENV": "production",
         "CONSOLE_URL": "https://console.preview.functhis.now",
+        "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
       },
+      "services": [
+        {
+          "binding": "MCP",
+          "service": "functhis-mcp-preview",
+        },
+      ],
     },
     "production": {
       "name": "functhis-web",
@@ -67,7 +81,14 @@
       "vars": {
         "NODE_ENV": "production",
         "CONSOLE_URL": "https://console.functhis.now",
+        "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
       },
+      "services": [
+        {
+          "binding": "MCP",
+          "service": "functhis-mcp",
+        },
+      ],
     },
   },
 }

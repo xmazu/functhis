@@ -58,9 +58,26 @@ export {
   runtimeExecuteBodySchema,
   workerLoaderBundleSchema,
 } from './schemas';
+export {
+  INTERNAL_MCP_EXECUTE_HOST,
+  internalMcpExecuteUrl,
+} from './internal-mcp-execute';
 export type {
   DeployFinalizeBody,
   DeployStartBody,
   RuntimeExecuteBody,
   WorkerLoaderBundle,
 } from './schemas';
+export {
+  canViewCatalogPage,
+  canViewPackage,
+  getFunctionBySlugs,
+  getPackageBySlugs,
+  listOwnerPackages,
+  listRecentExecutions,
+  publicFunctionPath,
+  publicPackagePath,
+  type CatalogFunctionRow,
+  type CatalogPackageRow,
+  type ExecutionSummaryRow,
+} from './catalog-read';

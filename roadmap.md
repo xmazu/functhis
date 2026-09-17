@@ -33,11 +33,11 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
   - [x] Deploy API: `POST /api/deploy/start` + `POST /api/deploy/finalize` on web
   - [x] Source hash → bundle → KV → `package_version`
   - [x] Quota constants (`cpuMs`, `subRequests`, request/response size) in `@functhis/deploy`
-  - [ ] Hosted execute (phase 5 POST; phase 6 MCP done)
+  - [x] Hosted execute (phase 5 POST; phase 6 MCP done)
 
 - [ ] **5. Public URLs + console**
-  - [ ] `GET` / `POST` `functhis.now/@owner/package[/function]`
-  - [ ] Thin console: list, URL, MCP snippet, executions
+  - [x] `GET` / `POST` `functhis.now/@owner/package[/function]`
+  - [x] Thin console: list, URL, MCP snippet, executions
 
 - [ ] **6. MCP** (`apps/mcp`)
   - [x] Worker app: `functhis-mcp`, Wrangler bindings (Hyperdrive, bundle KV, `LOADER`, Analytics Engine)
@@ -50,7 +50,7 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
 - [ ] **7. CLI**
   - [ ] `functhis login` (device)
   - [ ] `functhis deploy`
-  - [ ] `functhis run` / `dev` via `packages/runtime`
+  - [ ] `functhis run` / `dev`
 
 - [ ] **8. Sharing**
   - [ ] Turn on org / library filters

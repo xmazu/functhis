@@ -4,7 +4,6 @@ export {
   hashSourceTree,
   sha256Hex,
   stableBundlePayload,
-  stableSourcePayload,
 } from '@functhis/deploy';
 
 export const createBootstrapSource = (

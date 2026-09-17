@@ -5,7 +5,8 @@
   "ignore": [
     "**/routeTree.gen.ts",
     "**/cloudflare-env.d.ts",
-    "**/worker-configuration.d.ts"
+    "**/worker-configuration.d.ts",
+    "examples/**"
   ],
   "ignoreDependencies": [
     "@cloudflare/vite-plugin",

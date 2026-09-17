@@ -17,6 +17,8 @@ import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './rout
 import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as Oauth2SplatRouteImport } from './routes/oauth2/$'
+import { Route as AuthPackagesIndexRouteImport } from './routes/_auth/packages/index'
+import { Route as AuthPackagesSlugRouteImport } from './routes/_auth/packages/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -60,6 +62,16 @@ const Oauth2SplatRoute = Oauth2SplatRouteImport.update({
   path: '/oauth2/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthPackagesIndexRoute = AuthPackagesIndexRouteImport.update({
+  id: '/packages/',
+  path: '/packages/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthPackagesSlugRoute = AuthPackagesSlugRouteImport.update({
+  id: '/packages/$slug',
+  path: '/packages/$slug',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -74,7 +86,9 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/oauth2/$': typeof Oauth2SplatRoute
+  '/packages/$slug': typeof AuthPackagesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/packages/': typeof AuthPackagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
@@ -84,7 +98,9 @@ export interface FileRoutesByTo {
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/': typeof AuthIndexRoute
+  '/packages/$slug': typeof AuthPackagesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/packages': typeof AuthPackagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,7 +112,9 @@ export interface FileRoutesById {
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/packages/$slug': typeof AuthPackagesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_auth/packages/': typeof AuthPackagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,7 +126,9 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
     | '/oauth2/$'
+    | '/packages/$slug'
     | '/api/auth/$'
+    | '/packages/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/consent'
@@ -118,7 +138,9 @@ export interface FileRouteTypes {
     | '/.well-known/openid-configuration'
     | '/oauth2/$'
     | '/'
+    | '/packages/$slug'
     | '/api/auth/$'
+    | '/packages'
   id:
     | '__root__'
     | '/_auth'
@@ -129,7 +151,9 @@ export interface FileRouteTypes {
     | '/.well-known/openid-configuration'
     | '/oauth2/$'
     | '/_auth/'
+    | '/_auth/packages/$slug'
     | '/api/auth/$'
+    | '/_auth/packages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +225,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Oauth2SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/packages/': {
+      id: '/_auth/packages/'
+      path: '/packages'
+      fullPath: '/packages/'
+      preLoaderRoute: typeof AuthPackagesIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/packages/$slug': {
+      id: '/_auth/packages/$slug'
+      path: '/packages/$slug'
+      fullPath: '/packages/$slug'
+      preLoaderRoute: typeof AuthPackagesSlugRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -213,10 +251,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthPackagesSlugRoute: typeof AuthPackagesSlugRoute
+  AuthPackagesIndexRoute: typeof AuthPackagesIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
+  AuthPackagesSlugRoute: AuthPackagesSlugRoute,
+  AuthPackagesIndexRoute: AuthPackagesIndexRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

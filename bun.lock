@@ -29,6 +29,7 @@
         "@better-auth/oauth-provider": "1.7.3",
         "@functhis/auth": "workspace:*",
         "@functhis/db": "workspace:*",
+        "@functhis/deploy": "workspace:*",
         "@functhis/ui": "workspace:*",
         "@tabler/icons-react": "^3.46.0",
         "@tailwindcss/vite": "^4.3.3",
@@ -241,6 +242,7 @@
       "name": "@functhis/deploy",
       "dependencies": {
         "@functhis/db": "workspace:*",
+        "drizzle-orm": "^0.45.2",
         "zod": "catalog:",
       },
       "devDependencies": {

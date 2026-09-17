@@ -7,6 +7,7 @@ interface CloudflareEnv {
   MCP_RESOURCE: string;
   NODE_ENV: string;
   TRUSTED_ORIGINS: string;
+  WEB_URL: string;
 }
 
 declare global {

@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 const DashboardPage = () => {
   const { session } = Route.useRouteContext();
@@ -15,10 +15,15 @@ const DashboardPage = () => {
           Signed in as {session?.user.name} ({session?.user.email})
         </p>
         <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
-          Package management, MCP snippets, and execution history arrive in a
-          later phase. This console already hosts GitHub login, OAuth consent,
-          and CLI device approval.
+          Manage deployed packages, copy public URLs and MCP snippets, and
+          review recent executions from the Packages page.
         </p>
+        <Link
+          className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
+          to="/packages"
+        >
+          Open packages
+        </Link>
       </div>
     </main>
   );

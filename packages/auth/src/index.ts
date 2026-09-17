@@ -19,6 +19,11 @@ export {
   type DeployAuthResult,
   type DeployAuthOptions,
 } from './deploy-token';
+export {
+  resolveCallerUserId,
+  resolveSessionUserId,
+  type CallerAuthResult,
+} from './caller-auth';
 export { ensureCliOAuthClient } from './seed-cli-client';
 export {
   allocateUniqueHandle,

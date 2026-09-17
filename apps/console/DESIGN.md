@@ -8,7 +8,7 @@ Product role lives in [architecture.md](../../architecture.md). This file is the
 
 Forced dark. Near-black canvas, 4% white hairlines, system UI at 12px with normal tracking, frosted sidebar, opaque inset content, flat controls. No drop shadows. Rows ~28px.
 
-Reject Inter, Geist, Cal Sans, lyra `rounded-none`, marketing hero type, and fake product surfaces (Projects, Threads, Kanban, Terminal). Alpha still has no package list, MCP snippet, or execution history — empty copy stays honest.
+Reject Inter, Geist, Cal Sans, lyra `rounded-none`, marketing hero type, and fake product surfaces (Projects, Threads, Kanban, Terminal).
 
 ## Tokens
 
@@ -50,7 +50,7 @@ Signed-in routes under `/_auth` use `AppShell`: frosted rail + opaque inset card
 
 - Sidebar: `app-sidebar-surface`, 28px rows, muted hover, `--sidebar-selected` for the active item
 - Content: `app-content-card` with `inset 0.5px` hairline (`--seam-line`)
-- Nav is honest: Home → `/`, Authorize device → `/device`. User name + ghost Sign out at the bottom
+- Nav is honest: Home → `/`, Packages → `/packages`, Authorize device → `/device`. User name + ghost Sign out at the bottom
 - `md` and up: persistent rail. Below `md`: sheet from the hamburger
 
 Login, device, and consent stay **outside** `/_auth`. Wrap them in `AuthCanvas`: full-bleed `#0e0e0e`, small Functhis wordmark (link home only when a session exists), compact hairline card. No sidebar.
