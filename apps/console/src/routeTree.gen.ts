@@ -16,10 +16,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known/oauth-authorization-server'
 import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation/$id'
 import { Route as Oauth2SplatRouteImport } from './routes/oauth2/$'
+import { Route as AuthOrganizationsIndexRouteImport } from './routes/_auth/organizations/index'
+import { Route as AuthOrganizationsSlugRouteImport } from './routes/_auth/organizations/$slug'
 import { Route as AuthPackagesIndexRouteImport } from './routes/_auth/packages/index'
-import { Route as AuthPackagesSlugRouteImport } from './routes/_auth/packages/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthPackagesHandleSlugRouteImport } from './routes/_auth/packages/$handle/$slug'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -57,25 +60,40 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
+  id: '/accept-invitation/$id',
+  path: '/accept-invitation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Oauth2SplatRoute = Oauth2SplatRouteImport.update({
   id: '/oauth2/$',
   path: '/oauth2/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthOrganizationsIndexRoute = AuthOrganizationsIndexRouteImport.update({
+  id: '/organizations/',
+  path: '/organizations/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthOrganizationsSlugRoute = AuthOrganizationsSlugRouteImport.update({
+  id: '/organizations/$slug',
+  path: '/organizations/$slug',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthPackagesIndexRoute = AuthPackagesIndexRouteImport.update({
   id: '/packages/',
   path: '/packages/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthPackagesSlugRoute = AuthPackagesSlugRouteImport.update({
-  id: '/packages/$slug',
-  path: '/packages/$slug',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthPackagesHandleSlugRoute = AuthPackagesHandleSlugRouteImport.update({
+  id: '/packages/$handle/$slug',
+  path: '/packages/$handle/$slug',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -85,10 +103,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
-  '/packages/$slug': typeof AuthPackagesSlugRoute
+  '/organizations/$slug': typeof AuthOrganizationsSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/organizations/': typeof AuthOrganizationsIndexRoute
   '/packages/': typeof AuthPackagesIndexRoute
+  '/packages/$handle/$slug': typeof AuthPackagesHandleSlugRoute
 }
 export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
@@ -96,11 +117,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/': typeof AuthIndexRoute
-  '/packages/$slug': typeof AuthPackagesSlugRoute
+  '/organizations/$slug': typeof AuthOrganizationsSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/organizations': typeof AuthOrganizationsIndexRoute
   '/packages': typeof AuthPackagesIndexRoute
+  '/packages/$handle/$slug': typeof AuthPackagesHandleSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -110,11 +134,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/_auth/': typeof AuthIndexRoute
-  '/_auth/packages/$slug': typeof AuthPackagesSlugRoute
+  '/_auth/organizations/$slug': typeof AuthOrganizationsSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_auth/organizations/': typeof AuthOrganizationsIndexRoute
   '/_auth/packages/': typeof AuthPackagesIndexRoute
+  '/_auth/packages/$handle/$slug': typeof AuthPackagesHandleSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -125,10 +152,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/accept-invitation/$id'
     | '/oauth2/$'
-    | '/packages/$slug'
+    | '/organizations/$slug'
     | '/api/auth/$'
+    | '/organizations/'
     | '/packages/'
+    | '/packages/$handle/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/consent'
@@ -136,11 +166,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/accept-invitation/$id'
     | '/oauth2/$'
     | '/'
-    | '/packages/$slug'
+    | '/organizations/$slug'
     | '/api/auth/$'
+    | '/organizations'
     | '/packages'
+    | '/packages/$handle/$slug'
   id:
     | '__root__'
     | '/_auth'
@@ -149,11 +182,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/accept-invitation/$id'
     | '/oauth2/$'
     | '/_auth/'
-    | '/_auth/packages/$slug'
+    | '/_auth/organizations/$slug'
     | '/api/auth/$'
+    | '/_auth/organizations/'
     | '/_auth/packages/'
+    | '/_auth/packages/$handle/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -163,6 +199,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRoute
   DotwellKnownOpenidConfigurationRoute: typeof DotwellKnownOpenidConfigurationRoute
+  AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
   Oauth2SplatRoute: typeof Oauth2SplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -218,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/accept-invitation/$id': {
+      id: '/accept-invitation/$id'
+      path: '/accept-invitation/$id'
+      fullPath: '/accept-invitation/$id'
+      preLoaderRoute: typeof AcceptInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth2/$': {
       id: '/oauth2/$'
       path: '/oauth2/$'
@@ -225,18 +269,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Oauth2SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/organizations/': {
+      id: '/_auth/organizations/'
+      path: '/organizations'
+      fullPath: '/organizations/'
+      preLoaderRoute: typeof AuthOrganizationsIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/organizations/$slug': {
+      id: '/_auth/organizations/$slug'
+      path: '/organizations/$slug'
+      fullPath: '/organizations/$slug'
+      preLoaderRoute: typeof AuthOrganizationsSlugRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/packages/': {
       id: '/_auth/packages/'
       path: '/packages'
       fullPath: '/packages/'
       preLoaderRoute: typeof AuthPackagesIndexRouteImport
-      parentRoute: typeof AuthRouteRoute
-    }
-    '/_auth/packages/$slug': {
-      id: '/_auth/packages/$slug'
-      path: '/packages/$slug'
-      fullPath: '/packages/$slug'
-      preLoaderRoute: typeof AuthPackagesSlugRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/api/auth/$': {
@@ -246,19 +297,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/packages/$handle/$slug': {
+      id: '/_auth/packages/$handle/$slug'
+      path: '/packages/$handle/$slug'
+      fullPath: '/packages/$handle/$slug'
+      preLoaderRoute: typeof AuthPackagesHandleSlugRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
   }
 }
 
 interface AuthRouteRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
-  AuthPackagesSlugRoute: typeof AuthPackagesSlugRoute
+  AuthOrganizationsSlugRoute: typeof AuthOrganizationsSlugRoute
+  AuthOrganizationsIndexRoute: typeof AuthOrganizationsIndexRoute
   AuthPackagesIndexRoute: typeof AuthPackagesIndexRoute
+  AuthPackagesHandleSlugRoute: typeof AuthPackagesHandleSlugRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
-  AuthPackagesSlugRoute: AuthPackagesSlugRoute,
+  AuthOrganizationsSlugRoute: AuthOrganizationsSlugRoute,
+  AuthOrganizationsIndexRoute: AuthOrganizationsIndexRoute,
   AuthPackagesIndexRoute: AuthPackagesIndexRoute,
+  AuthPackagesHandleSlugRoute: AuthPackagesHandleSlugRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
@@ -273,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownOauthAuthorizationServerRoute:
     DotwellKnownOauthAuthorizationServerRoute,
   DotwellKnownOpenidConfigurationRoute: DotwellKnownOpenidConfigurationRoute,
+  AcceptInvitationIdRoute: AcceptInvitationIdRoute,
   Oauth2SplatRoute: Oauth2SplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

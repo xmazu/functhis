@@ -127,7 +127,7 @@ functhis login --console-url http://localhost:3002 --web-url http://localhost:30
 bun run example:hello:deploy
 ```
 
-`functhis deploy` stores a **content hash** of the source tree in Postgres, puts the runnable bundle in KV, and prints public URLs plus MCP ids.
+`functhis deploy` stores a **content hash** of the source tree in Postgres, puts the runnable bundle in KV, and prints live `@handle/package` URLs and MCP ids (packages default to **private** unless you set `--visibility`).
 
 Run a single app:
 

@@ -47,8 +47,10 @@ export const resolvePackageSlug = (
 };
 
 export const runDeploy = async (options?: {
+  organizationSlug?: string;
   projectRoot?: string;
   slug?: string;
+  visibility?: 'library' | 'organization' | 'private';
   webUrl?: string;
 }): Promise<void> => {
   const config = await loadAuthenticatedConfig();
@@ -63,14 +65,22 @@ export const runDeploy = async (options?: {
   const bundle = await buildWorkerBundle({ files, functions });
   const sourceHash = await hashSourceTree(files);
 
+  const startBody: Record<string, unknown> = {
+    filesManifest: filesManifest(files),
+    slug,
+  };
+  if (options?.visibility !== undefined) {
+    startBody.visibility = options.visibility;
+  }
+  if (options?.organizationSlug !== undefined) {
+    startBody.organizationSlug = options.organizationSlug;
+  }
+
   const startResponse = await authorizedFetch(
     config,
     `${webUrl}/api/deploy/start`,
     {
-      body: JSON.stringify({
-        filesManifest: filesManifest(files),
-        slug,
-      }),
+      body: JSON.stringify(startBody),
       headers: { 'content-type': 'application/json' },
       method: 'POST',
     }

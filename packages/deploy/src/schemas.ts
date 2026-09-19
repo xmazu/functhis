@@ -9,6 +9,12 @@ export const deployStartBodySchema = z.object({
       })
     )
     .min(1),
+  organizationSlug: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u)
+    .optional(),
   slug: z
     .string()
     .min(1)

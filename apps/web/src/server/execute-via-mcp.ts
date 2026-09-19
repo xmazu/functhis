@@ -5,13 +5,13 @@ import { env } from '../env.server';
 
 const internalExecuteBodySchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
-  callerUserId: z.string().min(1),
+  callerUserId: z.string().min(1).nullable(),
   id: z.string().min(1),
 });
 
 export interface ExecuteViaMcpInput {
   arguments?: Record<string, unknown>;
-  callerUserId: string;
+  callerUserId: string | null;
   id: string;
 }
 

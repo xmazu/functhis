@@ -1,8 +1,11 @@
 import { createDb } from '@functhis/db';
 import { user } from '@functhis/db/schema/auth';
 import { pkg, pkgFunction } from '@functhis/db/schema/catalog';
-import { formatFunctionId } from '@functhis/deploy';
-import { and, eq, ilike, isNotNull, or, sql } from 'drizzle-orm';
+import {
+  formatFunctionId,
+  listMembershipOrganizationIds,
+} from '@functhis/deploy';
+import { and, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
 
 export type SearchDomain = 'library' | 'mine' | 'org';
 
@@ -13,24 +16,21 @@ export interface SearchHit {
 
 const SEARCH_LIMIT = 25;
 
-export class UnsupportedSearchDomainError extends Error {
-  readonly domain: SearchDomain;
+export const normalizeSearchDomain = (domain?: SearchDomain): SearchDomain =>
+  domain ?? 'mine';
 
-  constructor(domain: SearchDomain) {
-    super(`Search domain "${domain}" is not available yet`);
-    this.name = 'UnsupportedSearchDomainError';
-    this.domain = domain;
-  }
-}
+const textQueryFilter = (trimmedQuery: string) =>
+  or(
+    ilike(user.handle, `%${trimmedQuery}%`),
+    ilike(pkg.slug, `%${trimmedQuery}%`),
+    ilike(pkgFunction.slug, `%${trimmedQuery}%`),
+    ilike(
+      sql<string>`${pkgFunction.contract}->>'description'`,
+      `%${trimmedQuery}%`
+    )
+  );
 
-export const assertSearchDomain = (domain?: SearchDomain): 'mine' => {
-  if (domain !== undefined && domain !== 'mine') {
-    throw new UnsupportedSearchDomainError(domain);
-  }
-  return 'mine';
-};
-
-export const searchMine = async (
+export const searchFunctions = async (
   env: Env,
   input: {
     callerUserId: string;
@@ -38,15 +38,40 @@ export const searchMine = async (
     query?: string;
   }
 ): Promise<SearchHit[]> => {
-  assertSearchDomain(input.domain);
-
+  const domain = normalizeSearchDomain(input.domain);
   const database = await createDb(env);
   const trimmedQuery = input.query?.trim() ?? '';
 
-  const ownerFilter = and(
-    eq(pkg.ownerUserId, input.callerUserId),
-    isNotNull(pkg.currentVersionId)
-  );
+  let baseFilter;
+  if (domain === 'mine') {
+    baseFilter = and(
+      eq(pkg.ownerUserId, input.callerUserId),
+      isNotNull(pkg.currentVersionId)
+    );
+  } else if (domain === 'library') {
+    baseFilter = and(
+      eq(pkg.visibility, 'library'),
+      isNotNull(pkg.currentVersionId)
+    );
+  } else {
+    const organizationIds = await listMembershipOrganizationIds(
+      database,
+      input.callerUserId
+    );
+    if (organizationIds.length === 0) {
+      return [];
+    }
+    baseFilter = and(
+      inArray(pkg.organizationId, organizationIds),
+      eq(pkg.visibility, 'organization'),
+      isNotNull(pkg.currentVersionId)
+    );
+  }
+
+  const whereClause =
+    trimmedQuery.length === 0
+      ? baseFilter
+      : and(baseFilter, textQueryFilter(trimmedQuery));
 
   const rows = await database
     .select({
@@ -58,22 +83,7 @@ export const searchMine = async (
     .from(pkgFunction)
     .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
     .innerJoin(user, eq(pkg.ownerUserId, user.id))
-    .where(
-      trimmedQuery.length === 0
-        ? ownerFilter
-        : and(
-            ownerFilter,
-            or(
-              ilike(user.handle, `%${trimmedQuery}%`),
-              ilike(pkg.slug, `%${trimmedQuery}%`),
-              ilike(pkgFunction.slug, `%${trimmedQuery}%`),
-              ilike(
-                sql<string>`${pkgFunction.contract}->>'description'`,
-                `%${trimmedQuery}%`
-              )
-            )
-          )
-    )
+    .where(whereClause)
     .limit(SEARCH_LIMIT);
 
   return rows.map((row) => ({

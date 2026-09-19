@@ -56,7 +56,7 @@ console          → session cookies + issuer pages
 - `mcp({ loginPage, consentPage, resource: "https://mcp.functhis.now" })`
 - `cimd({ metadataProfile: "mcp-2026-07-28", fetchClientMetadataResource })` — no DCR unless an old client requires it
 - `oauthDeviceAuthorization({ verificationUri: "/device" })`
-- `organization()` — schema only in alpha
+- `organization()` — Better Auth org plugin; thin console admin at `/organizations` (create, invite via copy link, accept). No outbound invite email in alpha.
 - `crossSubDomainCookies` on `.functhis.now`
 
 Login / consent / device pages: `https://console.functhis.now/...`. Issuer: `https://console.functhis.now`.
@@ -76,15 +76,15 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 Thin owner app at `apps/console`. Not the shareable object. Visual system: [apps/console/DESIGN.md](apps/console/DESIGN.md).
 
-Alpha: GitHub login, MCP consent, device approval, signed-in home, owner package list at `/packages` (URLs, MCP snippet, recent executions).
+Alpha: GitHub login, MCP consent, device approval, signed-in home, package list at `/packages` (owned + org-shared), package detail at `/packages/:handle/:slug` (not `/packages/:slug` alone), organizations at `/organizations`, sharing controls on owned packages.
 
-Try-it lives on the public function page. No billing, org admin, or library catalog in alpha.
+Try-it lives on the public function page. No billing or library browse/catalog UI in alpha.
 
 ## MCP
 
 `https://mcp.functhis.now/mcp`. Two tools.
 
-**`search`** — `query`, optional `domain`: `mine` | `org` | `library`. Lexical over contracts the caller may see. Alpha: `mine` only.
+**`search`** — `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Lexical over contracts the caller may see under the package ACL.
 
 **`execute`** — id + JSON arguments. ACL, quota, Dynamic Worker, execution row. Not one MCP tool per function.
 
@@ -206,15 +206,15 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 
 Owner handle (`@xmazu`) is unique. Default from GitHub username.
 
-Alpha ACL: `ownerUserId = me`. Org columns exist; filters unused until sharing.
-
-Later ACL:
+Package ACL (GET, POST, MCP `search`, MCP `execute`):
 
 ```text
 ownerUserId = me
 or (organizationId in memberships and visibility in organization|library)
 or visibility = library
 ```
+
+`private` is owner-only even when `organizationId` is set. Deploy and console set `visibility` + optional `organizationId`; CLI: `--visibility`, `--organization`.
 
 Quotas fail closed from day one: CPU, concurrency, request/response size.
 
@@ -259,4 +259,4 @@ CLI:    login → console.functhis.now/device
 
 ## Defer
 
-Billing, marketplace, library UX, org admin, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, embeddings, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.
+Billing, marketplace, library browse UX, org billing, invite email, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, embeddings, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.

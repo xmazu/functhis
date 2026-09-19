@@ -73,15 +73,44 @@ export type {
   WorkerLoaderBundle,
 } from './schemas';
 export {
+  hasDeploySharingInput,
+  resolveDeploySharing,
+  resolveDeploySharingForDeployStart,
+  resolveOrganizationIdForMember,
+  resolveOrganizationSlugById,
+  updatePackageSharing,
+  type DeploySharingInput,
+  type ExistingPackageSharing,
+  type ResolvedDeploySharing,
+} from './deploy-sharing';
+export {
+  buildPackageAccessContext,
+  canAccessPackage,
+  listMembershipOrganizationIds,
+  type PackageAccessContext,
+  type PackageAccessRow,
+  type PackageVisibility,
+} from './catalog-access';
+export {
   canViewCatalogPage,
+  canViewCatalogWithoutAuth,
   canViewPackage,
   getFunctionBySlugs,
   getPackageBySlugs,
+  listAccessiblePackagesForUser,
+  listOrgSharedPackages,
   listOwnerPackages,
   listRecentExecutions,
   publicFunctionPath,
   publicPackagePath,
+  type AccessiblePackageListRow,
   type CatalogFunctionRow,
   type CatalogPackageRow,
   type ExecutionSummaryRow,
+  type PackageListRow,
 } from './catalog-read';
+export { normalizeOrganizationSlug } from './org-slug';
+export {
+  safeCallbackURL,
+  safeCallbackURLFromRequest,
+} from './safe-callback-url';

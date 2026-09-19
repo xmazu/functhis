@@ -24,13 +24,14 @@ const PackagesPage = () => {
               <li key={pkg.id}>
                 <Link
                   className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-                  params={{ slug: pkg.packageSlug }}
-                  to="/packages/$slug"
+                  params={{ handle: pkg.handle, slug: pkg.packageSlug }}
+                  to="/packages/$handle/$slug"
                 >
                   @{pkg.handle}/{pkg.packageSlug}
                 </Link>
                 <span className="text-muted-foreground ml-2 text-[length:var(--app-font-size-ui,12px)]">
                   {pkg.functionCount} fn · {pkg.visibility}
+                  {pkg.shared ? ' · org' : ''}
                 </span>
               </li>
             ))}

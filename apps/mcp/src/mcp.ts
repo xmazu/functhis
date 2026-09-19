@@ -3,10 +3,10 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 
 import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';
-import { searchMine, UnsupportedSearchDomainError } from './search';
+import { searchFunctions } from './search';
 
 const searchInputSchema = z.object({
-  domain: z.enum(['mine']).optional(),
+  domain: z.enum(['library', 'mine', 'org']).optional(),
   query: z.string().optional(),
 });
 
@@ -35,30 +35,23 @@ export const createFuncthisMcpHandler = (
         'search',
         {
           description:
-            'Find functions you own by package slug, function slug, handle, or optional JSDoc description. Results include contract.inputSchema when deploy extracted one — use it to build execute.arguments. Use the returned id with execute. Do not ask the user to paste @handle/package/function ids.',
+            'Find deployed functions by package slug, function slug, handle, or optional JSDoc description. domain: mine (default, your packages), org (organization-shared), library (public). Results include contract.inputSchema when deploy extracted one — use it to build execute.arguments. Use the returned id with execute.',
           inputSchema: searchInputSchema,
         },
         async (input) => {
-          try {
-            const hits = await searchMine(env, {
-              callerUserId: userId,
-              domain: input.domain,
-              query: input.query,
-            });
-            return {
-              content: [
-                {
-                  text: JSON.stringify({ results: hits }, null, 2),
-                  type: 'text' as const,
-                },
-              ],
-            };
-          } catch (error) {
-            if (error instanceof UnsupportedSearchDomainError) {
-              return toolErrorContent(error.message);
-            }
-            throw error;
-          }
+          const hits = await searchFunctions(env, {
+            callerUserId: userId,
+            domain: input.domain,
+            query: input.query,
+          });
+          return {
+            content: [
+              {
+                text: JSON.stringify({ results: hits }, null, 2),
+                type: 'text' as const,
+              },
+            ],
+          };
         }
       );
 

@@ -3,6 +3,7 @@ import { user } from '@functhis/db/schema/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import {
   bundleKvKey,
+  resolveDeploySharingForDeployStart,
   sha256Hex,
   stableBundlePayload,
   utf8ByteLength,
@@ -88,8 +89,6 @@ export const handleDeployStart = async (
     return badRequest(manifestError);
   }
 
-  const visibility = parsed.data.visibility ?? 'private';
-
   const [existingPackage] = await database
     .select()
     .from(pkg)
@@ -98,11 +97,43 @@ export const handleDeployStart = async (
     )
     .limit(1);
 
+  const sharing = await resolveDeploySharingForDeployStart(
+    database,
+    auth.userId,
+    {
+      organizationSlug: parsed.data.organizationSlug,
+      visibility: parsed.data.visibility,
+    },
+    existingPackage
+      ? {
+          organizationId: existingPackage.organizationId,
+          visibility: existingPackage.visibility,
+        }
+      : null
+  );
+  if (!sharing.ok) {
+    return badRequest(sharing.error);
+  }
+
+  const { organizationId, visibility } = sharing.value;
+
   let packageRow = existingPackage;
-  if (!packageRow) {
+  if (packageRow) {
+    if (
+      packageRow.organizationId !== organizationId ||
+      packageRow.visibility !== visibility
+    ) {
+      await database
+        .update(pkg)
+        .set({ organizationId, visibility })
+        .where(eq(pkg.id, packageRow.id));
+      packageRow = { ...packageRow, organizationId, visibility };
+    }
+  } else {
     const [inserted] = await database
       .insert(pkg)
       .values({
+        organizationId,
         ownerUserId: auth.userId,
         slug: parsed.data.slug,
         visibility,

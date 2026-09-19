@@ -1,4 +1,5 @@
 import {
+  IconBuilding,
   IconDeviceDesktop,
   IconHome,
   IconMenu2,
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { icon: IconHome, label: 'Home', to: '/' },
   { icon: IconPackage, label: 'Packages', to: '/packages' },
+  { icon: IconBuilding, label: 'Organizations', to: '/organizations' },
   { icon: IconDeviceDesktop, label: 'Authorize device', to: '/device' },
 ] as const;
 

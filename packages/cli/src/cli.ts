@@ -2,13 +2,14 @@
 
 import { parseFlag, parseJsonInput } from './argv';
 import { runDeploy, runDev } from './deploy';
+import { parseDeployVisibility } from './deploy-sharing';
 import { runLogin } from './login';
 
 const usage = `functhis — deploy TypeScript functions
 
 Usage:
   functhis login [--console-url URL] [--web-url URL]
-  functhis deploy [--slug NAME] [--web-url URL] [--project-root PATH]
+  functhis deploy [--slug NAME] [--visibility private|organization|library] [--organization SLUG] [--web-url URL] [--project-root PATH]
   functhis run|dev [--slug FUNCTION] [--input JSON] [--project-root PATH]
 `;
 
@@ -39,8 +40,10 @@ const main = async (): Promise<void> => {
     }
     case 'deploy': {
       await runDeploy({
+        organizationSlug: parseFlag(rest, '--organization'),
         projectRoot: parseFlag(rest, '--project-root'),
         slug: parseFlag(rest, '--slug'),
+        visibility: parseDeployVisibility(parseFlag(rest, '--visibility')),
         webUrl: parseFlag(rest, '--web-url'),
       });
       return;

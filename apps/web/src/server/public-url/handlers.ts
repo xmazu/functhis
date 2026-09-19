@@ -1,11 +1,17 @@
 import { resolveCallerUserId } from '@functhis/auth';
-import type { getFunctionBySlugs } from '@functhis/deploy';
 import {
+  buildPackageAccessContext,
   canViewCatalogPage,
+  canViewCatalogWithoutAuth,
   formatFunctionId,
   getPackageBySlugs,
   publicFunctionPath,
   publicPackagePath,
+  safeCallbackURLFromRequest,
+} from '@functhis/deploy';
+import type {
+  getFunctionBySlugs,
+  PackageAccessContext,
 } from '@functhis/deploy';
 import { z } from 'zod';
 
@@ -22,20 +28,34 @@ const wantsJsonContract = (request: Request): boolean => {
   return accept.includes('application/json');
 };
 
-const resolveViewerUserId = async (
+const resolveViewerAccessContext = async (
   request: Request
-): Promise<string | null> => {
+): Promise<PackageAccessContext> => {
   const database = await getDb();
   const auth = await resolveCallerUserId(database, request, {
     consoleUrl: env.CONSOLE_URL,
   });
-  return auth.ok ? auth.userId : null;
+  return buildPackageAccessContext(database, auth.ok ? auth.userId : null);
 };
-
-const notFound = (): Response => new Response('Not Found', { status: 404 });
 
 const relaxCatalogPageInDevelopment = (): boolean =>
   env.NODE_ENV === 'development';
+
+const catalogPageAccess = (
+  catalog: Awaited<ReturnType<typeof getPackageBySlugs>> & object,
+  accessContext: PackageAccessContext
+): 'allow' | 'sign-in' => {
+  if (
+    canViewCatalogPage(catalog, accessContext, {
+      relaxInDevelopment: relaxCatalogPageInDevelopment(),
+    })
+  ) {
+    return 'allow';
+  }
+  return 'sign-in';
+};
+
+const notFound = (): Response => new Response('Not Found', { status: 404 });
 
 const escapeHtml = (value: string): string =>
   value
@@ -45,9 +65,9 @@ const escapeHtml = (value: string): string =>
     .replaceAll('"', '&quot;');
 
 const signInRequired = (request: Request): Response => {
-  const returnUrl = new URL(request.url).href;
+  const callbackPath = safeCallbackURLFromRequest(request.url);
   const loginUrl = new URL('/login', env.CONSOLE_URL);
-  loginUrl.searchParams.set('callbackURL', returnUrl);
+  loginUrl.searchParams.set('callbackURL', callbackPath);
 
   const html = `<!doctype html>
 <html lang="en">
@@ -61,7 +81,7 @@ const signInRequired = (request: Request): Response => {
 </head>
 <body>
   <h1>Sign in required</h1>
-  <p>This package is private. Sign in on the console (same browser), then open this URL again.</p>
+  <p>This package is not public. Sign in on the console with an account that owns it or belongs to its organization, then open this URL again.</p>
   <p>On <code>localhost</code>, console login on port 3002 does not share cookies with web on 3001 — use local dev (pages are open in development) or call POST with your CLI bearer token.</p>
   <p><a href="${escapeHtml(loginUrl.href)}">Sign in on console</a></p>
 </body>
@@ -71,20 +91,6 @@ const signInRequired = (request: Request): Response => {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
     status: 401,
   });
-};
-
-const catalogPageAccess = (
-  catalog: Awaited<ReturnType<typeof getPackageBySlugs>> & object,
-  viewerUserId: string | null
-): 'allow' | 'sign-in' => {
-  if (
-    canViewCatalogPage(catalog, viewerUserId, {
-      relaxInDevelopment: relaxCatalogPageInDevelopment(),
-    })
-  ) {
-    return 'allow';
-  }
-  return 'sign-in';
 };
 
 const renderPackagePageHtml = (
@@ -228,14 +234,21 @@ export const handlePublicFunctionRequest = async (
 
   const authOptions = { consoleUrl: env.CONSOLE_URL };
   const auth = await resolveCallerUserId(database, request, authOptions);
+  const accessContext = await buildPackageAccessContext(
+    database,
+    auth.ok ? auth.userId : null
+  );
 
   if (request.method === 'POST' && !auth.ok) {
-    return auth.response;
+    const allowsAnonymousPost = canViewCatalogWithoutAuth(catalog, {
+      relaxInDevelopment: relaxCatalogPageInDevelopment(),
+    });
+    if (!allowsAnonymousPost) {
+      return auth.response;
+    }
   }
 
-  const viewerUserId = auth.ok ? auth.userId : null;
-
-  const access = catalogPageAccess(catalog, viewerUserId);
+  const access = catalogPageAccess(catalog, accessContext);
   if (access === 'sign-in') {
     return request.method === 'GET'
       ? signInRequired(request)
@@ -280,14 +293,9 @@ export const handlePublicFunctionRequest = async (
       return Response.json({ error: parsed.error.message }, { status: 400 });
     }
 
-    const executeCallerUserId =
-      catalog.visibility === 'library'
-        ? catalog.ownerUserId
-        : (viewerUserId ?? catalog.ownerUserId);
-
     const upstream = await executeViaMcp({
       arguments: parsed.data.arguments,
-      callerUserId: executeCallerUserId,
+      callerUserId: accessContext.userId,
       id: functionId,
     });
     const responseText = await upstream.text();
@@ -328,8 +336,8 @@ export const handlePublicPackageRequest = async (
     return notFound();
   }
 
-  const viewerUserId = await resolveViewerUserId(request);
-  if (catalogPageAccess(catalog, viewerUserId) === 'sign-in') {
+  const viewerAccessContext = await resolveViewerAccessContext(request);
+  if (catalogPageAccess(catalog, viewerAccessContext) === 'sign-in') {
     return signInRequired(request);
   }
 

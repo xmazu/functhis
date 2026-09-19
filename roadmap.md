@@ -52,6 +52,6 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
   - [x] `functhis deploy`
   - [x] `functhis run` / `dev`
 
-- [ ] **8. Sharing**
-  - [ ] Turn on org / library filters
-  - [ ] Same ids, same two MCP tools
+- [x] **8. Sharing**
+  - [x] Turn on org / library filters
+  - [x] Same ids, same two MCP tools

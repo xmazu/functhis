@@ -3,6 +3,8 @@ import { user } from '@functhis/db/schema/auth';
 import { pkg, pkgFunction, packageVersion } from '@functhis/db/schema/catalog';
 import {
   assertExecuteRequestSize,
+  buildPackageAccessContext,
+  canAccessPackage,
   executeRequestByteLength,
   finalizeExecute,
   loadStoredBundle,
@@ -40,7 +42,7 @@ export type ExecuteOwnedResult = ExecuteOwnedFailure | ExecuteOwnedSuccess;
 
 export const executeOwnedFunction = async (
   env: Env,
-  callerUserId: string,
+  callerUserId: string | null,
   input: ExecuteOwnedInput
 ): Promise<ExecuteOwnedResult> => {
   const parsedId = parseFunctionId(input.id);
@@ -57,11 +59,16 @@ export const executeOwnedFunction = async (
   const requestBytes = executeRequestByteLength(requestBody);
 
   const database = await createDb(env);
+  const accessContext = await buildPackageAccessContext(database, callerUserId);
+
   const [row] = await database
     .select({
       bundleHash: packageVersion.bundleHash,
       functionId: pkgFunction.id,
+      organizationId: pkg.organizationId,
+      ownerUserId: pkg.ownerUserId,
       versionId: packageVersion.id,
+      visibility: pkg.visibility,
     })
     .from(pkgFunction)
     .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
@@ -69,7 +76,6 @@ export const executeOwnedFunction = async (
     .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
     .where(
       and(
-        eq(pkg.ownerUserId, callerUserId),
         eq(user.handle, parsedId.handle),
         eq(pkg.slug, parsedId.packageSlug),
         eq(pkgFunction.slug, parsedId.functionSlug)
@@ -78,6 +84,19 @@ export const executeOwnedFunction = async (
     .limit(1);
 
   if (!row) {
+    throw new FunctionNotFoundError();
+  }
+
+  if (
+    !canAccessPackage(
+      {
+        organizationId: row.organizationId,
+        ownerUserId: row.ownerUserId,
+        visibility: row.visibility,
+      },
+      accessContext
+    )
+  ) {
     throw new FunctionNotFoundError();
   }
 
@@ -110,11 +129,13 @@ export const executeOwnedFunction = async (
     versionId: row.versionId,
   });
 
+  const executionCallerUserId = callerUserId ?? undefined;
+
   const httpResponse = await finalizeExecute(
     env,
     {
       bundleHash: row.bundleHash,
-      callerUserId,
+      callerUserId: executionCallerUserId,
       functionSlug: parsedId.functionSlug,
       input: runInput,
       versionId: row.versionId,

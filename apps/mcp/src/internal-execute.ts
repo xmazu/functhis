@@ -8,7 +8,7 @@ import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';
 
 const internalExecuteBodySchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
-  callerUserId: z.string().min(1),
+  callerUserId: z.string().min(1).nullable(),
   id: z.string().min(1),
 });
 

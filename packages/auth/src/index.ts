@@ -102,7 +102,11 @@ export const createAuth = (env: AuthConfig, database: Database) =>
         metadataProfile: 'mcp-2026-07-28',
       }),
       oauthDeviceAuthorization({ verificationUri: '/device' }),
-      organization(),
+      organization({
+        sendInvitationEmail: async () => {
+          // Console shows copyable invite links; no outbound email in alpha.
+        },
+      }),
       tanstackStartCookies(),
     ],
     rateLimit: {

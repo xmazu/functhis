@@ -22,7 +22,7 @@
     "tailwindcss",
     "web-vitals"
   ],
-  "ignoreUnresolved": ["./routeTree.gen"],
+  "ignoreUnresolved": ["./routeTree.gen", "scripts/check-src-coverage.ts"],
   "ignoreIssues": {
     "apps/**/src/env.server.ts": ["unlisted"],
     "apps/fumadocs/src/components/mdx.tsx": ["duplicates"],
@@ -87,8 +87,8 @@
       "project": ["**/*.ts"]
     },
     "packages/cli": {
-      "entry": ["src/cli.ts"],
-      "project": ["src/**/*.ts"]
+      "entry": ["src/cli.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts"]
     },
     "packages/deploy": {
       "entry": ["src/index.ts"],

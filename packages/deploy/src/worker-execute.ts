@@ -91,7 +91,7 @@ export const writeExecutionAnalytics = (
 export const insertExecutionRow = async (
   bindings: WorkerExecuteBindings,
   input: {
-    callerUserId?: string;
+    callerUserId?: string | null;
     cpuMs: number;
     functionId?: string;
     packageVersionId: string;
@@ -100,13 +100,10 @@ export const insertExecutionRow = async (
     status: string;
   }
 ): Promise<void> => {
-  if (!input.callerUserId) {
-    return;
-  }
   try {
     const database = await createDb(bindings);
     await database.insert(execution).values({
-      callerUserId: input.callerUserId,
+      callerUserId: input.callerUserId ?? null,
       cpuMs: input.cpuMs,
       functionId: input.functionId,
       packageVersionId: input.packageVersionId,

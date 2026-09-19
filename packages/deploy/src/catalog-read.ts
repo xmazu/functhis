@@ -6,7 +6,14 @@ import {
   pkgFunction,
   packageVersion,
 } from '@functhis/db/schema/catalog';
-import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+
+import {
+  canAccessPackage,
+  listMembershipOrganizationIds,
+} from './catalog-access';
+import type { PackageAccessContext, PackageVisibility } from './catalog-access';
 
 export interface CatalogFunctionRow {
   contract: unknown;
@@ -24,9 +31,10 @@ export interface CatalogPackageRow {
   functions: CatalogFunctionRow[];
   handle: string;
   id: string;
+  organizationId: string | null;
   ownerUserId: string;
   packageSlug: string;
-  visibility: 'library' | 'organization' | 'private';
+  visibility: PackageVisibility;
 }
 
 export interface ExecutionSummaryRow {
@@ -40,28 +48,85 @@ export interface ExecutionSummaryRow {
 }
 
 export const canViewPackage = (
-  packageRow: Pick<CatalogPackageRow, 'ownerUserId' | 'visibility'>,
-  viewerUserId: string | null
-): boolean => {
-  if (packageRow.visibility === 'library') {
-    return true;
-  }
-  if (viewerUserId !== null && packageRow.ownerUserId === viewerUserId) {
-    return true;
-  }
-  return false;
-};
+  packageRow: Pick<
+    CatalogPackageRow,
+    'organizationId' | 'ownerUserId' | 'visibility'
+  >,
+  context: PackageAccessContext
+): boolean => canAccessPackage(packageRow, context);
 
 /** GET pages: in local dev, show private URLs without a web session (console cookies do not cross ports). */
 export const canViewCatalogPage = (
-  packageRow: Pick<CatalogPackageRow, 'ownerUserId' | 'visibility'>,
-  viewerUserId: string | null,
+  packageRow: Pick<
+    CatalogPackageRow,
+    'organizationId' | 'ownerUserId' | 'visibility'
+  >,
+  context: PackageAccessContext,
   options?: { relaxInDevelopment?: boolean }
 ): boolean => {
-  if (canViewPackage(packageRow, viewerUserId)) {
+  if (canAccessPackage(packageRow, context)) {
     return true;
   }
   return Boolean(options?.relaxInDevelopment);
+};
+
+const anonymousViewer: PackageAccessContext = {
+  organizationIds: [],
+  userId: null,
+};
+
+/** GET/POST policy for callers without a session (library + optional dev relax). */
+export const canViewCatalogWithoutAuth = (
+  packageRow: Pick<
+    CatalogPackageRow,
+    'organizationId' | 'ownerUserId' | 'visibility'
+  >,
+  options?: { relaxInDevelopment?: boolean }
+): boolean => canViewCatalogPage(packageRow, anonymousViewer, options);
+
+export interface PackageListRow {
+  functionCount: number;
+  handle: string;
+  id: string;
+  organizationId: string | null;
+  ownerUserId: string;
+  packageSlug: string;
+  visibility: PackageVisibility;
+}
+
+export type AccessiblePackageListRow = PackageListRow & {
+  shared: boolean;
+};
+
+const listPackagesGrouped = async (
+  database: Database,
+  where: SQL | undefined
+): Promise<PackageListRow[]> => {
+  const rows = await database
+    .select({
+      functionCount: sql<number>`count(${pkgFunction.id})`.mapWith(Number),
+      handle: user.handle,
+      id: pkg.id,
+      organizationId: pkg.organizationId,
+      ownerUserId: pkg.ownerUserId,
+      packageSlug: pkg.slug,
+      visibility: pkg.visibility,
+    })
+    .from(pkg)
+    .innerJoin(user, eq(pkg.ownerUserId, user.id))
+    .leftJoin(pkgFunction, eq(pkgFunction.packageId, pkg.id))
+    .where(where)
+    .groupBy(
+      pkg.id,
+      user.handle,
+      pkg.slug,
+      pkg.visibility,
+      pkg.organizationId,
+      pkg.ownerUserId
+    )
+    .orderBy(pkg.slug);
+
+  return rows;
 };
 
 export const getPackageBySlugs = async (
@@ -83,6 +148,7 @@ export const getPackageBySlugs = async (
     .select({
       currentVersionId: pkg.currentVersionId,
       id: pkg.id,
+      organizationId: pkg.organizationId,
       ownerUserId: pkg.ownerUserId,
       slug: pkg.slug,
       visibility: pkg.visibility,
@@ -120,10 +186,29 @@ export const getPackageBySlugs = async (
     })),
     handle: owner.handle,
     id: packageRow.id,
+    organizationId: packageRow.organizationId,
     ownerUserId: packageRow.ownerUserId,
     packageSlug: packageRow.slug,
     visibility: packageRow.visibility,
   };
+};
+
+export const listOrgSharedPackages = (
+  database: Database,
+  organizationIds: readonly string[]
+): Promise<PackageListRow[]> => {
+  if (organizationIds.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  return listPackagesGrouped(
+    database,
+    and(
+      isNotNull(pkg.currentVersionId),
+      inArray(pkg.organizationId, [...organizationIds]),
+      eq(pkg.visibility, 'organization')
+    )
+  );
 };
 
 export const getFunctionBySlugs = async (
@@ -142,36 +227,30 @@ export const getFunctionBySlugs = async (
   );
 };
 
-export const listOwnerPackages = async (
+export const listOwnerPackages = (
   database: Database,
   ownerUserId: string
-): Promise<
-  {
-    functionCount: number;
-    handle: string;
-    id: string;
-    packageSlug: string;
-    visibility: 'library' | 'organization' | 'private';
-  }[]
-> => {
-  const rows = await database
-    .select({
-      functionCount: sql<number>`count(${pkgFunction.id})`.mapWith(Number),
-      handle: user.handle,
-      id: pkg.id,
-      packageSlug: pkg.slug,
-      visibility: pkg.visibility,
-    })
-    .from(pkg)
-    .innerJoin(user, eq(pkg.ownerUserId, user.id))
-    .leftJoin(pkgFunction, eq(pkgFunction.packageId, pkg.id))
-    .where(
-      and(eq(pkg.ownerUserId, ownerUserId), isNotNull(pkg.currentVersionId))
-    )
-    .groupBy(pkg.id, user.handle, pkg.slug, pkg.visibility)
-    .orderBy(pkg.slug);
+): Promise<PackageListRow[]> =>
+  listPackagesGrouped(
+    database,
+    and(eq(pkg.ownerUserId, ownerUserId), isNotNull(pkg.currentVersionId))
+  );
 
-  return rows;
+export const listAccessiblePackagesForUser = async (
+  database: Database,
+  userId: string
+): Promise<AccessiblePackageListRow[]> => {
+  const owned = await listOwnerPackages(database, userId);
+  const organizationIds = await listMembershipOrganizationIds(database, userId);
+  const shared = await listOrgSharedPackages(database, organizationIds);
+  const ownedIds = new Set(owned.map((row) => row.id));
+  const merged: AccessiblePackageListRow[] = [
+    ...owned.map((row) => ({ ...row, shared: false as const })),
+    ...shared
+      .filter((row) => !ownedIds.has(row.id))
+      .map((row) => ({ ...row, shared: true as const })),
+  ];
+  return merged.toSorted((a, b) => a.packageSlug.localeCompare(b.packageSlug));
 };
 
 export const listRecentExecutions = async (
