@@ -35,11 +35,11 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
   - [x] Quota constants (`cpuMs`, `subRequests`, request/response size) in `@functhis/deploy`
   - [x] Hosted execute (phase 5 POST; phase 6 MCP done)
 
-- [ ] **5. Public URLs + console**
+- [x] **5. Public URLs + console**
   - [x] `GET` / `POST` `functhis.now/@owner/package[/function]`
   - [x] Thin console: list, URL, MCP snippet, executions
 
-- [ ] **6. MCP** (`apps/mcp`)
+- [x] **6. MCP** (`apps/mcp`)
   - [x] Worker app: `functhis-mcp`, Wrangler bindings (Hyperdrive, bundle KV, `LOADER`, Analytics Engine)
   - [x] Dynamic Worker execute helpers in `apps/mcp/src/execute.ts`
   - [x] `POST mcp.functhis.now/mcp` + OAuth protected resource
@@ -47,10 +47,10 @@ Someone who is not us can: `functhis deploy`, open `https://functhis.now/@them/p
   - [x] Wire `execute` → `LOADER.get(versionId)` + execution rows + AE
   - [x] Ids = `@owner/package/function`; `mine` only
 
-- [ ] **7. CLI**
-  - [ ] `functhis login` (device)
-  - [ ] `functhis deploy`
-  - [ ] `functhis run` / `dev`
+- [x] **7. CLI**
+  - [x] `functhis login` (device)
+  - [x] `functhis deploy`
+  - [x] `functhis run` / `dev`
 
 - [ ] **8. Sharing**
   - [ ] Turn on org / library filters

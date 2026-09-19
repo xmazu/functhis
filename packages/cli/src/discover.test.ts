@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { discoverProject } from './discover';
+import { discoverProject, filesManifest } from './discover';
 
 const tempRoots: string[] = [];
 
@@ -19,6 +19,15 @@ afterEach(async () => {
       .splice(0)
       .map((root) => rm(root, { force: true, recursive: true }))
   );
+});
+
+describe('filesManifest', () => {
+  test('reports utf-8 byte length per path', () => {
+    expect(filesManifest({ 'a.ts': 'hi', 'b.ts': '你好' })).toEqual([
+      { bytes: 2, path: 'a.ts' },
+      { bytes: 6, path: 'b.ts' },
+    ]);
+  });
 });
 
 describe('discoverProject', () => {
@@ -86,6 +95,40 @@ describe('discoverProject', () => {
     );
 
     await expect(discoverProject(root)).rejects.toThrow(/No functions found/u);
+  });
+
+  test('derives kebab-case slug from file name', async () => {
+    const root = await makeProject();
+    await writeFile(
+      path.join(root, 'generatePresentation.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+
+    const { functions } = await discoverProject(root);
+    expect(functions[0]?.slug).toBe('generate-presentation');
+  });
+
+  test('matches hello-world author contract', async () => {
+    const projectRoot = path.join(
+      import.meta.dirname,
+      '../../../examples/hello-world'
+    );
+    const { functions } = await discoverProject(projectRoot);
+    expect(functions).toHaveLength(1);
+    expect(functions[0]).toMatchObject({
+      contract: {
+        description: 'Greet someone by name.',
+        inputSchema: {
+          properties: { name: { type: 'string' } },
+          required: [],
+          type: 'object',
+        },
+      },
+      exportName: 'default',
+      path: 'hello.ts',
+      slug: 'hello',
+    });
   });
 
   test('prefers functions/ directory when present', async () => {

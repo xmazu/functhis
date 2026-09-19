@@ -1,0 +1,29 @@
+import { describe, expect, test } from 'bun:test';
+
+import { parseFlag, parseJsonInput } from './argv';
+
+describe('parseFlag', () => {
+  test('reads a flag value', () => {
+    expect(parseFlag(['--slug', 'hello', '--other'], '--slug')).toBe('hello');
+  });
+});
+
+describe('parseJsonInput', () => {
+  test('defaults to empty object', () => {
+    expect(parseJsonInput()).toEqual({ ok: true, value: {} });
+  });
+
+  test('parses JSON objects', () => {
+    expect(parseJsonInput('{"name":"Ada"}')).toEqual({
+      ok: true,
+      value: { name: 'Ada' },
+    });
+  });
+
+  test('rejects invalid JSON', () => {
+    expect(parseJsonInput('{bad')).toEqual({
+      error: 'Invalid JSON for --input',
+      ok: false,
+    });
+  });
+});

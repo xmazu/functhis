@@ -1,4 +1,5 @@
 import { validateDeployBearerToken } from '@functhis/auth';
+import { user } from '@functhis/db/schema/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import {
   bundleKvKey,
@@ -167,6 +168,16 @@ export const handleDeployFinalize = async (
     return new Response('Not Found', { status: 404 });
   }
 
+  const [owner] = await database
+    .select({ handle: user.handle })
+    .from(user)
+    .where(eq(user.id, packageRow.ownerUserId))
+    .limit(1);
+
+  if (!owner?.handle) {
+    return new Response('Owner handle not found', { status: 500 });
+  }
+
   const kvKey = bundleKvKey(parsed.data.bundleHash);
   const kvPayload = JSON.stringify({
     mainModule: parsed.data.bundle.mainModule,
@@ -248,7 +259,10 @@ export const handleDeployFinalize = async (
     bundleHash: parsed.data.bundleHash,
     bundleKvKey: kvKey.replace(BUNDLE_KV_PREFIX, ''),
     currentVersionId: version.id,
+    functions: parsed.data.contracts.map((fn) => ({ slug: fn.slug })),
+    handle: owner.handle,
     packageId: packageRow.id,
+    slug: packageRow.slug,
     versionId: version.id,
   });
 };

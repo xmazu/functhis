@@ -1,5 +1,6 @@
 export {
   deployFinalizeBodySchema,
+  deployFinalizeResponseSchema,
   deployFunctionContractSchema,
   deployStartBodySchema,
   executeBodySchema,
@@ -7,6 +8,7 @@ export {
 } from '@functhis/deploy';
 export type {
   DeployFinalizeBody,
+  DeployFinalizeResponse,
   DeployStartBody,
   WorkerLoaderBundle,
 } from '@functhis/deploy';

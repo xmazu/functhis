@@ -2,12 +2,19 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import {
+  deployFinalizeResponseSchema,
+  isValidPackageSlug,
+} from '@functhis/deploy';
+
 import { loadAuthenticatedConfig } from './auth-session';
 import { buildWorkerBundle } from './build-bundle';
 import { hashSourceTree } from './bundle';
 import { resolveWebUrl } from './config';
 import type { CliConfig } from './config';
+import { formatDeployResult } from './deploy-output';
 import { discoverProject, filesManifest } from './discover';
+import { formatRunResponseBody } from './run-output';
 
 const authorizedFetch = (
   config: CliConfig,
@@ -22,6 +29,23 @@ const authorizedFetch = (
     },
   });
 
+const INVALID_PACKAGE_SLUG_MESSAGE =
+  'Invalid package slug. Use lowercase letters, numbers, and hyphens (e.g. hello-world).';
+
+export const resolvePackageSlug = (
+  projectRoot: string,
+  explicit?: string
+): string => {
+  if (explicit !== undefined) {
+    if (!isValidPackageSlug(explicit)) {
+      throw new Error(INVALID_PACKAGE_SLUG_MESSAGE);
+    }
+    return explicit;
+  }
+  const base = projectRoot.split('/').at(-1) ?? 'package';
+  return isValidPackageSlug(base) ? base : 'package';
+};
+
 export const runDeploy = async (options?: {
   projectRoot?: string;
   slug?: string;
@@ -32,8 +56,8 @@ export const runDeploy = async (options?: {
   const projectRoot = options?.projectRoot
     ? path.resolve(process.cwd(), options.projectRoot)
     : process.cwd();
-  const slug = options?.slug ?? projectRoot.split('/').at(-1) ?? 'package';
-  const webUrl = options?.webUrl ?? resolveWebUrl(config);
+  const slug = resolvePackageSlug(projectRoot, options?.slug);
+  const webUrl = resolveWebUrl(config, options?.webUrl);
 
   const { files, functions } = await discoverProject(projectRoot);
   const bundle = await buildWorkerBundle({ files, functions });
@@ -88,14 +112,15 @@ export const runDeploy = async (options?: {
     throw new Error(await finalizeResponse.text());
   }
 
-  const finalized = (await finalizeResponse.json()) as {
-    currentVersionId: string;
-    packageId: string;
-  };
+  const finalizedJson = await finalizeResponse.json();
+  const parsed = deployFinalizeResponseSchema.safeParse(finalizedJson);
+  if (!parsed.success) {
+    throw new Error('Deploy finalize returned an unexpected response');
+  }
 
-  console.log(
-    `Deployed package ${finalized.packageId} version ${finalized.currentVersionId}`
-  );
+  for (const line of formatDeployResult(webUrl, parsed.data)) {
+    console.log(line);
+  }
 };
 
 export const runDev = async (options?: {
@@ -135,7 +160,8 @@ export const runDev = async (options?: {
         method: 'POST',
       })
     );
-    console.log(await response.text());
+    const bodyText = await response.text();
+    console.log(formatRunResponseBody(response, bodyText));
   } finally {
     await rm(tempDir, { force: true, recursive: true });
   }

@@ -5,6 +5,7 @@ import {
   DEPLOY_API_RESOURCE,
   loadConfig,
   resolveConsoleUrl,
+  resolveWebUrl,
   saveConfig,
 } from './config';
 import type { CliConfig } from './config';
@@ -26,13 +27,23 @@ interface TokenResponse {
   refresh_token?: string;
 }
 
+const tryOpenVerificationUrl = (url: string): void => {
+  try {
+    if (typeof Bun !== 'undefined' && typeof Bun.open === 'function') {
+      Bun.open(url);
+    }
+  } catch {
+    // ignore
+  }
+};
+
 export const runLogin = async (options?: {
   consoleUrl?: string;
   webUrl?: string;
 }): Promise<void> => {
   const existing = await loadConfig();
-  const consoleUrl = options?.consoleUrl ?? resolveConsoleUrl(existing);
-  const webUrl = options?.webUrl ?? existing?.webUrl ?? 'http://localhost:3001';
+  const consoleUrl = resolveConsoleUrl(existing, options?.consoleUrl);
+  const webUrl = resolveWebUrl(existing, options?.webUrl);
 
   const deviceResponse = await fetch(`${consoleUrl}/api/auth/device/code`, {
     body: new URLSearchParams({
@@ -53,6 +64,7 @@ export const runLogin = async (options?: {
     `${consoleUrl}/device?user_code=${encodeURIComponent(device.user_code)}`;
 
   console.log(`Open ${verifyUrl} and approve code ${device.user_code}`);
+  tryOpenVerificationUrl(verifyUrl);
 
   const intervalMs = (device.interval ?? 5) * 1000;
   const deadline = Date.now() + device.expires_in * 1000;

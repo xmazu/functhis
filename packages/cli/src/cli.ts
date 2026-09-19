@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { parseFlag, parseJsonInput } from './argv';
 import { runDeploy, runDev } from './deploy';
 import { runLogin } from './login';
 
@@ -8,15 +9,20 @@ const usage = `functhis — deploy TypeScript functions
 Usage:
   functhis login [--console-url URL] [--web-url URL]
   functhis deploy [--slug NAME] [--web-url URL] [--project-root PATH]
-  functhis dev [--slug FUNCTION] [--project-root PATH]
+  functhis run|dev [--slug FUNCTION] [--input JSON] [--project-root PATH]
 `;
 
-const parseFlag = (args: string[], name: string): string | undefined => {
-  const index = args.indexOf(name);
-  if (index === -1) {
-    return undefined;
+const runLocal = async (rest: string[]): Promise<void> => {
+  const inputRaw = parseFlag(rest, '--input');
+  const parsedInput = parseJsonInput(inputRaw);
+  if (!parsedInput.ok) {
+    throw new Error(parsedInput.error);
   }
-  return args[index + 1];
+  await runDev({
+    functionSlug: parseFlag(rest, '--slug'),
+    input: parsedInput.value,
+    projectRoot: parseFlag(rest, '--project-root'),
+  });
 };
 
 const main = async (): Promise<void> => {
@@ -39,11 +45,9 @@ const main = async (): Promise<void> => {
       });
       return;
     }
+    case 'run':
     case 'dev': {
-      await runDev({
-        functionSlug: parseFlag(rest, '--slug'),
-        projectRoot: parseFlag(rest, '--project-root'),
-      });
+      await runLocal(rest);
       return;
     }
     default: {

@@ -106,8 +106,28 @@ bun run dev
 | --- | --- | --- |
 | Web | [http://localhost:3001](http://localhost:3001) | Marketing, public pages |
 | Console | [http://localhost:3002](http://localhost:3002) | OAuth issuer, login, consent, device |
+| MCP | [http://localhost:3003](http://localhost:3003) | MCP `search` / `execute` (local) |
 
-`functhis deploy` stores a **content hash** of the source tree in Postgres and puts the runnable bundle in KV.
+### CLI
+
+From the repo (or after `bun run --filter @functhis/cli build`):
+
+```bash
+functhis login
+functhis deploy
+functhis run --slug my-function --input '{"name":"Ada"}'
+```
+
+Production defaults: `https://console.functhis.now` and `https://functhis.now`. Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.
+
+Local deploy against `bun run dev`:
+
+```bash
+functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+bun run example:hello:deploy
+```
+
+`functhis deploy` stores a **content hash** of the source tree in Postgres, puts the runnable bundle in KV, and prints public URLs plus MCP ids.
 
 Run a single app:
 
@@ -243,7 +263,7 @@ functhis/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # Shared oRPC / business logic (multi-app only)
 │   ├── auth/        # createAuth, CIMD fetch, CLI client seed, deploy bearer
-│   ├── cli/         # functhis login, deploy, local dev stub
+│   ├── cli/         # functhis login, deploy, run/dev
 │   └── db/          # Database schema & queries
 ```
 
@@ -258,5 +278,5 @@ functhis/
 - `bun run db:generate`: Generate Drizzle migrations from schema
 - `bun run db:migrate:local`: Apply Drizzle migrations to Neon
 - `bun run example:hello:dev`: Run [`examples/hello-world`](examples/hello-world) locally (no Cloudflare)
-- `bun run example:hello:deploy`: Deploy hello-world via CLI (`functhis login` + `bun run dev`)
+- `bun run example:hello:deploy`: Deploy hello-world via CLI (passes localhost URLs; log in with `functhis login --console-url http://localhost:3002 --web-url http://localhost:3001` first)
 - `bun run check`: Run Oxlint and Oxfmt

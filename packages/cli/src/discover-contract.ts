@@ -97,6 +97,23 @@ const stripUndefinedFromUnion = (type: Type): Type | undefined => {
   return members[0];
 };
 
+const booleanSchemaFromType = (type: Type): Record<string, unknown> | null => {
+  if (type.isBoolean()) {
+    return { type: 'boolean' };
+  }
+  if (!type.isUnion()) {
+    return null;
+  }
+  const unionMembers = type.getUnionTypes();
+  if (
+    unionMembers.length > 0 &&
+    unionMembers.every((member) => member.isBooleanLiteral())
+  ) {
+    return { type: 'boolean' };
+  }
+  return null;
+};
+
 export const typeToInputSchema = (
   type: Type,
   options?: { allowUndefinedUnion: boolean }
@@ -106,6 +123,10 @@ export const typeToInputSchema = (
       ? (stripUndefinedFromUnion(type) ?? type)
       : type;
 
+  const booleanSchema = booleanSchemaFromType(resolved);
+  if (booleanSchema) {
+    return booleanSchema;
+  }
   if (resolved.isUnion()) {
     return undefined;
   }
@@ -117,9 +138,6 @@ export const typeToInputSchema = (
   }
   if (resolved.isNumber()) {
     return { type: 'number' };
-  }
-  if (resolved.isBoolean()) {
-    return { type: 'boolean' };
   }
   if (resolved.isArray()) {
     const elementType = resolved.getArrayElementType();

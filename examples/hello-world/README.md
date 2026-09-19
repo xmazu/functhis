@@ -4,7 +4,13 @@ Minimal package for local CLI smoke tests. One handler (`hello.ts` at the projec
 
 ## Prerequisites
 
-Repo root: `bun run dev` and CLI logged in (`functhis login`). See [README.md](../../README.md).
+Repo root: `bun run dev`. For deploy, log in against local console:
+
+```bash
+functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+```
+
+See [README.md](../../README.md).
 
 From repo root:
 
@@ -16,14 +22,20 @@ bun run example:hello:deploy
 Or from this directory (pass `--project-root` when using `bun run --filter @functhis/cli` from the monorepo root):
 
 ```bash
-bun run --filter @functhis/cli dev -- dev --slug hello --project-root examples/hello-world
-bun run --filter @functhis/cli dev -- deploy --slug hello-world --project-root examples/hello-world
+bun run --filter @functhis/cli dev -- run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
+bun run --filter @functhis/cli dev -- deploy --slug hello-world --project-root examples/hello-world --console-url http://localhost:3002 --web-url http://localhost:3001
 ```
 
 ## Local run (no Cloudflare)
 
 ```bash
 bun run example:hello:dev
+```
+
+With JSON input:
+
+```bash
+bun packages/cli/src/cli.ts run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
 ```
 
 ## Deploy
@@ -34,12 +46,12 @@ Deploy hashes the source tree, uploads the compiled bundle to KV, and records a 
 bun run example:hello:deploy
 ```
 
+The CLI prints package and function URLs on `https://functhis.now` (or your `--web-url`).
+
 ## Execute (hosted)
 
 After deploy:
 
-- **MCP (local):** `bun run dev` includes `functhis-mcp` on `http://localhost:3003/mcp`. Connect MCP Inspector, complete OAuth against console (`http://localhost:3002`), then `search` (try query `greet` or `hello`) and `execute` with the returned `@handle/hello-world/hello` id.
-- **HTTP (phase 5):** `POST functhis.now/@owner/package/function`
+- **HTTP:** open the printed URL or `POST` `/@owner/hello-world/hello` on web
+- **MCP (local):** `bun run dev` includes `functhis-mcp` on `http://localhost:3003/mcp`. Connect MCP Inspector, complete OAuth against console (`http://localhost:3002`), then `search` (try query `greet` or `hello`) and `execute` with the returned `@handle/hello-world/hello` id
 - **MCP (production):** `https://mcp.functhis.now/mcp`
-
-Until phase 5 ships, use `bun run example:hello:dev` for local runs without MCP.

@@ -47,14 +47,17 @@ export {
 } from './quotas';
 export {
   CLI_CLIENT_ID,
+  CONSOLE_ORIGIN_PRODUCTION,
   DEPLOY_API_RESOURCE,
   MCP_RESOURCE_PRODUCTION,
 } from './oauth';
 export {
   deployFinalizeBodySchema,
+  deployFinalizeResponseSchema,
   deployFunctionContractSchema,
   deployStartBodySchema,
   executeBodySchema,
+  isValidPackageSlug,
   runtimeExecuteBodySchema,
   workerLoaderBundleSchema,
 } from './schemas';
@@ -64,6 +67,7 @@ export {
 } from './internal-mcp-execute';
 export type {
   DeployFinalizeBody,
+  DeployFinalizeResponse,
   DeployStartBody,
   RuntimeExecuteBody,
   WorkerLoaderBundle,

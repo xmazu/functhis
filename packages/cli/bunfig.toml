@@ -1,0 +1,3 @@
+[test]
+coveragePath = "src"
+coverageSkip = ["../**", "login.ts", "cli.ts", "**/private/**", "**/var/**"]

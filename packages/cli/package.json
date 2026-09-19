@@ -8,7 +8,8 @@
   "scripts": {
     "build": "bun build src/cli.ts --outdir dist --target bun",
     "check-types": "tsc --noEmit",
-    "dev": "bun run src/cli.ts"
+    "dev": "bun run src/cli.ts",
+    "test": "bun scripts/check-src-coverage.ts"
   },
   "dependencies": {
     "@functhis/deploy": "workspace:*",

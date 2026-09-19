@@ -41,6 +41,17 @@ export const deployFinalizeBodySchema = z.object({
     .regex(/^[0-9a-f]+$/iu),
 });
 
+export const deployFinalizeResponseSchema = z.object({
+  bundleHash: z.string().min(8).max(128),
+  bundleKvKey: z.string().min(1),
+  currentVersionId: z.string().min(1),
+  functions: z.array(z.object({ slug: z.string().min(1) })).min(1),
+  handle: z.string().min(1),
+  packageId: z.string().min(1),
+  slug: z.string().min(1),
+  versionId: z.string().min(1),
+});
+
 export const executeBodySchema = z.object({
   functionSlug: z.string().min(1),
   input: z.unknown().optional(),
@@ -57,5 +68,12 @@ export const runtimeExecuteBodySchema = z.object({
 
 export type DeployStartBody = z.infer<typeof deployStartBodySchema>;
 export type DeployFinalizeBody = z.infer<typeof deployFinalizeBodySchema>;
+export type DeployFinalizeResponse = z.infer<
+  typeof deployFinalizeResponseSchema
+>;
 export type WorkerLoaderBundle = z.infer<typeof workerLoaderBundleSchema>;
+
+/** Same rule as `deployStartBodySchema.slug`. */
+export const isValidPackageSlug = (slug: string): boolean =>
+  deployStartBodySchema.shape.slug.safeParse(slug).success;
 export type RuntimeExecuteBody = z.infer<typeof runtimeExecuteBodySchema>;

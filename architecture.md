@@ -76,9 +76,9 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 Thin owner app at `apps/console`. Not the shareable object. Visual system: [apps/console/DESIGN.md](apps/console/DESIGN.md).
 
-Alpha: GitHub login, MCP consent, device approval, signed-in home. No package list yet.
+Alpha: GitHub login, MCP consent, device approval, signed-in home, owner package list at `/packages` (URLs, MCP snippet, recent executions).
 
-Try-it lives on the public function page. No billing, org admin, or catalog in alpha.
+Try-it lives on the public function page. No billing, org admin, or library catalog in alpha.
 
 ## MCP
 
@@ -171,6 +171,8 @@ CLI → deploy API
   → insert immutable package_version, point package.currentVersionId
 ```
 
+**Author source (CLI discovery):** one default export per `.ts` / `.tsx` file; function slug from the file name (kebab-case); optional JSDoc description on the export; optional `input` object parameter (TypeScript type → JSON Schema in `contract`). Root-level sources or everything under `functions/` when that directory exists. See [examples/README.md](examples/README.md).
+
 Execute (public POST and MCP `execute`):
 
 ```text
@@ -219,14 +221,15 @@ Quotas fail closed from day one: CPU, concurrency, request/response size.
 ## Repo
 
 ```text
-apps/web          hosted origin: public pages + deploy API + POST (public URLs later)
+apps/web          hosted origin: public pages + deploy API + public POST execute
 apps/console      OAuth issuer + thin dashboard
 apps/mcp          hosted: mcp.functhis.now, MCP tools + Worker Loader execute
-apps/cli          OSS: login, deploy, local run (later)
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
+packages/cli      OSS: login, deploy, local run/dev
 packages/db       schema
 packages/api      shared oRPC / business logic (see below)
+packages/deploy   deploy schemas, bundle hashing, catalog reads, execute helpers
 packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
 packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts

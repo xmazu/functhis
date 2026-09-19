@@ -20,7 +20,8 @@ export interface DiscoveredFunction {
   slug: string;
 }
 
-const slugFromPath = (filePath: string): string => {
+/** Function slug from a project-relative `.ts` / `.tsx` path (file name, kebab-case). */
+export const slugFromRelativePath = (filePath: string): string => {
   const base = filePath.replace(/\.tsx?$/u, '');
   const segments = base.split('/');
   const last = segments.at(-1) ?? base;
@@ -102,7 +103,7 @@ export const discoverProject = async (
 
   for (const { content, relativePath } of fileEntries) {
     files[relativePath] = content;
-    const slug = slugFromPath(relativePath);
+    const slug = slugFromRelativePath(relativePath);
     if (!slug) {
       continue;
     }
