@@ -1,3 +1,4 @@
+export { publicFunctionPath, publicPackagePath } from './public-paths';
 export {
   bundleKvKey,
   hashSourceTree,
@@ -83,13 +84,13 @@ export {
   type ExistingPackageSharing,
   type ResolvedDeploySharing,
 } from './deploy-sharing';
+export { type PackageVisibility } from './package-visibility';
 export {
   buildPackageAccessContext,
   canAccessPackage,
   listMembershipOrganizationIds,
   type PackageAccessContext,
   type PackageAccessRow,
-  type PackageVisibility,
 } from './catalog-access';
 export {
   canViewCatalogPage,
@@ -101,8 +102,6 @@ export {
   listOrgSharedPackages,
   listOwnerPackages,
   listRecentExecutions,
-  publicFunctionPath,
-  publicPackagePath,
   type AccessiblePackageListRow,
   type CatalogFunctionRow,
   type CatalogPackageRow,

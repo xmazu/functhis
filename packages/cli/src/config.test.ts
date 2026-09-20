@@ -6,7 +6,7 @@ import path from 'node:path';
 import {
   CONSOLE_ORIGIN_PRODUCTION,
   DEPLOY_API_RESOURCE,
-} from '@functhis/deploy';
+} from '@functhis/deploy/oauth';
 
 import type { CliConfig } from './config';
 import {

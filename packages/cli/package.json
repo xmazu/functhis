@@ -1,25 +1,44 @@
 {
-  "name": "@functhis/cli",
-  "version": "0.0.0",
+  "name": "functhis",
+  "version": "0.1.0",
+  "description": "Deploy TypeScript functions to Functhis",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openenvx/functhis.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "functhis": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
-    "build": "bun build src/cli.ts --outdir dist --target bun",
+    "build": "bun run scripts/build.ts",
     "check-types": "tsc --noEmit",
     "dev": "bun run src/cli.ts",
+    "prepack": "bun run build",
+    "pack-smoke": "bun scripts/pack-smoke.ts",
     "test": "bun scripts/check-src-coverage.ts"
   },
   "dependencies": {
     "@functhis/deploy": "workspace:*",
     "esbuild": "^0.25.12",
     "ts-morph": "^26.0.0",
+    "typescript": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@functhis/config": "workspace:*",
-    "@types/bun": "latest",
-    "typescript": "catalog:"
+    "@types/bun": "latest"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

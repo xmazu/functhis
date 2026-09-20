@@ -1,9 +1,9 @@
-import type { DeployFinalizeResponse } from '@functhis/deploy';
+import { formatFunctionId } from '@functhis/deploy/function-id';
 import {
-  formatFunctionId,
   publicFunctionPath,
   publicPackagePath,
-} from '@functhis/deploy';
+} from '@functhis/deploy/public-paths';
+import type { DeployFinalizeResponse } from '@functhis/deploy/schemas';
 
 export const formatDeployResult = (
   webOrigin: string,

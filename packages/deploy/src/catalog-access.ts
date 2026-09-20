@@ -2,7 +2,9 @@ import type { Database } from '@functhis/db';
 import { member } from '@functhis/db/schema/auth';
 import { eq } from 'drizzle-orm';
 
-export type PackageVisibility = 'library' | 'organization' | 'private';
+import type { PackageVisibility } from './package-visibility';
+
+export type { PackageVisibility } from './package-visibility';
 
 export interface PackageAccessRow {
   organizationId: string | null;

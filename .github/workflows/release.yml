@@ -1,0 +1,181 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semver bump for the functhis CLI
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      skip_bump:
+        description: Skip version/changelog/tag and publish the current package version (retry a failed publish)
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Version, publish, and release
+    runs-on: ubuntu-latest
+    env:
+      HUSKY: '0'
+      PUBLISHED_PACKAGE: packages/cli
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Ensure current npm CLI
+        run: npm install -g npm@latest && npm --version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Compute next version
+        id: version
+        run: |
+          if [ "${{ inputs.skip_bump }}" = "true" ]; then
+            VERSION=$(bun -e "console.log(require('./packages/cli/package.json').version)")
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "Publishing package.json version (skip_bump): $VERSION"
+            exit 0
+          fi
+          BUMP="${{ inputs.bump }}"
+          VERSION=$(bun -e "
+            const { execSync } = require('node:child_process');
+            const bump = process.argv[1];
+            const bumpSemver = (version, kind) => {
+              const [maj, min, patch] = version.split('.').map(Number);
+              if (kind === 'major') return \`\${maj + 1}.0.0\`;
+              if (kind === 'minor') return \`\${maj}.\${min + 1}.0\`;
+              return \`\${maj}.\${min}.\${patch + 1}\`;
+            };
+            const latestTag = execSync(\"git tag -l 'v[0-9]*' --sort=-v:refname\", { encoding: 'utf8' })
+              .trim()
+              .split(/\\n/)
+              .filter(Boolean)[0];
+            if (!latestTag) {
+              console.log(require('./packages/cli/package.json').version);
+              process.exit(0);
+            }
+            const latestVersion = latestTag.replace(/^v/, '');
+            let raw = execSync(\`bunx git-cliff --bump \${bump} --bumped-version\`, { encoding: 'utf8' }).trim();
+            let version = raw.replace(/^v/, '');
+            if (version === latestVersion) {
+              version = bumpSemver(latestVersion, bump);
+              console.error(
+                \`git-cliff reported no unreleased commits (stayed at \${latestVersion}); manual release bump -> \${version}\`,
+              );
+            }
+            console.log(version);
+          " "$BUMP")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Next version: $VERSION"
+
+      - name: Bump CLI package version
+        if: ${{ !inputs.skip_bump }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bun -e "
+            const fs = require('node:fs');
+            const file = './packages/cli/package.json';
+            const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+            json.version = process.argv[1];
+            fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n');
+          " "$VERSION"
+
+      - name: Update changelog
+        if: ${{ !inputs.skip_bump }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bunx git-cliff --tag "v$VERSION" -o CHANGELOG.md
+
+      - name: Build CLI
+        run: bun run --filter functhis build
+
+      - name: Lint and type check
+        run: bun run check && bun run check-types
+
+      - name: Test
+        run: bun test packages/auth packages/deploy packages/cli apps/mcp/src scripts apps/console/src/lib
+
+      - name: Pack smoke
+        run: bun run --filter functhis pack-smoke
+
+      - name: Verify package repository metadata
+        run: |
+          EXPECTED="git+https://github.com/${{ github.repository }}.git"
+          REPO_URL=$(bun -e "console.log(require('./packages/cli/package.json').repository.url)")
+          if [ "$REPO_URL" != "$EXPECTED" ]; then
+            echo "ERROR: packages/cli repository.url is '$REPO_URL', expected '$EXPECTED'"
+            exit 1
+          fi
+
+      - name: Commit version bump and tag
+        if: ${{ !inputs.skip_bump }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md packages/cli/package.json
+          git commit -m "chore(release): v$VERSION"
+          git tag "v$VERSION"
+          git push
+          git push origin "v$VERSION"
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          NODE_AUTH_TOKEN="$(printf '%s' "${NODE_AUTH_TOKEN}" | tr -d '[:space:]')"
+          export NODE_AUTH_TOKEN
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "ERROR: GitHub secret NPM_TOKEN is missing or empty for this repository."
+            exit 1
+          fi
+          printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "${HOME}/.npmrc"
+          NAME=$(bun -e "console.log(require('./packages/cli/package.json').name)")
+          VERSION=$(bun -e "console.log(require('./packages/cli/package.json').version)")
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "Skipping $NAME@$VERSION (already on npm)"
+          else
+            echo "Publishing packages/cli ($NAME@$VERSION)"
+            bun packages/cli/scripts/prepare-npm-manifest.ts
+            npm publish --access public --provenance ./packages/cli
+            git checkout -- packages/cli/package.json
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bunx git-cliff --latest --strip header > release-notes.md
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md

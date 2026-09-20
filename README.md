@@ -110,13 +110,15 @@ bun run dev
 
 ### CLI
 
-From the repo (or after `bun run --filter @functhis/cli build`):
+Install from npm (`npx functhis`, `bunx functhis`, or `npm i -g functhis`), or from the monorepo after `bun run --filter functhis build`:
 
 ```bash
 functhis login
 functhis deploy
 functhis run --slug my-function --input '{"name":"Ada"}'
 ```
+
+Monorepo dev without building: `bun run --filter functhis dev -- login`
 
 Production defaults: `https://console.functhis.now` and `https://functhis.now`. Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.
 
@@ -239,7 +241,7 @@ Do not create customer packages or dispatch namespaces in Terraform. Package dep
 Use the repo example package [`examples/hello-world`](examples/hello-world) (see [examples/README.md](examples/README.md)).
 
 1. Start stack: `bun run dev` (web + console + MCP on port 3003).
-2. Log in: `bun run --filter @functhis/cli dev -- login` (device flow against console; tokens in `~/.config/functhis/config.json`).
+2. Log in: `bun run --filter functhis dev -- login` (device flow against console; tokens in `~/.config/functhis/config.json`).
 3. `bun run example:hello:dev` then `bun run example:hello:deploy` (see [`examples/hello-world`](examples/hello-world)).
 4. Hosted execute: MCP `search` / `execute` at `http://localhost:3003/mcp` (OAuth via console); public `POST` (phase 5).
 5. Deploy again for v2; rollback by updating `package.currentVersionId` in Postgres to the prior version id (no rebuild if that version’s KV key still exists).

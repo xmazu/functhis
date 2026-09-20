@@ -1,5 +1,5 @@
 {
-  "name": "functhis",
+  "name": "@functhis/monorepo",
   "private": true,
   "workspaces": {
     "packages": [
@@ -46,6 +46,7 @@
     "example:hello:deploy": "bun packages/cli/src/cli.ts deploy --slug hello-world --project-root examples/hello-world --web-url http://localhost:3001",
     "ultracite:staged": "sh .husky/ultracite-staged",
     "knip": "knip",
+    "changelog": "git-cliff --unreleased",
     "precommit": "bun run check:staged && bun run check-types --filter='...[HEAD]' --filter='!./apps/*'",
     "prepare": "husky"
   },
@@ -56,6 +57,7 @@
     "@cloudflare/workers-types": "^5.20260906.1",
     "@functhis/config": "workspace:*",
     "@types/node": "^26.4.1",
+    "git-cliff": "^2.12.0",
     "husky": "^9.1.7",
     "knip": "^6.29.0",
     "oxfmt": "latest",

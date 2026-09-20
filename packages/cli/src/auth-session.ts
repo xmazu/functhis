@@ -1,4 +1,4 @@
-import { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy';
+import { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy/oauth';
 
 import { loadConfig, resolveConsoleUrl, saveConfig } from './config';
 import type { CliConfig } from './config';

@@ -19,11 +19,11 @@ bun run example:hello:dev
 bun run example:hello:deploy
 ```
 
-Or from this directory (pass `--project-root` when using `bun run --filter @functhis/cli` from the monorepo root):
+Or from this directory (pass `--project-root` when using `bun run --filter functhis` from the monorepo root):
 
 ```bash
-bun run --filter @functhis/cli dev -- run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
-bun run --filter @functhis/cli dev -- deploy --slug hello-world --project-root examples/hello-world --console-url http://localhost:3002 --web-url http://localhost:3001
+bun run --filter functhis dev -- run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
+bun run --filter functhis dev -- deploy --slug hello-world --project-root examples/hello-world --console-url http://localhost:3002 --web-url http://localhost:3001
 ```
 
 ## Local run (no Cloudflare)

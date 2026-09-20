@@ -9,6 +9,7 @@ import {
   saveConfig,
 } from './config';
 import type { CliConfig } from './config';
+import { openUrl } from './open-url';
 
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
@@ -26,16 +27,6 @@ interface TokenResponse {
   expires_in?: number;
   refresh_token?: string;
 }
-
-const tryOpenVerificationUrl = (url: string): void => {
-  try {
-    if (typeof Bun !== 'undefined' && typeof Bun.open === 'function') {
-      Bun.open(url);
-    }
-  } catch {
-    // ignore
-  }
-};
 
 export const runLogin = async (options?: {
   consoleUrl?: string;
@@ -64,7 +55,7 @@ export const runLogin = async (options?: {
     `${consoleUrl}/device?user_code=${encodeURIComponent(device.user_code)}`;
 
   console.log(`Open ${verifyUrl} and approve code ${device.user_code}`);
-  tryOpenVerificationUrl(verifyUrl);
+  openUrl(verifyUrl);
 
   const intervalMs = (device.interval ?? 5) * 1000;
   const deadline = Date.now() + device.expires_in * 1000;

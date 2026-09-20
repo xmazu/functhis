@@ -5,7 +5,7 @@ import path from 'node:path';
 import {
   deployFinalizeResponseSchema,
   isValidPackageSlug,
-} from '@functhis/deploy';
+} from '@functhis/deploy/schemas';
 
 import { loadAuthenticatedConfig } from './auth-session';
 import { buildWorkerBundle } from './build-bundle';

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { parseFlag, parseJsonInput } from './argv';
 import { runDeploy, runDev } from './deploy';
