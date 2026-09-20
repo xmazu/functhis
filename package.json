@@ -47,7 +47,7 @@
     "ultracite:staged": "sh .husky/ultracite-staged",
     "knip": "knip",
     "changelog": "git-cliff --unreleased",
-    "precommit": "bun run check && bun run check-types --filter='...[HEAD]' --filter='!./apps/*'",
+    "precommit": "bun run check && bun run check-types --filter='...[HEAD]'",
     "prepare": "husky"
   },
   "dependencies": {

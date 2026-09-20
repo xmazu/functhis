@@ -27,11 +27,13 @@ const OrganizationDetailPage = () => {
     }
     const load = async (): Promise<void> => {
       const { data } = await authClient.organization.listMembers({
-        organizationId: organization.id,
+        query: {
+          organizationId: organization.id,
+        },
       });
       if (data) {
         setMembers(
-          data.map((memberRow) => ({
+          data.members.map((memberRow) => ({
             email: memberRow.user.email,
             id: memberRow.id,
             role: memberRow.role,
