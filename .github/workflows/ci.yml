@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --ignore-scripts
 
+      - name: Generate env types
+        run: bun run env:generate
+
       - name: Lint and type check
         run: bun run check && bun run check-types
 

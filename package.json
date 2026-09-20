@@ -39,7 +39,7 @@
     "db:generate": "turbo run db:generate -F @functhis/db --",
     "db:migrate:local": "turbo run db:migrate:local -F @functhis/infra --",
     "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/",
-    "check": "ultracite check && knip",
+    "check": "bun run env:generate && ultracite check && knip",
     "check:staged": "bun run ultracite:staged && bun run knip",
     "fix": "ultracite fix",
     "example:hello:dev": "bun packages/cli/src/cli.ts dev --slug hello --project-root examples/hello-world",
@@ -47,7 +47,7 @@
     "ultracite:staged": "sh .husky/ultracite-staged",
     "knip": "knip",
     "changelog": "git-cliff --unreleased",
-    "precommit": "bun run knip && bun run check-types --filter='...[HEAD]' --filter='!./apps/*'",
+    "precommit": "bun run check && bun run check-types --filter='...[HEAD]' --filter='!./apps/*'",
     "prepare": "husky"
   },
   "dependencies": {

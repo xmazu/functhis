@@ -6,7 +6,8 @@
     "**/routeTree.gen.ts",
     "**/cloudflare-env.d.ts",
     "**/worker-configuration.d.ts",
-    "examples/**"
+    "examples/**",
+    "packages/db/drizzle.config.ts"
   ],
   "ignoreDependencies": [
     "@cloudflare/vite-plugin",
@@ -67,7 +68,7 @@
       }
     },
     "packages/db": {
-      "entry": ["src/index.ts", "drizzle.config.ts"],
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["zod"]
     },

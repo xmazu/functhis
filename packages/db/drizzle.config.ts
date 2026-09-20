@@ -1,11 +1,13 @@
 import { defineConfig } from 'drizzle-kit';
 import 'varlock/auto-load';
 
-import { ENV } from './src/env';
+/** Placeholder for static analysis; drizzle-kit needs a real URL at runtime. */
+const databaseUrl =
+  process.env.DATABASE_URL ?? 'postgresql://127.0.0.1:5432/functhis';
 
 export default defineConfig({
   dbCredentials: {
-    url: ENV.DATABASE_URL,
+    url: databaseUrl,
   },
   dialect: 'postgresql',
   out: './src/migrations',
