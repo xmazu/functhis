@@ -287,5 +287,3 @@ export const listRecentExecutions = async (
 
   return rows;
 };
-
-export { publicFunctionPath, publicPackagePath } from './public-paths';

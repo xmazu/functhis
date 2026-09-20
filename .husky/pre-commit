@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 
+bun run ultracite:staged
 bun run precommit

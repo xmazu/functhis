@@ -21,11 +21,14 @@ fi
 
 FORMAT_EXIT_CODE=0
 bun x ultracite fix "$@" || FORMAT_EXIT_CODE=$?
-git add -- "$@"
 
 if [ "$FORMAT_EXIT_CODE" -ne 0 ]; then
   echo "Ultracite found issues that could not be auto-fixed."
   exit "$FORMAT_EXIT_CODE"
 fi
+
+bun x ultracite check "$@" || exit $?
+
+git add -- "$@"
 
 echo "✨ Files formatted by Ultracite"
