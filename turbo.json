@@ -39,6 +39,9 @@
     "test": {
       "cache": false
     },
+    "test:integration": {
+      "cache": false
+    },
     "destroy": {
       "cache": false,
       "interactive": true

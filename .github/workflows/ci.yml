@@ -14,6 +14,17 @@ jobs:
   check:
     name: Lint, test, and CLI publish smoke
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: functhis
+          POSTGRES_PASSWORD: functhis
+          POSTGRES_DB: functhis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U functhis" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,6 +51,11 @@ jobs:
 
       - name: Test
         run: bun test packages/auth packages/deploy packages/cli apps/mcp/src scripts apps/console/src/lib
+
+      - name: Integration test
+        env:
+          INTEGRATION_DATABASE_URL: postgres://functhis:functhis@127.0.0.1:5432/integration
+        run: bun tests/integration/scripts/migrate.ts && bun run --filter @functhis/integration-tests test:integration
 
       - name: Build CLI
         run: bun run --filter functhis build

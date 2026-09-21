@@ -29,6 +29,10 @@
     "./package-visibility": {
       "types": "./src/package-visibility.ts",
       "default": "./src/package-visibility.ts"
+    },
+    "./http": {
+      "types": "./src/http-handlers.ts",
+      "default": "./src/http-handlers.ts"
     }
   },
   "scripts": {

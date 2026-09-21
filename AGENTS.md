@@ -136,6 +136,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ## Testing
 
+- Before adding or changing integration tests, read [docs/integration-tests.md](docs/integration-tests.md) and [tests/integration/README.md](tests/integration/README.md)
 - Write assertions inside `it()` or `test()` blocks
 - Avoid done callbacks in async tests - use async/await instead
 - Don't use `.only` or `.skip` in committed code

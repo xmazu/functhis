@@ -1,25 +1,25 @@
-import { validateDeployBearerToken } from '@functhis/auth';
 import { user } from '@functhis/db/schema/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
+import { and, eq, notInArray } from 'drizzle-orm';
+
 import {
   bundleKvKey,
-  resolveDeploySharingForDeployStart,
   sha256Hex,
   stableBundlePayload,
   utf8ByteLength,
-} from '@functhis/deploy';
-import { and, eq, notInArray } from 'drizzle-orm';
-
-import { env } from '../../env.server';
-import { getDb } from '../../services';
+} from './bundle';
 import {
   BUNDLE_KV_PREFIX,
   MAX_BUNDLE_BYTES,
   MAX_SOURCE_MANIFEST_BYTES,
   MAX_SOURCE_MANIFEST_FILES,
 } from './constants';
+import { resolveDeploySharingForDeployStart } from './deploy-sharing';
+import type { DeployHandlerContext } from './http-context';
 import { deployFinalizeBodySchema, deployStartBodySchema } from './schemas';
 import type { WorkerLoaderBundle } from './schemas';
+
+export type { DeployHandlerContext } from './http-context';
 
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, { status });
@@ -53,21 +53,16 @@ const validateBundleSize = (bundle: WorkerLoaderBundle): string | null => {
   return null;
 };
 
-const deployAuth = (
-  request: Request,
-  database: Awaited<ReturnType<typeof getDb>>
-) =>
-  validateDeployBearerToken(database, request, { consoleUrl: env.CONSOLE_URL });
-
 export const handleDeployStart = async (
-  request: Request
+  request: Request,
+  ctx: DeployHandlerContext
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const database = await getDb();
-  const auth = await deployAuth(request, database);
+  const database = ctx.db;
+  const auth = await ctx.authenticateDeploy(request);
   if (!auth.ok) {
     return auth.response;
   }
@@ -153,14 +148,15 @@ export const handleDeployStart = async (
 };
 
 export const handleDeployFinalize = async (
-  request: Request
+  request: Request,
+  ctx: DeployHandlerContext
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const database = await getDb();
-  const auth = await deployAuth(request, database);
+  const database = ctx.db;
+  const auth = await ctx.authenticateDeploy(request);
   if (!auth.ok) {
     return auth.response;
   }
@@ -216,7 +212,7 @@ export const handleDeployFinalize = async (
   });
 
   try {
-    await env.BUNDLES.put(kvKey, kvPayload);
+    await ctx.bundles.put(kvKey, kvPayload);
   } catch {
     return new Response('Bundle storage failed; retry finalize', {
       status: 503,

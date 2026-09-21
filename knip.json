@@ -99,6 +99,10 @@
     "apps/mcp": {
       "entry": ["src/index.ts", "src/**/*.test.ts"],
       "project": ["src/**/*.ts"]
+    },
+    "tests/integration": {
+      "entry": ["src/**/*.test.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts"]
     }
   }
 }

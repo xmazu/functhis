@@ -284,6 +284,23 @@
         "typescript": "catalog:",
       },
     },
+    "tests/integration": {
+      "name": "@functhis/integration-tests",
+      "version": "0.0.0",
+      "dependencies": {
+        "@functhis/auth": "workspace:*",
+        "@functhis/db": "workspace:*",
+        "@functhis/deploy": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+      },
+      "devDependencies": {
+        "@functhis/config": "workspace:*",
+        "@types/bun": "latest",
+        "@types/pg": "^8.15.5",
+        "pg": "^8.16.3",
+        "typescript": "catalog:",
+      },
+    },
   },
   "catalog": {
     "@orpc/client": "^1.15.0",
@@ -529,6 +546,8 @@
     "@functhis/deploy": ["@functhis/deploy@workspace:packages/deploy"],
 
     "@functhis/infra": ["@functhis/infra@workspace:packages/infra"],
+
+    "@functhis/integration-tests": ["@functhis/integration-tests@workspace:tests/integration"],
 
     "@functhis/mcp": ["@functhis/mcp@workspace:apps/mcp"],
 

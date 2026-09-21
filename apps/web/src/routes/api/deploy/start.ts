@@ -1,11 +1,13 @@
+import { handleDeployStart } from '@functhis/deploy/http';
 import { createFileRoute } from '@tanstack/react-router';
 
-import { handleDeployStart } from '../../../server/deploy/handlers';
+import { createDeployHandlerContext } from '../../../server/deploy/context';
 
 export const Route = createFileRoute('/api/deploy/start')({
   server: {
     handlers: {
-      POST: ({ request }) => handleDeployStart(request),
+      POST: async ({ request }) =>
+        handleDeployStart(request, await createDeployHandlerContext()),
     },
   },
 });

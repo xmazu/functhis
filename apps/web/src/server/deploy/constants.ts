@@ -1,6 +1,0 @@
-export {
-  BUNDLE_KV_PREFIX,
-  MAX_BUNDLE_BYTES,
-  MAX_SOURCE_MANIFEST_BYTES,
-  MAX_SOURCE_MANIFEST_FILES,
-} from '@functhis/deploy';

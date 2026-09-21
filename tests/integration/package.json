@@ -1,0 +1,24 @@
+{
+  "name": "@functhis/integration-tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "echo 'Use bun run test:integration. This package is not in the unit gate.' && exit 0",
+    "test:integration": "bun test src/db"
+  },
+  "dependencies": {
+    "@functhis/auth": "workspace:*",
+    "@functhis/db": "workspace:*",
+    "@functhis/deploy": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/pg": "^8.15.5",
+    "pg": "^8.16.3",
+    "typescript": "catalog:"
+  }
+}

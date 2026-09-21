@@ -4,7 +4,8 @@
   "workspaces": {
     "packages": [
       "apps/*",
-      "packages/*"
+      "packages/*",
+      "tests/*"
     ],
     "catalog": {
       "zod": "^4.5.4",
@@ -33,6 +34,7 @@
     "postinstall": "tsc -b packages/api && varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/ && bun run cf-typegen",
     "cf-typegen": "turbo run cf-typegen -F web -F console -F @functhis/mcp --",
     "test": "bun test packages/auth packages/deploy packages/cli apps/mcp/src scripts apps/console/src/lib",
+    "test:integration": "docker compose up -d postgres && bun tests/integration/scripts/migrate.ts && bun run --filter @functhis/integration-tests test:integration",
     "dev:types": "tsc -b packages/api --watch",
     "dev:web": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F web --",
     "dev:console": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F console --",
