@@ -12,6 +12,7 @@ import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
 import Header from '#/components/header';
+import { SiteFooter } from '#/components/marketing/site-footer';
 import type { orpc } from '#/utils/orpc';
 
 import appCss from '#/index.css?url';
@@ -31,6 +32,7 @@ const RootDocument = () => (
       <div className="flex min-h-svh flex-col">
         <Header />
         <Outlet />
+        <SiteFooter />
       </div>
       <Toaster richColors />
       <TanStackRouterDevtools position="bottom-left" />

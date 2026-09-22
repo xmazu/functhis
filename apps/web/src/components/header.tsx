@@ -1,7 +1,6 @@
 import { Link, useRouteContext } from '@tanstack/react-router';
 
 import { BrandMark } from '#/components/brand-mark';
-import { CopyPromptButton } from '#/components/copy-prompt-button';
 import { DOCS_HREF } from '#/lib/agent-prompt';
 
 const Header = () => {
@@ -16,16 +15,9 @@ const Header = () => {
             className="flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight text-zinc-50"
             to="/"
           >
-            <BrandMark className="-ml-[5.27px] h-8 w-8" />
+            <BrandMark />
             functhis
           </Link>
-          <div className="hidden min-w-0 md:block">
-            <CopyPromptButton
-              copiedLabel="Copied!"
-              idleLabel="Copy prompt for agent"
-              size="header"
-            />
-          </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <a

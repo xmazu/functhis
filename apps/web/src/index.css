@@ -32,40 +32,17 @@
   }
 }
 
-@keyframes hero-highlight-fade {
-  from {
-    opacity: 0.85;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes hero-thing-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.ft-hero-highlight {
-  animation: hero-highlight-fade 350ms ease-out;
-}
-
-.ft-hero-thing {
-  animation: hero-thing-rise 350ms ease-out;
-}
-
 .invert-on-dark {
   filter: invert(1);
 }
 
 @keyframes term-blink {
-  50% {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
     opacity: 0;
   }
 }
@@ -79,6 +56,31 @@
   }
 }
 
+@keyframes agent-beat-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ft-agent-beat {
+  animation: agent-beat-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ft-term-caret {
+    animation: term-blink 1s step-end infinite;
+  }
+
+  .ft-term-line-in {
+    animation: agent-beat-in 180ms ease-out both;
+  }
+}
+
 .ft-marquee-track {
   animation: agent-marquee 48s linear infinite;
 }
@@ -88,9 +90,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ft-hero-highlight,
-  .ft-hero-thing,
-  .ft-marquee-track {
+  .ft-marquee-track,
+  .ft-agent-beat {
     animation: none;
   }
 }

@@ -232,7 +232,7 @@ const CatalogWindow = () => (
 );
 
 export const CatalogStage = () => (
-  <section className="scroll-mt-24 pt-[102px]">
+  <section className="scroll-mt-24 pt-[102px]" id="catalog">
     <h2 className="text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-[41px]">
       One file is one function
     </h2>

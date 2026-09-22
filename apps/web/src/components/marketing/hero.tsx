@@ -1,6 +1,5 @@
 import { CopyPromptButton } from '#/components/copy-prompt-button';
 import { AgentMarquee } from '#/components/marketing/agent-marquee';
-import { DeployConsole } from '#/components/marketing/deploy-console';
 import { HeroHeading } from '#/components/marketing/hero-heading';
 import { Reveal } from '#/components/marketing/reveal';
 
@@ -22,11 +21,6 @@ export const Hero = () => (
           />
         </div>
         <AgentMarquee />
-      </div>
-    </Reveal>
-    <Reveal delayMs={180}>
-      <div className="mt-16">
-        <DeployConsole />
       </div>
     </Reveal>
   </section>

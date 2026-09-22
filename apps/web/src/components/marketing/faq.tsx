@@ -48,7 +48,7 @@ export const FaqList = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <div className="pt-[102px]">
+    <div className="scroll-mt-24 pt-[102px]" id="faq">
       <h2 className="text-4xl leading-tight font-semibold tracking-tight sm:text-[41px]">
         FAQ
       </h2>
