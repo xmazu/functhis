@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { organization, user } from './auth';
+import { embeddingVector } from './vector';
 
 export const packageVisibility = pgEnum('package_visibility', [
   'private',
@@ -78,6 +79,7 @@ export const pkgFunction = pgTable(
   {
     contract: jsonb('contract').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    embedding: embeddingVector('embedding'),
     exportName: text('export_name').notNull(),
     id: text('id')
       .primaryKey()
@@ -86,6 +88,7 @@ export const pkgFunction = pgTable(
       .notNull()
       .references(() => pkg.id, { onDelete: 'cascade' }),
     path: text('path').notNull(),
+    searchText: text('search_text'),
     slug: text('slug').notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

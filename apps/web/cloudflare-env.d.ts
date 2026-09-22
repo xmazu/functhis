@@ -1,4 +1,5 @@
 interface CloudflareEnv {
+  AI: Ai;
   BUNDLES: KVNamespace;
   CONSOLE_URL: string;
   HYPERDRIVE: Hyperdrive;

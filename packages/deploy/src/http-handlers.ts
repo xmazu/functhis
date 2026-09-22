@@ -15,6 +15,7 @@ import {
   MAX_SOURCE_MANIFEST_FILES,
 } from './constants';
 import { resolveDeploySharingForDeployStart } from './deploy-sharing';
+import { buildFunctionSearchText, embedTexts } from './function-search-text';
 import type { DeployHandlerContext } from './http-context';
 import { deployFinalizeBodySchema, deployStartBodySchema } from './schemas';
 import type { WorkerLoaderBundle } from './schemas';
@@ -219,6 +220,26 @@ export const handleDeployFinalize = async (
     });
   }
 
+  const preparedFunctions = parsed.data.contracts.map((fn) => {
+    const contractRecord = fn.contract as Record<string, unknown>;
+    const searchText = buildFunctionSearchText({
+      contract: contractRecord,
+      slug: fn.slug,
+    });
+    return { fn, searchText };
+  });
+
+  let embeddings: (number[] | null)[] = preparedFunctions.map(() => null);
+  if (ctx.ai) {
+    const vectors = await embedTexts(
+      ctx.ai,
+      preparedFunctions.map((row) => row.searchText)
+    );
+    if (vectors) {
+      embeddings = vectors;
+    }
+  }
+
   let version;
   try {
     version = await database.transaction(async (tx) => {
@@ -240,26 +261,32 @@ export const handleDeployFinalize = async (
       const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
 
       await Promise.all(
-        parsed.data.contracts.map((fn) =>
-          tx
+        preparedFunctions.map((row, index) => {
+          const embedding = embeddings[index] ?? null;
+          const { fn } = row;
+          return tx
             .insert(pkgFunction)
             .values({
               contract: fn.contract,
+              embedding,
               exportName: fn.exportName,
               packageId: packageRow.id,
               path: fn.path,
+              searchText: row.searchText,
               slug: fn.slug,
             })
             .onConflictDoUpdate({
               set: {
                 contract: fn.contract,
+                embedding,
                 exportName: fn.exportName,
                 path: fn.path,
+                searchText: row.searchText,
                 updatedAt: new Date(),
               },
               target: [pkgFunction.packageId, pkgFunction.slug],
-            })
-        )
+            });
+        })
       );
 
       await tx

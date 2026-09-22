@@ -45,7 +45,11 @@ export const handleInternalExecute = async (
     });
 
     if (!result.ok) {
-      return Response.json({ error: result.error }, { status: result.status });
+      const errorBody =
+        result.issues === undefined
+          ? { error: result.error }
+          : { error: result.error, issues: result.issues };
+      return Response.json(errorBody, { status: result.status });
     }
 
     return new Response(result.responseText, {

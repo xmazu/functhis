@@ -9,7 +9,7 @@ Each **callable** is one TypeScript file:
 - **`export default`** — function declaration, arrow, or async handler (named exports are ignored).
 - **Slug** — from the **file name** in kebab-case (`generatePresentation.ts` → `generate-presentation`). Public id: `@<handle>/<package-slug>/<function-slug>`.
 - **`input` parameter** — single object argument; JSON Schema for MCP/HTTP is extracted from its TypeScript type (parameter must be named `input`).
-- **JSDoc** — description on the default export (first paragraph). Used in the stored `contract.description` and MCP `search`.
+- **JSDoc** — full description on the default export (tags stripped). `@example` tags are stored; `@param` / `@returns` add field descriptions when they match TypeScript property names (types win for shape).
 
 Layout:
 
@@ -25,7 +25,7 @@ export default function hello(input: { name?: string }) {
 }
 ```
 
-Deploy records `contract` (description + optional `inputSchema`) per function, bundles all sources into one Worker Loader module, and routes `{ functionSlug, input }` to the matching default export.
+Deploy records `contract` (`description`, optional `examples`, `inputSchema`, `outputSchema`) per function, bundles all sources into one Worker Loader module, and routes `{ functionSlug, input }` to the matching default export.
 
 | Example                       | Purpose                               |
 | ----------------------------- | ------------------------------------- |

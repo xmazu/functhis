@@ -84,7 +84,7 @@ Try-it lives on the public function page. No billing or library browse/catalog U
 
 `https://mcp.functhis.now/mcp`. Two tools.
 
-**`search`** — `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Lexical over contracts the caller may see under the package ACL.
+**`search`** — `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Hybrid: `ILIKE` on handle / slug / `search_text`, plus optional pgvector distance against a Workers AI embedding. Ranked exact-match first, then nearest neighbors the caller may see under the package ACL.
 
 **`execute`** — id + JSON arguments. ACL, quota, Dynamic Worker, execution row. Not one MCP tool per function.
 
@@ -94,9 +94,52 @@ Three product Workers (web, console, mcp). Untrusted package code must not share
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive, bundle KV (deploy) |
-| `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive, `global_fetch_strictly_public` |
-| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution (phase 6) | Neon via Hyperdrive, bundle KV, `LOADER`, Analytics Engine |
+| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive (catalog, cache on), bundle KV (deploy), Workers AI, service binding to mcp |
+| `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive (auth, cache off), `global_fetch_strictly_public` |
+| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution (phase 6) | Neon via Hyperdrive (catalog, cache on), bundle KV, `LOADER`, Analytics Engine, Workers AI |
+
+```mermaid
+flowchart TB
+  subgraph clients [Clients]
+    Browser
+    CLI
+    Agent
+  end
+
+  subgraph workers [Cloudflare Workers]
+    Web["functhis-web<br/>functhis.now"]
+    Console["functhis-console<br/>console.functhis.now"]
+    MCP["functhis-mcp<br/>mcp.functhis.now"]
+    Loader["Dynamic Worker isolate<br/>LOADER.get(versionId)"]
+  end
+
+  subgraph data [Data]
+    Neon["Neon Postgres"]
+    HDAuth["Hyperdrive auth<br/>cache off"]
+    HDCat["Hyperdrive catalog<br/>cache on"]
+    KV["KV bundles"]
+    AE["Analytics Engine"]
+    AI["Workers AI<br/>embeddings"]
+  end
+
+  Browser --> Web
+  Browser --> Console
+  CLI --> Console
+  CLI --> Web
+  Agent --> Console
+  Agent --> MCP
+
+  Web --> HDCat --> Neon
+  Console --> HDAuth --> Neon
+  MCP --> HDCat
+  Web -->|service binding| MCP
+  MCP --> KV
+  MCP --> Loader
+  MCP --> AE
+  MCP --> AI
+  Web --> KV
+  Web --> AI
+```
 
 Local `bun run dev` runs web (3001), console (3002), and MCP (3003). `bun run db:migrate:local` applies Drizzle migrations to Neon. Production deploys Workers independently (**mcp first**, then web, then console) before Terraform custom domains point `mcp.*` at `functhis-mcp`.
 
@@ -119,7 +162,7 @@ apps/mcp/wrangler.jsonc      functhis-mcp (+ preview/production env blocks)
 
 - Zone `functhis.now` (data source), Workers custom domains for the three hostnames (`enable_domains` after first deploy)
 - Neon Postgres project stays in the dashboard; connection string in Secrets Store and Hyperdrive origin (Neon **direct** / unpooled host)
-- Hyperdrive `functhis-auth-{env}` (caching disabled — console) and `functhis-catalog-{env}` (cache enabled — web)
+- Hyperdrive `functhis-auth-{env}` (caching disabled — console) and `functhis-catalog-{env}` (cache enabled — web and mcp)
 - KV `functhis-bundles-{env}`
 - R2 `functhis-tf-state` (state backend only — create once with `wrangler r2 bucket create`; not a Terraform resource)
 - Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
@@ -185,6 +228,28 @@ ACL + quota on functhis-web (POST @…) or functhis-mcp (MCP execute tool)
 
 Phase 5 may call the same execute path on `functhis-mcp` via a service binding from web; phase 6 exposes it to agents at `mcp.functhis.now`.
 
+```mermaid
+sequenceDiagram
+  participant CLI
+  participant Web as functhis-web
+  participant KV as Bundles KV
+  participant DB as Postgres
+  participant Agent
+  participant MCP as functhis-mcp
+  participant DW as Dynamic Worker
+
+  CLI->>Web: deploy (device token)
+  Web->>KV: PUT compiled modules
+  Web->>DB: insert package_version, point currentVersionId
+  Note over CLI,DB: later execute
+  Agent->>MCP: execute @handle/pkg/fn
+  MCP->>DB: ACL + quota
+  MCP->>KV: load bundle by hash
+  MCP->>DW: LOADER.get(versionId)
+  DW-->>MCP: fetch result
+  MCP->>DB: execution row
+```
+
 Rollback is `currentVersionId = previous`. The loader id is the version id, so the isolate changes immediately.
 
 Canonical source stays with the author (local tree / their Git). Functhis stores a deployed snapshot hash and the KV bundle. Reuse is `execute` (or HTTP POST) of a published function, not importing or forking source. Do not use Cloudflare Artifacts. Do not stand up a Git host for package trees.
@@ -200,9 +265,50 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 | Table | Notes |
 | --- | --- |
 | `package` | `slug`, `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
-| `function` | `packageId`, `exportName`, `path`, `slug`, contract JSON. Unique `(packageId, slug)` |
+| `function` | `packageId`, `exportName`, `path`, `slug`, contract JSON, `search_text`, `embedding vector(768)`. Unique `(packageId, slug)` |
 | `package_version` | Immutable: source hash, bundle hash, contracts, createdBy |
 | `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
+
+Local Docker is `pgvector/pgvector:pg16`. Production is Neon Postgres. Workers use `drizzle-orm` + `pg` through Hyperdrive (`createDb` in `packages/db`). Migrations use `DATABASE_URL` from `packages/db/.env`, never Hyperdrive.
+
+```mermaid
+erDiagram
+  user ||--o{ package : owns
+  organization ||--o{ package : optional
+  package ||--o{ package_version : versions
+  package ||--o{ function : functions
+  package_version ||--o{ execution : runs
+  function ||--o{ execution : optional
+  user ||--o{ execution : caller
+
+  package {
+    text id PK
+    text slug
+    text owner_user_id
+    text organization_id
+    enum visibility
+    text current_version_id
+  }
+  function {
+    text id PK
+    text package_id FK
+    text slug
+    jsonb contract
+    text search_text
+    vector embedding
+  }
+  package_version {
+    text id PK
+    text source_hash
+    text bundle_hash
+    jsonb contracts
+  }
+  execution {
+    text id PK
+    text status
+    int cpu_ms
+  }
+```
 
 Owner handle (`@xmazu`) is unique. Default from GitHub username.
 
@@ -259,4 +365,4 @@ CLI:    login → console.functhis.now/device
 
 ## Defer
 
-Billing, marketplace, library browse UX, org billing, invite email, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, embeddings, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.
+Billing, marketplace, library browse UX, org billing, invite email, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, one MCP tool per function, `run.` hostname, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.

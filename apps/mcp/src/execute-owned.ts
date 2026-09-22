@@ -11,7 +11,9 @@ import {
   parseFunctionId,
   runDynamicWorker,
   StoredBundleLoadError,
+  validateContractInput,
 } from '@functhis/deploy';
+import type { ContractInputValidationIssue } from '@functhis/deploy';
 import { and, eq } from 'drizzle-orm';
 
 export class FunctionNotFoundError extends Error {
@@ -34,6 +36,7 @@ export interface ExecuteOwnedSuccess {
 
 export interface ExecuteOwnedFailure {
   error: string;
+  issues?: ContractInputValidationIssue[];
   ok: false;
   status: number;
 }
@@ -64,6 +67,7 @@ export const executeOwnedFunction = async (
   const [row] = await database
     .select({
       bundleHash: packageVersion.bundleHash,
+      contract: pkgFunction.contract,
       functionId: pkgFunction.id,
       organizationId: pkg.organizationId,
       ownerUserId: pkg.ownerUserId,
@@ -98,6 +102,21 @@ export const executeOwnedFunction = async (
     )
   ) {
     throw new FunctionNotFoundError();
+  }
+
+  const contract =
+    row.contract && typeof row.contract === 'object'
+      ? (row.contract as Record<string, unknown>)
+      : null;
+  const inputSchema = contract?.inputSchema;
+  const validation = validateContractInput(inputSchema, runInput);
+  if (!validation.ok) {
+    return {
+      error: 'invalid_input',
+      issues: validation.issues,
+      ok: false,
+      status: 400,
+    };
   }
 
   let bundle;

@@ -68,6 +68,7 @@ describe('discoverProject', () => {
 
     const { functions } = await discoverProject(root);
     expect(functions[0]?.contract.inputSchema).toEqual({
+      additionalProperties: false,
       properties: { name: { type: 'string' } },
       required: [],
       type: 'object',
@@ -120,6 +121,7 @@ describe('discoverProject', () => {
       contract: {
         description: 'Greet someone by name.',
         inputSchema: {
+          additionalProperties: false,
           properties: { name: { type: 'string' } },
           required: [],
           type: 'object',

@@ -2,6 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { validateContractInput } from '@functhis/deploy';
 import {
   deployFinalizeResponseSchema,
   isValidPackageSlug,
@@ -148,6 +149,21 @@ export const runDev = async (options?: {
     throw new Error('No function slug available');
   }
 
+  const target = functions.find((fn) => fn.slug === slug);
+  if (!target) {
+    throw new Error(`Unknown function slug: ${slug}`);
+  }
+  const runInput = options?.input ?? {};
+  const validation = validateContractInput(
+    target.contract.inputSchema,
+    runInput
+  );
+  if (!validation.ok) {
+    throw new Error(
+      `invalid_input: ${JSON.stringify({ issues: validation.issues })}`
+    );
+  }
+
   const moduleCode = bundle.modules[bundle.mainModule];
   if (!moduleCode) {
     throw new Error('Bundle missing main module');
@@ -164,7 +180,7 @@ export const runDev = async (options?: {
       new Request('http://local/run', {
         body: JSON.stringify({
           functionSlug: slug,
-          input: options?.input ?? {},
+          input: runInput,
         }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',

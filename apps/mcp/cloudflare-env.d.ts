@@ -1,4 +1,5 @@
 interface CloudflareEnv {
+  AI: Ai;
   ANALYTICS: AnalyticsEngineDataset;
   BUNDLES: KVNamespace;
   CONSOLE_URL: string;

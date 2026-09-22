@@ -47,6 +47,15 @@ export {
   ExecutePayloadTooLargeError,
 } from './quotas';
 export {
+  validateContractInput,
+  type ContractInputValidationIssue,
+  type ContractInputValidationResult,
+} from './validate-input';
+export {
+  embedSearchQuery,
+  type TextEmbeddingRunner,
+} from './function-search-text';
+export {
   CLI_CLIENT_ID,
   CONSOLE_ORIGIN_PRODUCTION,
   DEPLOY_API_RESOURCE,

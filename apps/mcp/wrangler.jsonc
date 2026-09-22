@@ -17,6 +17,9 @@
     "inspector_port": 9231,
     "port": 3003,
   },
+  "ai": {
+    "binding": "AI",
+  },
   "worker_loaders": [
     {
       "binding": "LOADER",
@@ -44,6 +47,9 @@
     "preview": {
       "name": "functhis-mcp-preview",
       "workers_dev": false,
+      "ai": {
+        "binding": "AI",
+      },
       "vars": {
         "CONSOLE_URL": "https://console.preview.functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
@@ -76,6 +82,9 @@
     "production": {
       "name": "functhis-mcp",
       "workers_dev": false,
+      "ai": {
+        "binding": "AI",
+      },
       "vars": {
         "CONSOLE_URL": "https://console.functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",

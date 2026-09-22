@@ -35,7 +35,7 @@ export const createFuncthisMcpHandler = (
         'search',
         {
           description:
-            'Find deployed functions by package slug, function slug, handle, or optional JSDoc description. domain: mine (default, your packages), org (organization-shared), library (public). Results include contract.inputSchema when deploy extracted one — use it to build execute.arguments. Use the returned id with execute.',
+            'Find deployed functions by handle, package slug, function slug, contract text, or semantic similarity. domain: mine (default), org (organization-shared), library (public). Results include contract (description, examples, inputSchema, outputSchema). Use contract.inputSchema to build execute.arguments. Use the returned id with execute.',
           inputSchema: searchInputSchema,
         },
         async (input) => {
@@ -69,6 +69,14 @@ export const createFuncthisMcpHandler = (
               id: input.id,
             });
             if (!result.ok) {
+              if (result.issues) {
+                return toolErrorContent(
+                  JSON.stringify({
+                    error: result.error,
+                    issues: result.issues,
+                  })
+                );
+              }
               return toolErrorContent(result.error);
             }
             return {
