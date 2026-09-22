@@ -1,0 +1,14 @@
+---
+description: Functhis web marketing visual language. Apply when editing apps/web UI, CSS, routes, or DESIGN.md.
+globs: apps/web/**
+alwaysApply: false
+---
+
+# Web marketing UI
+
+Read [apps/web/DESIGN.md](../../apps/web/DESIGN.md) before changing web visuals. That file is the source of truth for look and feel.
+
+- Dark canvas (`#09090b`), Geist, porcelain type, one white pill CTA, 780px reading column, sticky frosted header
+- DESIGN.md is visual language only. Never add features, sections, or component catalogs to it
+- Do not restyle `apps/console` or `packages/ui`. Marketing is forced dark; do not add a theme toggle
+- Product facts live in `vision.md` / `architecture.md`. Do not invent metrics, testimonials, or capabilities
