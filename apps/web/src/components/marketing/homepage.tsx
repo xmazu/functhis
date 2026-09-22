@@ -4,6 +4,7 @@ import { CatalogStage } from '#/components/marketing/catalog-stage';
 import { DeployStage } from '#/components/marketing/deploy-stage';
 import { FaqList } from '#/components/marketing/faq';
 import { Hero } from '#/components/marketing/hero';
+import { LoopStage } from '#/components/marketing/loop-stage';
 import { Reveal } from '#/components/marketing/reveal';
 import { SectionRule } from '#/components/marketing/section-rule';
 
@@ -12,6 +13,12 @@ export const Homepage = () => (
     <Hero />
     <Reveal>
       <AgentRun />
+    </Reveal>
+    <Reveal>
+      <SectionRule />
+    </Reveal>
+    <Reveal>
+      <LoopStage />
     </Reveal>
     <Reveal>
       <SectionRule />

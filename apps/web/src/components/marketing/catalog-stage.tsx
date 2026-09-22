@@ -54,7 +54,7 @@ const TREE: TreeRow[] = [
   { depth: 2, kind: 'file', name: 'list-open-orders.ts' },
 ];
 
-const DEPTH_CLASS = ['', 'ps-4', 'ps-7'] as const;
+const DEPTH_CLASS = ['', 'ps-4', 'ps-6'] as const;
 
 const FolderIcon = () => (
   <svg
@@ -102,13 +102,13 @@ const NoteBlock = ({ align, note }: { align: 'start' | 'end'; note: Note }) => (
 const CatalogWindow = () => (
   <div aria-hidden="true" className="hidden md:block" data-proof="catalog">
     <BrowserWindow
-      className="h-auto min-h-[38rem] max-w-none overflow-hidden rounded-xl border-zinc-800 bg-zinc-900 shadow-none"
+      className="h-auto min-h-[33rem] max-w-none overflow-hidden rounded-xl border-zinc-800 bg-zinc-900 shadow-none"
       headerStyle="full"
       size="xl"
       theme="dark"
       url="functhis.now/@acme/billing/send-reminder"
     >
-      <div className="grid h-full min-h-[35rem] grid-cols-[14.75rem_1fr] divide-x divide-zinc-800">
+      <div className="grid h-full min-h-[30rem] grid-cols-[14.5rem_1fr] divide-x divide-zinc-800">
         <div className="flex flex-col gap-px overflow-hidden px-2 py-3 font-mono text-[11px] text-zinc-500">
           {TREE.map((row) => (
             <div
@@ -122,7 +122,7 @@ const CatalogWindow = () => (
             </div>
           ))}
         </div>
-        <pre className="min-h-0 overflow-hidden px-4 py-5 font-mono text-[13px] leading-7">
+        <pre className="min-h-0 overflow-hidden px-4 py-5 font-mono text-[12.5px] leading-6">
           <code>
             {SEND_REMINDER.lines.map((tokens, lineIndex) => (
               <span className="block whitespace-pre" key={lineIndex}>
@@ -153,7 +153,7 @@ export const CatalogStage = () => (
       JSDoc. The file name is the slug. That shape is the product, not a style
       guide.
     </p>
-    <div className="relative mt-10 grid items-start gap-8 min-[1360px]:min-h-[38rem] min-[1360px]:grid-cols-1">
+    <div className="relative mt-10 grid items-start gap-8 min-[1360px]:min-h-[33rem] min-[1360px]:grid-cols-1">
       <div className="grid gap-8 min-[1360px]:absolute min-[1360px]:top-0 min-[1360px]:right-full min-[1360px]:mr-10 min-[1360px]:flex min-[1360px]:w-[200px] min-[1360px]:flex-col min-[1360px]:gap-0 sm:grid-cols-2 md:grid-cols-3">
         {LEFT_NOTES.map((note) => (
           <NoteBlock align="start" key={note.title} note={note} />
