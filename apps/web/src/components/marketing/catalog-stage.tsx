@@ -1,3 +1,7 @@
+import {
+  SEND_REMINDER,
+  TOKEN_CLASS,
+} from '#/components/marketing/agent-run-data';
 import { BrowserWindow } from '#/components/ui/mock-browser-window';
 
 interface Note {
@@ -32,105 +36,6 @@ const RIGHT_NOTES: Note[] = [
   },
 ];
 
-type TokenKind =
-  | 'comment'
-  | 'ident'
-  | 'keyword'
-  | 'plain'
-  | 'property'
-  | 'punct'
-  | 'string'
-  | 'tag'
-  | 'type';
-
-interface Token {
-  kind: TokenKind;
-  text: string;
-}
-
-const TOKEN_CLASS: Record<TokenKind, string> = {
-  comment: 'text-[#8b949e]',
-  ident: 'text-[#d2a8ff]',
-  keyword: 'text-[#ff7b72]',
-  plain: 'text-[#e6edf3]',
-  property: 'text-[#ffa657]',
-  punct: 'text-[#9198a1]',
-  string: 'text-[#a5d6ff]',
-  tag: 'text-[#79c0ff]',
-  type: 'text-[#79c0ff]',
-};
-
-const t = (kind: TokenKind, text: string): Token => ({ kind, text });
-
-const CODE_LINES: Token[][] = [
-  [t('comment', '/**')],
-  [t('comment', ' * Greet someone by name.')],
-  [t('comment', ' *')],
-  [
-    t('comment', ' * '),
-    t('tag', '@param'),
-    t('comment', ' input.name - Person to greet. Defaults to "world".'),
-  ],
-  [
-    t('comment', ' * '),
-    t('tag', '@returns'),
-    t('comment', ' Greeting payload with a `message` string.'),
-  ],
-  [t('comment', ' * '), t('tag', '@example')],
-  [t('comment', " * hello({ name: 'Ada' })")],
-  [t('comment', " * // => { message: 'Hello, Ada!' }")],
-  [t('comment', ' */')],
-  [
-    t('keyword', 'export'),
-    t('plain', ' '),
-    t('keyword', 'default'),
-    t('plain', ' '),
-    t('keyword', 'function'),
-    t('plain', ' '),
-    t('ident', 'hello'),
-    t('punct', '('),
-    t('property', 'input'),
-    t('punct', ':'),
-    t('plain', ' '),
-    t('punct', '{'),
-    t('plain', ' '),
-    t('property', 'name'),
-    t('punct', '?:'),
-    t('plain', ' '),
-    t('type', 'string'),
-    t('plain', ' '),
-    t('punct', '}'),
-    t('punct', ')'),
-    t('plain', ' '),
-    t('punct', '{'),
-  ],
-  [
-    t('plain', '  '),
-    t('keyword', 'return'),
-    t('plain', ' '),
-    t('punct', '{'),
-    t('plain', ' '),
-    t('property', 'message'),
-    t('punct', ':'),
-    t('plain', ' '),
-    t('string', '`Hello, '),
-    t('punct', '${'),
-    t('property', 'input'),
-    t('punct', '.'),
-    t('property', 'name'),
-    t('plain', ' '),
-    t('keyword', '??'),
-    t('plain', ' '),
-    t('string', "'world'"),
-    t('punct', '}'),
-    t('string', '!`'),
-    t('plain', ' '),
-    t('punct', '}'),
-    t('punct', ';'),
-  ],
-  [t('punct', '}')],
-];
-
 interface TreeRow {
   depth: number;
   kind: 'file' | 'folder';
@@ -139,12 +44,17 @@ interface TreeRow {
 }
 
 const TREE: TreeRow[] = [
-  { depth: 0, kind: 'folder', name: '@you' },
-  { depth: 1, kind: 'folder', name: 'hello' },
-  { depth: 2, kind: 'file', name: 'hello.ts', selected: true },
-  { depth: 1, kind: 'folder', name: 'github' },
-  { depth: 2, kind: 'file', name: 'merge-pr.ts' },
+  { depth: 0, kind: 'folder', name: '@acme' },
+  { depth: 1, kind: 'folder', name: 'billing' },
+  { depth: 2, kind: 'file', name: 'find-overdue-invoices.ts' },
+  { depth: 2, kind: 'file', name: 'send-reminder.ts', selected: true },
+  { depth: 1, kind: 'folder', name: 'customers' },
+  { depth: 2, kind: 'file', name: 'get-contact.ts' },
+  { depth: 1, kind: 'folder', name: 'orders' },
+  { depth: 2, kind: 'file', name: 'list-open-orders.ts' },
 ];
+
+const DEPTH_CLASS = ['', 'ps-4', 'ps-7'] as const;
 
 const FolderIcon = () => (
   <svg
@@ -192,17 +102,17 @@ const NoteBlock = ({ align, note }: { align: 'start' | 'end'; note: Note }) => (
 const CatalogWindow = () => (
   <div aria-hidden="true" className="hidden md:block" data-proof="catalog">
     <BrowserWindow
-      className="h-auto min-h-[24rem] max-w-none overflow-hidden rounded-xl border-zinc-800 bg-zinc-900 shadow-none"
+      className="h-auto min-h-[38rem] max-w-none overflow-hidden rounded-xl border-zinc-800 bg-zinc-900 shadow-none"
       headerStyle="full"
       size="xl"
       theme="dark"
-      url="functhis.now/@you/hello"
+      url="functhis.now/@acme/billing/send-reminder"
     >
-      <div className="grid h-full min-h-[24rem] grid-cols-[12.5rem_1fr] divide-x divide-zinc-800">
+      <div className="grid h-full min-h-[35rem] grid-cols-[14.75rem_1fr] divide-x divide-zinc-800">
         <div className="flex flex-col gap-px overflow-hidden px-2 py-3 font-mono text-[11px] text-zinc-500">
           {TREE.map((row) => (
             <div
-              className={`flex items-center gap-2 rounded-md px-2 py-1 ${row.selected ? 'bg-zinc-800 text-zinc-50' : ''} ${row.depth === 1 ? 'ps-4' : ''} ${row.depth === 2 ? 'ps-6' : ''}`}
+              className={`flex items-center gap-2 rounded-md px-2 py-1 ${row.selected ? 'bg-zinc-800 text-zinc-50' : ''} ${DEPTH_CLASS[row.depth]}`}
               key={`${row.depth}-${row.name}`}
             >
               {row.kind === 'folder' ? <FolderIcon /> : <FileIcon />}
@@ -212,9 +122,9 @@ const CatalogWindow = () => (
             </div>
           ))}
         </div>
-        <pre className="min-h-0 overflow-hidden p-5 font-mono text-[13px] leading-7">
+        <pre className="min-h-0 overflow-hidden px-4 py-5 font-mono text-[13px] leading-7">
           <code>
-            {CODE_LINES.map((tokens, lineIndex) => (
+            {SEND_REMINDER.lines.map((tokens, lineIndex) => (
               <span className="block whitespace-pre" key={lineIndex}>
                 {tokens.length === 0 ? '\n' : null}
                 {tokens.map((token, tokenIndex) => (
@@ -243,7 +153,7 @@ export const CatalogStage = () => (
       JSDoc. The file name is the slug. That shape is the product, not a style
       guide.
     </p>
-    <div className="relative mt-10 grid items-start gap-8 min-[1360px]:min-h-[24rem] min-[1360px]:grid-cols-1">
+    <div className="relative mt-10 grid items-start gap-8 min-[1360px]:min-h-[38rem] min-[1360px]:grid-cols-1">
       <div className="grid gap-8 min-[1360px]:absolute min-[1360px]:top-0 min-[1360px]:right-full min-[1360px]:mr-10 min-[1360px]:flex min-[1360px]:w-[200px] min-[1360px]:flex-col min-[1360px]:gap-0 sm:grid-cols-2 md:grid-cols-3">
         {LEFT_NOTES.map((note) => (
           <NoteBlock align="start" key={note.title} note={note} />
