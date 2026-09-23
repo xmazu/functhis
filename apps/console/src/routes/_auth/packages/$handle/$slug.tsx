@@ -185,7 +185,7 @@ const PackageDetailPage = () => {
                     className="text-[length:var(--app-font-size-ui,12px)]"
                     key={row.id}
                   >
-                    {row.createdAt.toISOString()} · {row.functionSlug ?? '—'} ·{' '}
+                    {row.createdAt.toISOString()} · {row.functionSlug ?? '-'} ·{' '}
                     {row.status}
                     {row.cpuMs === null ? '' : ` · ${row.cpuMs}ms`}
                   </li>

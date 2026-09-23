@@ -76,7 +76,7 @@ const resolveSourcePaths = async (projectRoot: string): Promise<string[]> => {
       return walkDeep(projectRoot, functionsDir);
     }
   } catch {
-    // No functions/ directory — use project root entry files only.
+    // No functions/ directory - use project root entry files only.
   }
   return listShallowSources(projectRoot);
 };

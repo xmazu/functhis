@@ -22,6 +22,6 @@ export type Database = Awaited<ReturnType<typeof connectDatabase>>;
 export { type DatabaseConfig } from './config';
 export { resolveSecret, type SecretBinding } from './resolve-secret';
 
-/** New pool client per call — required for Workers + Hyperdrive (do not cache across requests). */
+/** New pool client per call - required for Workers + Hyperdrive (do not cache across requests). */
 export const createDb = (env: DatabaseConfig) =>
   connectDatabase(env.HYPERDRIVE.connectionString);

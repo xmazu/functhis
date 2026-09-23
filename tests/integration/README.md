@@ -44,7 +44,7 @@ In-process Node, **direct TCP** Postgres (`127.0.0.1:5432/integration`).
 
 **Chunks:**
 
-- **Deploy start → finalize** — opaque bearer auth, catalog rows, bundle KV stub.
+- **Deploy start → finalize** - opaque bearer auth, catalog rows, bundle KV stub.
 
 Cleanup: `int_db_%` user handles only (see `src/harness/cleanup.ts`).
 

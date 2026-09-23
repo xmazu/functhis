@@ -54,9 +54,9 @@ console          → session cookies + issuer pages
 
 - `jwt()`
 - `mcp({ loginPage, consentPage, resource: "https://mcp.functhis.now" })`
-- `cimd({ metadataProfile: "mcp-2026-07-28", fetchClientMetadataResource })` — no DCR unless an old client requires it
+- `cimd({ metadataProfile: "mcp-2026-07-28", fetchClientMetadataResource })` - no DCR unless an old client requires it
 - `oauthDeviceAuthorization({ verificationUri: "/device" })`
-- `organization()` — Better Auth org plugin; thin console admin at `/organizations` (create, invite via copy link, accept). No outbound invite email in alpha.
+- `organization()` - Better Auth org plugin; thin console admin at `/organizations` (create, invite via copy link, accept). No outbound invite email in alpha.
 - `crossSubDomainCookies` on `.functhis.now`
 
 Login / consent / device pages: `https://console.functhis.now/...`. Issuer: `https://console.functhis.now`.
@@ -84,9 +84,9 @@ Try-it lives on the public function page. No billing or library browse/catalog U
 
 `https://mcp.functhis.now/mcp`. Two tools.
 
-**`search`** — `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Hybrid: `ILIKE` on handle / slug / `search_text`, plus optional pgvector distance against a Workers AI embedding. Ranked exact-match first, then nearest neighbors the caller may see under the package ACL.
+**`search`** - `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Hybrid: `ILIKE` on handle / slug / `search_text`, plus optional pgvector distance against a Workers AI embedding. Ranked exact-match first, then nearest neighbors the caller may see under the package ACL.
 
-**`execute`** — id + JSON arguments. ACL, quota, Dynamic Worker, execution row. Not one MCP tool per function.
+**`execute`** - id + JSON arguments. ACL, quota, Dynamic Worker, execution row. Not one MCP tool per function.
 
 ## Fleet
 
@@ -162,9 +162,9 @@ apps/mcp/wrangler.jsonc      functhis-mcp (+ preview/production env blocks)
 
 - Zone `functhis.now` (data source), Workers custom domains for the three hostnames (`enable_domains` after first deploy)
 - Neon Postgres project stays in the dashboard; connection string in Secrets Store and Hyperdrive origin (Neon **direct** / unpooled host)
-- Hyperdrive `functhis-auth-{env}` (caching disabled — console) and `functhis-catalog-{env}` (cache enabled — web and mcp)
+- Hyperdrive `functhis-auth-{env}` (caching disabled - console) and `functhis-catalog-{env}` (cache enabled - web and mcp)
 - KV `functhis-bundles-{env}`
-- R2 `functhis-tf-state` (state backend only — create once with `wrangler r2 bucket create`; not a Terraform resource)
+- R2 `functhis-tf-state` (state backend only - create once with `wrangler r2 bucket create`; not a Terraform resource)
 - Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
 - Analytics Engine execution metrics: Wrangler-bound on `functhis-mcp` (`functhis_executions` / `functhis_executions_preview`; dataset names in Terraform output `analytics_execution_dataset`)
 

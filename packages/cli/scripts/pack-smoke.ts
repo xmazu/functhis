@@ -45,7 +45,7 @@ try {
       console.error(result.stderr || result.stdout);
       process.exit(result.status ?? 1);
     }
-    if (!result.stdout.includes('functhis — deploy TypeScript functions')) {
+    if (!result.stdout.includes('functhis - deploy TypeScript functions')) {
       console.error('pack smoke: expected usage banner in stdout');
       process.exit(1);
     }

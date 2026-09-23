@@ -58,7 +58,7 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
   return authConfigPromise;
 };
 
-/** Fresh Hyperdrive client per call — do not cache Better Auth across requests. */
+/** Fresh Hyperdrive client per call - do not cache Better Auth across requests. */
 export const createAuth = async (
   database?: Database
 ): Promise<AuthInstance> => {

@@ -40,6 +40,8 @@
     "dev:console": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F console --",
     "db:generate": "turbo run db:generate -F @functhis/db --",
     "db:migrate:local": "turbo run db:migrate:local -F @functhis/infra --",
+    "deploy:web:preview": "bun run --filter @functhis/infra deploy:web:preview",
+    "deploy:web:production": "bun run --filter @functhis/infra deploy:web:production",
     "env:generate": "varlock codegen --path ./apps/web/ && varlock codegen --path ./apps/console/ && varlock codegen --path ./packages/db/",
     "check": "bun run env:generate && ultracite check && knip",
     "check:staged": "bun run ultracite:staged && bun run knip",
@@ -53,6 +55,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
     "zod": "catalog:"
   },
   "devDependencies": {

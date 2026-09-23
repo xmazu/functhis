@@ -82,7 +82,7 @@ const signInRequired = (request: Request): Response => {
 <body>
   <h1>Sign in required</h1>
   <p>This package is not public. Sign in on the console with an account that owns it or belongs to its organization, then open this URL again.</p>
-  <p>On <code>localhost</code>, console login on port 3002 does not share cookies with web on 3001 — use local dev (pages are open in development) or call POST with your CLI bearer token.</p>
+  <p>On <code>localhost</code>, console login on port 3002 does not share cookies with web on 3001 - use local dev (pages are open in development) or call POST with your CLI bearer token.</p>
   <p><a href="${escapeHtml(loginUrl.href)}">Sign in on console</a></p>
 </body>
 </html>`;

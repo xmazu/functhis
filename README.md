@@ -38,7 +38,7 @@ docker compose up -d
 cp packages/db/.env.example packages/db/.env
 ```
 
-**`packages/db/.env`** — one URL for migrations **and** local dev (no separate Hyperdrive export):
+**`packages/db/.env`** - one URL for migrations **and** local dev (no separate Hyperdrive export):
 
 ```bash
 DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
@@ -48,7 +48,7 @@ DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
 
 ### 3. App secrets
 
-**`apps/console/.env`** — OAuth issuer:
+**`apps/console/.env`** - OAuth issuer:
 
 ```bash
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
@@ -58,7 +58,7 @@ GITHUB_CLIENT_SECRET=...
 TRUSTED_ORIGINS=http://localhost:3002,http://localhost:3001
 ```
 
-**`apps/web/.env`** — optional; defaults in `.env.schema` are enough for local dev:
+**`apps/web/.env`** - optional; defaults in `.env.schema` are enough for local dev:
 
 ```bash
 CONSOLE_URL=http://localhost:3002
@@ -190,11 +190,11 @@ Each app owns its environment schema in `.env.schema`. Varlock generates `src/en
 
 | Package | `.env` path | Purpose |
 | --- | --- | --- |
-| `packages/db` | `packages/db/.env` | `DATABASE_URL` — migrations + local dev DB |
+| `packages/db` | `packages/db/.env` | `DATABASE_URL` - migrations + local dev DB |
 | `apps/console` | `apps/console/.env` | Better Auth + GitHub OAuth |
 | `apps/web` | `apps/web/.env` | `CONSOLE_URL` (optional locally) |
 
-Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` — no manual `CLOUDFLARE_HYPERDRIVE_*` export.
+Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` - no manual `CLOUDFLARE_HYPERDRIVE_*` export.
 
 CIMD metadata fetch runs only on the **console** Worker. `apps/console/wrangler.jsonc` sets `global_fetch_strictly_public` so `fetch()` blocks private targets after DNS; `packages/auth` also validates HTTPS URLs before fetch. Regenerate Worker types after Wrangler changes: `bun run cf-typegen` (also runs on `bun install`).
 
@@ -227,7 +227,18 @@ terraform init -reconfigure \
 bun run --filter @functhis/infra tf:preview
 ```
 
-After apply: paste Hyperdrive, KV, and Secrets Store IDs into Wrangler `preview` / `production` env blocks, then deploy Workers in order — **`functhis-mcp` first** (MCP host must serve traffic before Terraform routes `mcp.*`), then web, then console. Only after MCP is live, set `enable_domains = true` in tfvars and apply again for custom domains.
+After apply: paste Hyperdrive, KV, and Secrets Store IDs into Wrangler `preview` / `production` env blocks, then deploy Workers in order - **`functhis-mcp` first** (MCP host must serve traffic before Terraform routes `mcp.*`), then web, then console. Only after MCP is live, set `enable_domains = true` in tfvars and apply again for custom domains.
+
+**Web only** (marketing + deploy API; TanStack Start via `@cloudflare/vite-plugin`):
+
+```bash
+wrangler login   # once per machine
+bun run deploy:web:preview      # or deploy:web:production
+```
+
+Those scripts set `CLOUDFLARE_ENV` during `vite build` so the generated Worker config matches the target environment, then run `wrangler deploy` from `apps/web`. Do not deploy web with `wrangler deploy -c apps/web/wrangler.jsonc` from another directory without building first - Wrangler will try to rebundle `worker-entry.ts` and fail.
+
+**GitHub Actions:** workflow [Deploy web](.github/workflows/deploy-web.yml) (`workflow_dispatch`). Add repository secrets `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit) and `CLOUDFLARE_ACCOUNT_ID`. Create GitHub environments `preview` and `production` if you want approval gates.
 
 - Workers: `functhis-web` + `functhis-console` + `functhis-mcp` (MCP + Dynamic Workers LOADER, phase 6)
 - Auth issuer: `https://console.functhis.now` (preview: `https://console.preview.functhis.now`)
@@ -260,7 +271,7 @@ functhis/
 ├── apps/
 │   ├── web/         # Marketing + deploy API (functhis.now)
 │   ├── console/     # OAuth issuer + dashboard (console.functhis.now)
-│   └── mcp/         # mcp.functhis.now — MCP + Dynamic Workers (phase 6)
+│   └── mcp/         # mcp.functhis.now - MCP + Dynamic Workers (phase 6)
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # Shared oRPC / business logic (multi-app only)

@@ -24,7 +24,7 @@ Use `createDbFromUrl` from `@functhis/db/node-postgres` against the dedicated `i
 
 ## Budget
 
-Each test under `tests/integration/src/db/` should finish in about one second on a warm machine. If a scenario needs Wrangler, live `bun run dev`, or MCP Worker Loader execution, it belongs in a slower layer—not the DB project.
+Each test under `tests/integration/src/db/` should finish in about one second on a warm machine. If a scenario needs Wrangler, live `bun run dev`, or MCP Worker Loader execution, it belongs in a slower layer-not the DB project.
 
 ## Forbidden in fast DB chunks (`src/db/*.test.ts`)
 

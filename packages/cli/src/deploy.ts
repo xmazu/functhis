@@ -91,7 +91,7 @@ export const runDeploy = async (options?: {
     const detail = await startResponse.text();
     throw new Error(
       startResponse.status === 401
-        ? `${detail}. Token may be expired — run: functhis login`
+        ? `${detail}. Token may be expired - run: functhis login`
         : detail
     );
   }

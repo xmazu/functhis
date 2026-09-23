@@ -12,6 +12,7 @@ import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
 import Header from '#/components/header';
+import { SiteFooter } from '#/components/marketing/site-footer';
 import type { orpc } from '#/utils/orpc';
 
 import appCss from '#/index.css?url';
@@ -23,14 +24,15 @@ export interface RouterAppContext {
 }
 
 const RootDocument = () => (
-  <html lang="en" className="dark">
+  <html className="dark" lang="en">
     <head>
       <HeadContent />
     </head>
     <body>
-      <div className="grid h-svh grid-rows-[auto_1fr]">
+      <div className="flex min-h-svh flex-col">
         <Header />
         <Outlet />
+        <SiteFooter />
       </div>
       <Toaster richColors />
       <TanStackRouterDevtools position="bottom-left" />
@@ -61,6 +63,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         title: 'Functhis',
+      },
+      {
+        name: 'description',
+        content:
+          'Write a TypeScript function. Share a working tool. Deploy with Functhis and let people or agents run it.',
       },
     ],
     links: [

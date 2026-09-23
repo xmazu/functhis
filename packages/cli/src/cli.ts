@@ -5,7 +5,7 @@ import { runDeploy, runDev } from './deploy';
 import { parseDeployVisibility } from './deploy-sharing';
 import { runLogin } from './login';
 
-const usage = `functhis — deploy TypeScript functions
+const usage = `functhis - deploy TypeScript functions
 
 Usage:
   functhis login [--console-url URL] [--web-url URL]

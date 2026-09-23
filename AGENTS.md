@@ -155,9 +155,17 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 
 ---
 
+## Design documents
+
+`apps/web/DESIGN.md` and `apps/console/DESIGN.md` are visual language only: color, type, spacing, motion, surfaces, and general UX principles.
+
+Never add product features, page sections, component inventories, implementation recipes, or copy decks to those files. Product behavior belongs in `vision.md` and `architecture.md`; UI structure belongs in code. When the look changes, update tokens and principles - not a catalog of widgets.
+
+Do not restyle `apps/console` from the web design file, or `apps/web` from the console design file.
+
 ## Monorepo placement
 
-Put code in [`packages/`](packages) **only when it is shared** — imported from **more than one** app or package (e.g. web + console, or `packages/auth` + `apps/web`). If a module has a **single** consumer, keep it under that app (e.g. `apps/web/src/server/…`) until a second consumer exists, then extract.
+Put code in [`packages/`](packages) **only when it is shared** - imported from **more than one** app or package (e.g. web + console, or `packages/auth` + `apps/web`). If a module has a **single** consumer, keep it under that app (e.g. `apps/web/src/server/…`) until a second consumer exists, then extract.
 
 | Location | Use for |
 | --- | --- |
@@ -166,7 +174,7 @@ Put code in [`packages/`](packages) **only when it is shared** — imported from
 
 [`packages/api`](packages/api) is the shared **oRPC** surface: procedures and types that **more than one app** will call (web, console, MCP HTTP later). Do not add app-only procedures there. See [architecture.md](architecture.md) for the full rule.
 
-Do not add to `packages/` “for organization” or “might be reused later” without a second consumer today — that spreads coupling and makes ownership unclear.
+Do not add to `packages/` “for organization” or “might be reused later” without a second consumer today - that spreads coupling and makes ownership unclear.
 
 ### Unused and barrel-only code
 
