@@ -151,4 +151,85 @@ describe('discoverProject', () => {
     expect(Object.keys(files)).toEqual(['functions/api.ts']);
     expect(functions.map((fn) => fn.slug)).toEqual(['api']);
   });
+
+  test('uses src/ folders as namespaces', async () => {
+    const root = await makeProject();
+    await writeFile(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'tools' }),
+      'utf-8'
+    );
+    await mkdir(path.join(root, 'src', 'support'), { recursive: true });
+    await writeFile(
+      path.join(root, 'src', 'support', 'extend-access.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+
+    const { functions } = await discoverProject(root);
+    expect(functions.map((fn) => fn.slug)).toEqual(['support/extend-access']);
+    expect(functions[0]?.path).toBe('src/support/extend-access.ts');
+  });
+
+  test('discovers nested paths under functions/', async () => {
+    const root = await makeProject();
+    await mkdir(path.join(root, 'functions', 'billing'), { recursive: true });
+    await writeFile(
+      path.join(root, 'functions', 'billing', 'find-overdue.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+
+    const { functions } = await discoverProject(root);
+    expect(functions.map((fn) => fn.slug)).toEqual(['billing/find-overdue']);
+  });
+
+  test('prefers src/ over functions/ when both exist', async () => {
+    const root = await makeProject();
+    await mkdir(path.join(root, 'src'), { recursive: true });
+    await writeFile(
+      path.join(root, 'src', 'hello.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+    await mkdir(path.join(root, 'functions'), { recursive: true });
+    await writeFile(
+      path.join(root, 'functions', 'ignored.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+
+    const { functions, files } = await discoverProject(root);
+    expect(Object.keys(files)).toEqual(['src/hello.ts']);
+    expect(functions.map((fn) => fn.slug)).toEqual(['hello']);
+  });
+
+  test('honors functhis.root for discovery', async () => {
+    const root = await makeProject();
+    await writeFile(
+      path.join(root, 'package.json'),
+      JSON.stringify({ functhis: { root: 'lib' }, name: 'tools' }),
+      'utf-8'
+    );
+    await mkdir(path.join(root, 'lib', 'nested'), { recursive: true });
+    await writeFile(
+      path.join(root, 'lib', 'nested', 'ping.ts'),
+      'export default async () => ({});\n',
+      'utf-8'
+    );
+
+    const { functions } = await discoverProject(root);
+    expect(functions.map((fn) => fn.slug)).toEqual(['nested/ping']);
+  });
+
+  test('tells you to cd into a package from a workspace root', async () => {
+    const root = await makeProject();
+    await writeFile(
+      path.join(root, 'package.json'),
+      JSON.stringify({ name: 'monorepo', workspaces: ['packages/*'] }),
+      'utf-8'
+    );
+
+    await expect(discoverProject(root)).rejects.toThrow(/cd into a package/u);
+  });
 });

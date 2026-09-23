@@ -1,5 +1,5 @@
 import type { Database } from '@functhis/db';
-import { user } from '@functhis/db/schema/auth';
+import { organization, user } from '@functhis/db/schema/auth';
 import { eq } from 'drizzle-orm';
 
 const HANDLE_MAX_LENGTH = 39;
@@ -34,7 +34,7 @@ export const isValidHandle = (handle: string): boolean =>
   handle.length <= HANDLE_MAX_LENGTH &&
   HANDLE_PATTERN.test(handle);
 
-const handleExists = async (
+export const userHandleExists = async (
   database: Database,
   handle: string
 ): Promise<boolean> => {
@@ -43,9 +43,28 @@ const handleExists = async (
     .from(user)
     .where(eq(user.handle, handle))
     .limit(1);
-
   return rows.length > 0;
 };
+
+export const scopeHandleExists = async (
+  database: Database,
+  handle: string
+): Promise<boolean> => {
+  if (await userHandleExists(database, handle)) {
+    return true;
+  }
+
+  const orgRows = await database
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.slug, handle))
+    .limit(1);
+
+  return orgRows.length > 0;
+};
+
+const handleExists = (database: Database, handle: string): Promise<boolean> =>
+  scopeHandleExists(database, handle);
 
 const buildSuffixedHandle = (base: string, suffix: number): string => {
   const suffixText = `-${suffix}`;

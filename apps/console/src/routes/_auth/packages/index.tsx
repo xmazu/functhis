@@ -16,7 +16,7 @@ const PackagesPage = () => {
         {packages.length === 0 ? (
           <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
             No deployed packages yet. Run{' '}
-            <code className="font-mono">functhis deploy</code> from a project.
+            <code className="font-mono">functhis publish</code> from a project.
           </p>
         ) : (
           <ul className="flex flex-col gap-1">

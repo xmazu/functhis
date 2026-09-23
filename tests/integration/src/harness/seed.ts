@@ -1,18 +1,24 @@
 import { ensureCliOAuthClient } from '@functhis/auth/seed-cli-client';
 import type { Database } from '@functhis/db';
-import { oauthAccessToken, user } from '@functhis/db/schema/auth';
-import { DEPLOY_API_RESOURCE } from '@functhis/deploy';
-import { CLI_CLIENT_ID } from '@functhis/deploy/oauth';
+import {
+  member,
+  oauthAccessToken,
+  organization,
+  user,
+} from '@functhis/db/schema/auth';
+import { PUBLISH_API_RESOURCE } from '@functhis/publish';
+import { CLI_CLIENT_ID } from '@functhis/publish/oauth';
 
-export interface IntegrationDeployAuth {
+export interface IntegrationPublishAuth {
   accessToken: string;
+  handle: string;
   userId: string;
 }
 
-export const seedIntegrationDeployAuth = async (
+export const seedIntegrationPublishAuth = async (
   db: Database,
   suffix: string
-): Promise<IntegrationDeployAuth> => {
+): Promise<IntegrationPublishAuth> => {
   await ensureCliOAuthClient(db);
 
   const handle = `int_db_${suffix}`;
@@ -37,11 +43,40 @@ export const seedIntegrationDeployAuth = async (
     clientId: CLI_CLIENT_ID,
     createdAt: now,
     expiresAt,
-    resources: [DEPLOY_API_RESOURCE],
+    resources: [PUBLISH_API_RESOURCE],
     scopes: ['openid'],
     token: accessToken,
     userId: insertedUser.id,
   });
 
-  return { accessToken, userId: insertedUser.id };
+  return { accessToken, handle, userId: insertedUser.id };
+};
+
+export const seedIntegrationOrganization = async (
+  db: Database,
+  input: { slug: string; userIds: string[] }
+): Promise<{ organizationId: string; slug: string }> => {
+  const [org] = await db
+    .insert(organization)
+    .values({
+      createdAt: new Date(),
+      name: input.slug,
+      slug: input.slug,
+    })
+    .returning({ id: organization.id });
+
+  if (!org) {
+    throw new Error('Failed to seed integration organization');
+  }
+
+  await db.insert(member).values(
+    input.userIds.map((userId) => ({
+      createdAt: new Date(),
+      organizationId: org.id,
+      role: 'member',
+      userId,
+    }))
+  );
+
+  return { organizationId: org.id, slug: input.slug };
 };

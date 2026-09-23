@@ -12,11 +12,11 @@ The MVP must prove one complete loop:
 ```text
 write a TypeScript function
 → test it locally
-→ deploy it
+→ publish it
 → configure a secret
 → execute it through HTTP and MCP
 → inspect logs and usage
-→ deploy a new version
+→ publish a new version
 → roll back
 ```
 ````
@@ -82,7 +82,7 @@ write a TypeScript function
 - [x] Create an immutable version for every deployment.
 - [x] Track the currently active package version.
 - [ ] Add `functhis versions`.
-- [ ] Add `functhis rollback <version>`.
+- [x] Add `functhis rollback <semver>`.
 - [ ] Show version history in the console.
 - [ ] Show deploy time, author, source hash, and active status.
 - [ ] Allow rollback from the console without rebuilding the bundle.

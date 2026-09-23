@@ -1,5 +1,6 @@
 interface CloudflareEnv {
   AI: Ai;
+  ARTIFACTS: R2Bucket;
   BUNDLES: KVNamespace;
   CONSOLE_URL: string;
   HYPERDRIVE: Hyperdrive;

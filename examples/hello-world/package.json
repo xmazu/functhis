@@ -1,0 +1,8 @@
+{
+  "name": "hello-world",
+  "private": true,
+  "type": "module",
+  "functhis": {
+    "name": "hello-world"
+  }
+}

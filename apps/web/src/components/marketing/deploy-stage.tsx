@@ -8,7 +8,7 @@ export const DeployStage = () => (
     <p className="mt-4 text-lg leading-relaxed text-zinc-400">
       Run{' '}
       <code className="font-mono text-[0.95em] text-zinc-300">
-        npx functhis deploy
+        npx functhis publish
       </code>{' '}
       from the project. Functhis versions the functions and prints live URLs.
       People open a page. Agents call search and execute.

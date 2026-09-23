@@ -1,0 +1,19 @@
+{
+  "name": "functhis-example-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.12",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "bun@1.4.0"
+}

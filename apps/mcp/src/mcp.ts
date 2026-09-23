@@ -1,4 +1,4 @@
-import { ExecutePayloadTooLargeError } from '@functhis/deploy';
+import { ExecutePayloadTooLargeError } from '@functhis/publish';
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 

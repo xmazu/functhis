@@ -37,16 +37,17 @@ In-process Node, **direct TCP** Postgres (`127.0.0.1:5432/integration`).
 | --- | --- |
 | `src/harness/env.ts` | `INTEGRATION_DATABASE_URL` + local-host guard |
 | `src/harness/db.ts` | `createDbFromUrl` singleton + close (`@functhis/db/node-postgres`) |
-| `src/harness/deploy-context.ts` | `createIntegrationDeployContext` for deploy HTTP handlers |
+| `src/harness/publish-context.ts` | `createIntegrationPublishContext` for publish HTTP handlers |
 | `src/harness/seed.ts` | Integration user + CLI deploy bearer token |
 | `src/harness/memory-kv.ts` | In-memory `BUNDLES.put` stub |
 | `src/db/*.test.ts` | Fast Postgres composition chunks |
 
 **Chunks:**
 
-- **Deploy start → finalize** - opaque bearer auth, catalog rows, bundle KV stub.
+- **Deploy start → finalize** - opaque bearer auth, catalog rows, artifact store stub, semver, org scope.
+- **Deploy rollback** - restore a previous semver by slug or package id.
 
-Cleanup: `int_db_%` user handles only (see `src/harness/cleanup.ts`).
+Cleanup: `int_db_%` user handles and organization slugs only (see `src/harness/cleanup.ts`).
 
 ## Environment
 

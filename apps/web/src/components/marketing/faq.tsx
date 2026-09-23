@@ -16,7 +16,7 @@ const FAQS = [
   {
     answer:
       'You keep the code in your project. The CLI discovers each default-exported function, reads its TypeScript signature and JSDoc, bundles the project, and publishes an immutable version. It then prints live pages and callable URLs for the functions it found.',
-    question: 'What happens when I run functhis deploy?',
+    question: 'What happens when I run functhis publish?',
   },
   {
     answer:
@@ -55,7 +55,7 @@ const FAQS = [
   },
   {
     answer:
-      'Ask your coding agent to set up Functhis, or run npx functhis login followed by npx functhis deploy in a TypeScript project. To use published functions from an agent, connect https://mcp.functhis.now/mcp once, then search and execute.',
+      'Ask your coding agent to set up Functhis, or run npx functhis login followed by npx functhis publish in a TypeScript project. To use published functions from an agent, connect https://mcp.functhis.now/mcp once, then search and execute.',
     question: 'How do I get started?',
   },
 ] as const;

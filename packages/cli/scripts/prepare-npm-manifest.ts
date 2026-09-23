@@ -18,7 +18,7 @@ export const prepareNpmManifest = async (): Promise<{
   };
 
   if (pkg.dependencies) {
-    delete pkg.dependencies['@functhis/deploy'];
+    delete pkg.dependencies['@functhis/publish'];
     for (const [name, version] of Object.entries(pkg.dependencies)) {
       if (version === 'catalog:') {
         const resolved = catalog[name];

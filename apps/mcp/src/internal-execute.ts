@@ -1,7 +1,7 @@
 import {
   ExecutePayloadTooLargeError,
   INTERNAL_MCP_EXECUTE_HOST,
-} from '@functhis/deploy';
+} from '@functhis/publish';
 import { z } from 'zod';
 
 import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';

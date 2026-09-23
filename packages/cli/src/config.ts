@@ -3,10 +3,10 @@ import path from 'node:path';
 
 import {
   CONSOLE_ORIGIN_PRODUCTION,
-  DEPLOY_API_RESOURCE,
-} from '@functhis/deploy/oauth';
+  PUBLISH_API_RESOURCE,
+} from '@functhis/publish/oauth';
 
-export { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy/oauth';
+export { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
 
 export interface CliConfig {
   accessToken: string;
@@ -59,7 +59,7 @@ export const resolveWebUrl = (
     cliFlag,
     configValue: config?.webUrl,
     envVar: 'FUNCTHIS_WEB_URL',
-    productionDefault: DEPLOY_API_RESOURCE,
+    productionDefault: PUBLISH_API_RESOURCE,
   });
 
 export const loadConfig = async (): Promise<CliConfig | null> => {

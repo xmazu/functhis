@@ -16,6 +16,8 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
 
+Contributors: see [CONTRIBUTING.md](CONTRIBUTING.md) for tests, examples, and publish-to-local in one place.
+
 ## Run locally
 
 ### Prerequisites
@@ -114,7 +116,7 @@ Install from npm (`npx functhis`, `bunx functhis`, or `npm i -g functhis`), or f
 
 ```bash
 functhis login
-functhis deploy
+functhis publish
 functhis run --slug my-function --input '{"name":"Ada"}'
 ```
 
@@ -129,7 +131,7 @@ functhis login --console-url http://localhost:3002 --web-url http://localhost:30
 bun run example:hello:deploy
 ```
 
-`functhis deploy` stores a **content hash** of the source tree in Postgres, puts the runnable bundle in KV, and prints live `@handle/package` URLs and MCP ids (packages default to **private** unless you set `--visibility`).
+`functhis publish` builds a self-contained artifact locally, stores it on R2 (canonical) and KV (hot path), records an immutable semver, and prints live `@scope/package/function` URLs and MCP ids (packages default to **private** unless you set `--visibility`).
 
 Run a single app:
 
@@ -267,7 +269,8 @@ Use the repo example package [`examples/hello-world`](examples/hello-world) (see
 ```
 functhis/
 ├── examples/
-│   └── hello-world/ # Sample package for CLI smoke tests
+│   ├── hello-world/ # Minimal publish smoke test
+│   └── monorepo/    # Turborepo + functions package
 ├── apps/
 │   ├── web/         # Marketing + deploy API (functhis.now)
 │   ├── console/     # OAuth issuer + dashboard (console.functhis.now)
@@ -292,4 +295,5 @@ functhis/
 - `bun run db:migrate:local`: Apply Drizzle migrations to Neon
 - `bun run example:hello:dev`: Run [`examples/hello-world`](examples/hello-world) locally (no Cloudflare)
 - `bun run example:hello:deploy`: Deploy hello-world via CLI (passes localhost URLs; log in with `functhis login --console-url http://localhost:3002 --web-url http://localhost:3001` first)
+- `bun run example:monorepo:dev` / `example:monorepo:deploy`: Turborepo example (`packages/demo-functions`)
 - `bun run check`: Run Oxlint and Oxfmt

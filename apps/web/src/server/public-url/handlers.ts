@@ -8,11 +8,11 @@ import {
   publicFunctionPath,
   publicPackagePath,
   safeCallbackURLFromRequest,
-} from '@functhis/deploy';
+} from '@functhis/publish';
 import type {
   getFunctionBySlugs,
   PackageAccessContext,
-} from '@functhis/deploy';
+} from '@functhis/publish';
 import { z } from 'zod';
 
 import { env } from '../../env.server';

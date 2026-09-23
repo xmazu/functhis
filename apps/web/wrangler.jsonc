@@ -25,6 +25,12 @@
       "id": "00000000-0000-0000-0000-000000000030",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "ARTIFACTS",
+      "bucket_name": "functhis-artifacts",
+    },
+  ],
   "vars": {
     "NODE_ENV": "development",
     "CONSOLE_URL": "http://localhost:3002",
@@ -56,6 +62,12 @@
           "id": "00000000-0000-0000-0000-000000000010",
         },
       ],
+      "r2_buckets": [
+        {
+          "binding": "ARTIFACTS",
+          "bucket_name": "functhis-artifacts-preview",
+        },
+      ],
       "vars": {
         "NODE_ENV": "production",
         "CONSOLE_URL": "https://console.preview.functhis.now",
@@ -85,6 +97,12 @@
         {
           "binding": "BUNDLES",
           "id": "00000000-0000-0000-0000-000000000011",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "ARTIFACTS",
+          "bucket_name": "functhis-artifacts-production",
         },
       ],
       "vars": {

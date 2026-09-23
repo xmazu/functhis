@@ -6,9 +6,9 @@ import {
 } from '@functhis/db/schema/auth';
 import {
   CLI_CLIENT_ID,
-  DEPLOY_API_RESOURCE,
+  PUBLISH_API_RESOURCE,
   MCP_RESOURCE_PRODUCTION,
-} from '@functhis/deploy';
+} from '@functhis/publish/oauth';
 
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
@@ -23,8 +23,8 @@ export const ensureCliOAuthClient = async (
     .values({
       createdAt: now,
       disabled: false,
-      identifier: DEPLOY_API_RESOURCE,
-      name: 'Functhis deploy API',
+      identifier: PUBLISH_API_RESOURCE,
+      name: 'Functhis publish API',
       updatedAt: now,
     })
     .onConflictDoNothing({ target: oauthResource.identifier });
@@ -61,7 +61,7 @@ export const ensureCliOAuthClient = async (
     .values({
       clientId: CLI_CLIENT_ID,
       createdAt: now,
-      resourceId: DEPLOY_API_RESOURCE,
+      resourceId: PUBLISH_API_RESOURCE,
     })
     .onConflictDoNothing({
       target: [oauthClientResource.clientId, oauthClientResource.resourceId],

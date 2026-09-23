@@ -6,7 +6,7 @@ import {
   embedSearchQuery,
   formatFunctionId,
   listMembershipOrganizationIds,
-} from '@functhis/deploy';
+} from '@functhis/publish';
 import { and, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
 
 import {

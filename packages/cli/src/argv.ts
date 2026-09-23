@@ -1,3 +1,6 @@
+export const parseBooleanFlag = (args: string[], name: string): boolean =>
+  args.includes(name);
+
 export const parseFlag = (args: string[], name: string): string | undefined => {
   const index = args.indexOf(name);
   if (index === -1) {

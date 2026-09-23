@@ -32,16 +32,18 @@ The source of truth is always the ordinary default-exported function and the con
 
 ## The core product loop
 
+The core product loop
+
 The complete experience should feel almost immediate:
 
 ```text
 write ordinary TypeScript function files
-→ functhis deploy
+→ functhis publish
 → receive live URLs
 → test in the browser
 → connect the project to an application or agent
 → inspect executions
-→ deploy a new version or roll back
+→ publish a new version or roll back
 ```
 
 A project can contain several related functions. Functhis deploys the project as one isolated runtime unit while exposing each function as a separate logical tool.

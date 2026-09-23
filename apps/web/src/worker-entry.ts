@@ -9,7 +9,7 @@ import {
 const tanstack = createEvlogTanstackWorkerEntry('functhis-web');
 
 const PUBLIC_PATH =
-  /^\/@(?<handle>[^/]+)\/(?<package>[^/]+)(?:\/(?<function>[^/]+))?\/?$/u;
+  /^\/@(?<handle>[^/]+)\/(?<package>[^/]+)(?:\/(?<function>.+?))?\/?$/u;
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

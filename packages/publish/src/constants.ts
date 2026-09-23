@@ -1,0 +1,19 @@
+export const BUNDLE_KV_PREFIX = 'bundle:v1:';
+
+export const MAX_BUNDLE_BYTES = 5_242_880;
+
+export const MAX_ARTIFACT_BYTES = 15_728_640;
+
+export const MAX_SOURCE_MANIFEST_FILES = 512;
+
+export const MAX_SOURCE_MANIFEST_BYTES = 5_242_880;
+
+export const MAX_EXECUTE_REQUEST_BYTES = 1_048_576;
+
+export const MAX_EXECUTE_RESPONSE_BYTES = 1_048_576;
+
+export const EXECUTE_CPU_MS = 30_000;
+
+export const EXECUTE_SUB_REQUESTS = 50;
+
+export const WORKER_COMPATIBILITY_DATE = '2025-09-15';

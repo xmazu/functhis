@@ -2,9 +2,12 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const packageRoot = path.join(import.meta.dirname, '..');
-const minimumLineCoverage = 80;
+const minimumLineCoverage = 85;
+const skippedFiles = new Set(['cli.ts', 'login.ts', 'open-url.ts']);
+const srcDir = path.join(packageRoot, 'src');
+const packageSrcMarker = `packages/${path.basename(packageRoot)}/src/`;
 
-const result = spawnSync('bun', ['test', 'src', '--coverage'], {
+const result = spawnSync('bun', ['test', srcDir, '--coverage'], {
   cwd: packageRoot,
   encoding: 'utf-8',
   maxBuffer: 10 * 1024 * 1024,
@@ -17,17 +20,38 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
-const combinedOutput = `${result.stdout}\n${result.stderr}`;
-const srcRows = combinedOutput
-  .split('\n')
-  .filter((line) => /\ssrc\/[a-z].+\.ts/u.test(line));
-
-for (const row of srcRows) {
-  const segments = row
+const coverageSegments = (row: string): string[] =>
+  row
     .split('|')
     .map((part) => part.trim())
-    .filter(Boolean);
-  const [filePath, , lineCoverageText] = segments;
+    .filter((part) => part.length > 0);
+
+const combinedOutput = `${result.stdout}\n${result.stderr}`;
+const srcRows = combinedOutput.split('\n').filter((line) => {
+  const filePath = coverageSegments(line).find((segment) =>
+    segment.endsWith('.ts')
+  );
+  if (!filePath || filePath.includes('.test.')) {
+    return false;
+  }
+  return (
+    filePath.startsWith('src/') ||
+    filePath.includes(packageSrcMarker) ||
+    /(?:^|\s)src\/[a-z][\w.-]*\.ts(?:\s|$)/u.test(line)
+  );
+});
+
+for (const row of srcRows) {
+  const segments = coverageSegments(row);
+  const filePath = segments.find((segment) => segment.endsWith('.ts'));
+  const lineCoverageText = segments.at(2);
+  if (!filePath) {
+    continue;
+  }
+  const fileName = path.basename(filePath);
+  if (skippedFiles.has(fileName)) {
+    continue;
+  }
   const lineCoverage = Number(lineCoverageText ?? '0');
   if (lineCoverage < minimumLineCoverage) {
     console.error(

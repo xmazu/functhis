@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { DEPLOY_API_RESOURCE } from '@functhis/deploy';
+import { PUBLISH_API_RESOURCE } from '@functhis/publish';
 
 import { ensureCliOAuthClient } from './seed-cli-client';
 
@@ -20,7 +20,7 @@ describe('ensureCliOAuthClient', () => {
 
     await ensureCliOAuthClient(database as never, 'http://localhost:3003');
 
-    expect(insertedResources).toContain(DEPLOY_API_RESOURCE);
+    expect(insertedResources).toContain(PUBLISH_API_RESOURCE);
     expect(insertedResources).toContain('http://localhost:3003');
   });
 });

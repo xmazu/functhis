@@ -5,8 +5,8 @@ import path from 'node:path';
 
 import {
   CONSOLE_ORIGIN_PRODUCTION,
-  DEPLOY_API_RESOURCE,
-} from '@functhis/deploy/oauth';
+  PUBLISH_API_RESOURCE,
+} from '@functhis/publish/oauth';
 
 import type { CliConfig } from './config';
 import {
@@ -81,7 +81,7 @@ describe('resolveConsoleUrl', () => {
 
 describe('resolveWebUrl', () => {
   test('defaults to deploy API resource origin', () => {
-    expect(resolveWebUrl(null)).toBe(DEPLOY_API_RESOURCE);
+    expect(resolveWebUrl(null)).toBe(PUBLISH_API_RESOURCE);
   });
 });
 

@@ -50,7 +50,7 @@ jobs:
         run: bun run check && bun run check-types
 
       - name: Test
-        run: bun test packages/auth packages/deploy packages/cli apps/mcp/src scripts apps/console/src/lib
+        run: bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/console/src/lib
 
       - name: Integration test
         env:

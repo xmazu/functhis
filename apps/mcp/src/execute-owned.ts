@@ -12,8 +12,8 @@ import {
   runDynamicWorker,
   StoredBundleLoadError,
   validateContractInput,
-} from '@functhis/deploy';
-import type { ContractInputValidationIssue } from '@functhis/deploy';
+} from '@functhis/publish';
+import type { ContractInputValidationIssue } from '@functhis/publish';
 import { and, eq } from 'drizzle-orm';
 
 export class FunctionNotFoundError extends Error {

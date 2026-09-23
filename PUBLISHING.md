@@ -10,7 +10,7 @@ Maintainer reference for releasing the `functhis` npm CLI. Contributors should u
 | --- | --- | --- |
 | `functhis` | npmjs (`registry.npmjs.org`, public) | Node ESM CLI binary (`dist/cli.js` only) |
 
-`@functhis/deploy` and other workspace packages stay private; deploy protocol code used by the CLI is bundled into `dist/cli.js`.
+`@functhis/publish` and other workspace packages stay private; publish protocol code used by the CLI is bundled into `dist/cli.js`.
 
 ## License
 
@@ -56,6 +56,6 @@ Add repository secret **`NPM_TOKEN`** with publish access to the unscoped `funct
 ```bash
 bun run --filter functhis build
 bun run check && bun run check-types
-bun test packages/auth packages/deploy packages/cli apps/mcp/src scripts apps/console/src/lib
+bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/console/src/lib
 bun run --filter functhis pack-smoke
 ```

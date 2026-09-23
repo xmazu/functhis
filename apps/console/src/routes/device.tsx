@@ -191,9 +191,10 @@ const DevicePage = () => {
 export const Route = createFileRoute('/device')({
   component: DevicePage,
   beforeLoad: async ({ location }) => {
+    const callbackURL = `${location.pathname}${location.search}`;
     const session = await resolveSession();
     if (!session) {
-      throw redirectToLogin(`${location.pathname}${location.search}`);
+      throw redirectToLogin(callbackURL);
     }
   },
   validateSearch: (search: Record<string, unknown>) => ({

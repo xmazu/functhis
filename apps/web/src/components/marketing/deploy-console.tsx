@@ -14,7 +14,7 @@ const HANDLE = 'xmazu';
 const PACKAGE_SLUG = 'openenvx-tools';
 const WEB_ORIGIN = 'https://functhis.now';
 const PROJECT_DIR = '~/projects/openenvx-tools';
-const COMMAND = 'npx functhis deploy';
+const COMMAND = 'npx functhis publish';
 
 const TYPE_START_MS = 480;
 const TYPE_MIN_MS = 25;
@@ -289,7 +289,7 @@ export const DeployConsole = () => {
 
   return (
     <div
-      aria-label="Example of npx functhis deploy"
+      aria-label="Example of npx functhis publish"
       className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 text-left shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
       ref={rootRef}
     >

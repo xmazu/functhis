@@ -1,4 +1,4 @@
-import { internalMcpExecuteUrl } from '@functhis/deploy';
+import { internalMcpExecuteUrl } from '@functhis/publish';
 import { z } from 'zod';
 
 import { env } from '../env.server';

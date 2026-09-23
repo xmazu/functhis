@@ -1,0 +1,15 @@
+{
+  "name": "@acme/demo-functions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@acme/shared": "workspace:*"
+  },
+  "functhis": {
+    "name": "demo-functions"
+  }
+}

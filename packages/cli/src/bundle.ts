@@ -4,7 +4,7 @@ export {
   hashSourceTree,
   sha256Hex,
   stableBundlePayload,
-} from '@functhis/deploy/bundle';
+} from '@functhis/publish/bundle';
 
 export const createBootstrapSource = (
   functions: DiscoveredFunction[]

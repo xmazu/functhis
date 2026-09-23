@@ -3,22 +3,27 @@ import { mcp } from '@better-auth/mcp';
 import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
 import type { Database } from '@functhis/db';
 import * as schema from '@functhis/db/schema/auth';
-import { DEPLOY_API_RESOURCE } from '@functhis/deploy';
+import { PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError } from 'better-auth/api';
 import { jwt, organization } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 
 import { fetchClientMetadataResource } from './cimd-fetch';
-import { allocateUniqueHandle, normalizeHandleCandidate } from './handle';
+import {
+  allocateUniqueHandle,
+  normalizeHandleCandidate,
+  userHandleExists,
+} from './handle';
 
 export {
-  DEPLOY_API_RESOURCE,
+  PUBLISH_API_RESOURCE,
   parseBearerToken,
-  validateDeployBearerToken,
-  type DeployAuthResult,
-  type DeployAuthOptions,
-} from './deploy-token';
+  validatePublishBearerToken,
+  type PublishAuthResult,
+  type PublishAuthOptions,
+} from './publish-token';
 export {
   resolveCallerUserId,
   resolveSessionUserId,
@@ -29,6 +34,8 @@ export {
   allocateUniqueHandle,
   isValidHandle,
   normalizeHandleCandidate,
+  scopeHandleExists,
+  userHandleExists,
 } from './handle';
 
 export interface AuthConfig {
@@ -56,8 +63,19 @@ const crossSubdomainCookies = (baseURL: string) => {
   return { enabled: false };
 };
 
-export const createAuth = (env: AuthConfig, database: Database) =>
-  betterAuth({
+export const createAuth = (env: AuthConfig, database: Database) => {
+  const assertOrgSlugAvailable = async (slug: unknown): Promise<void> => {
+    if (typeof slug !== 'string') {
+      return;
+    }
+    if (await userHandleExists(database, slug)) {
+      throw new APIError('BAD_REQUEST', {
+        message: `Slug ${slug} is already used by a user`,
+      });
+    }
+  };
+
+  return betterAuth({
     advanced: {
       crossSubDomainCookies: crossSubdomainCookies(env.BETTER_AUTH_URL),
     },
@@ -95,7 +113,7 @@ export const createAuth = (env: AuthConfig, database: Database) =>
         consentPage: '/consent',
         loginPage: '/login',
         resource: env.MCP_RESOURCE,
-        resources: [env.MCP_RESOURCE, DEPLOY_API_RESOURCE],
+        resources: [env.MCP_RESOURCE, PUBLISH_API_RESOURCE],
       }),
       cimd({
         fetchClientMetadataResource,
@@ -103,6 +121,14 @@ export const createAuth = (env: AuthConfig, database: Database) =>
       }),
       oauthDeviceAuthorization({ verificationUri: '/device' }),
       organization({
+        organizationHooks: {
+          beforeCreateOrganization: async ({ organization: created }) => {
+            await assertOrgSlugAvailable(created.slug);
+          },
+          beforeUpdateOrganization: async ({ organization: updated }) => {
+            await assertOrgSlugAvailable(updated.slug);
+          },
+        },
         sendInvitationEmail: async () => {
           // Console shows copyable invite links; no outbound email in alpha.
         },
@@ -141,5 +167,6 @@ export const createAuth = (env: AuthConfig, database: Database) =>
       },
     },
   });
+};
 
 export type Auth = ReturnType<typeof createAuth>;

@@ -9,7 +9,7 @@ import {
   publicPackagePath,
   resolveOrganizationSlugById,
   updatePackageSharing,
-} from '@functhis/deploy';
+} from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
 
 import { env } from '@/env.server';

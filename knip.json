@@ -88,12 +88,12 @@
       "project": ["**/*.ts"]
     },
     "packages/cli": {
-      "entry": ["src/cli.ts", "scripts/**/*.ts"],
+      "entry": ["src/cli.ts", "src/**/*.test.ts", "scripts/**/*.ts"],
       "project": ["src/**/*.ts", "scripts/**/*.ts"]
     },
-    "packages/deploy": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**/*.ts"],
+    "packages/publish": {
+      "entry": ["src/index.ts", "src/**/*.test.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts"],
       "ignoreDependencies": ["zod"]
     },
     "apps/mcp": {

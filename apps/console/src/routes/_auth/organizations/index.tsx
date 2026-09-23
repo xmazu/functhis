@@ -1,4 +1,4 @@
-import { normalizeOrganizationSlug } from '@functhis/deploy';
+import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 

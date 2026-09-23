@@ -94,7 +94,7 @@ Three product Workers (web, console, mcp). Untrusted package code must not share
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive (catalog, cache on), bundle KV (deploy), Workers AI, service binding to mcp |
+| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive (catalog, cache on), bundle KV (hot path), artifacts R2 (canonical), Workers AI, service binding to mcp |
 | `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive (auth, cache off), `global_fetch_strictly_public` |
 | `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution (phase 6) | Neon via Hyperdrive (catalog, cache on), bundle KV, `LOADER`, Analytics Engine, Workers AI |
 
@@ -164,6 +164,7 @@ apps/mcp/wrangler.jsonc      functhis-mcp (+ preview/production env blocks)
 - Neon Postgres project stays in the dashboard; connection string in Secrets Store and Hyperdrive origin (Neon **direct** / unpooled host)
 - Hyperdrive `functhis-auth-{env}` (caching disabled - console) and `functhis-catalog-{env}` (cache enabled - web and mcp)
 - KV `functhis-bundles-{env}`
+- R2 `functhis-artifacts-{env}` (published package artifacts; Terraform; not the Terraform state bucket)
 - R2 `functhis-tf-state` (state backend only - create once with `wrangler r2 bucket create`; not a Terraform resource)
 - Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
 - Analytics Engine execution metrics: Wrangler-bound on `functhis-mcp` (`functhis_executions` / `functhis_executions_preview`; dataset names in Terraform output `analytics_execution_dataset`)
@@ -199,22 +200,22 @@ Do not add a Workers for Platforms dispatch namespace unless custom-domain hostn
 Three layers. Do not collapse them.
 
 ```text
-Source hash        deterministic hash of the deployed source tree (metadata only in alpha).
-KV bundle          compiled Worker Loader modules, keyed by content hash.
-Postgres catalog   ACL, slugs, currentVersionId, execution rows.
+Source hash        deterministic hash of the published source tree (metadata only in alpha).
+R2 artifact        canonical bundle.mjs, bundle.mjs.map, manifest.json, build.json, keyed by content hash.
+KV bundle          hot copy of bundle.mjs for Worker Loader, keyed by bundle hash.
+Postgres catalog   ACL, slugs, currentVersionId, semver, execution rows.
 ```
 
-Deploy:
+Publish:
 
 ```text
 CLI → deploy API
-  → record source hash from the CLI
-  → bundle for Workers (esbuild / worker-bundler; no Node builtins)
-  → PUT modules to KV under the bundle hash
-  → insert immutable package_version, point package.currentVersionId
+  → discover + ts-morph contracts + esbuild ESM (local)
+  → upload artifact (R2 canonical + KV copy of bundle.mjs)
+  → insert immutable package_version (semver), point package.currentVersionId
 ```
 
-**Author source (CLI discovery):** one default export per `.ts` / `.tsx` file; function slug from the file name (kebab-case); optional JSDoc description on the export; optional `input` object parameter (TypeScript type → JSON Schema in `contract`). Root-level sources or everything under `functions/` when that directory exists. See [examples/README.md](examples/README.md).
+**Author source (CLI discovery):** nearest `package.json` is the package. Function root is `"functhis"."root"`, else `src/`, else `functions/`, else shallow files at the package root. One default export per `.ts` / `.tsx` file; function slug from the path under the function root (kebab-case segments, so `src/support/extend-access.ts` → `support/extend-access`). Optional JSDoc description; optional `input` object parameter (TypeScript type → JSON Schema in `contract`). Public id: `@<scope>/<package>/<namespace…>/<function>`. Scope is a user handle or org slug. See [examples/README.md](examples/README.md).
 
 Execute (public POST and MCP `execute`):
 
@@ -232,14 +233,16 @@ Phase 5 may call the same execute path on `functhis-mcp` via a service binding f
 sequenceDiagram
   participant CLI
   participant Web as functhis-web
+  participant R2 as Artifacts R2
   participant KV as Bundles KV
   participant DB as Postgres
   participant Agent
   participant MCP as functhis-mcp
   participant DW as Dynamic Worker
 
-  CLI->>Web: deploy (device token)
-  Web->>KV: PUT compiled modules
+  CLI->>Web: publish (device token)
+  Web->>R2: PUT artifact (bundle, map, manifest, build.json)
+  Web->>KV: PUT bundle.mjs copy
   Web->>DB: insert package_version, point currentVersionId
   Note over CLI,DB: later execute
   Agent->>MCP: execute @handle/pkg/fn
@@ -250,11 +253,11 @@ sequenceDiagram
   MCP->>DB: execution row
 ```
 
-Rollback is `currentVersionId = previous`. The loader id is the version id, so the isolate changes immediately.
+Rollback is `functhis rollback <semver>` (`currentVersionId` → that row). The loader id is the version id, so the isolate changes immediately. No rebuild.
 
-Canonical source stays with the author (local tree / their Git). Functhis stores a deployed snapshot hash and the KV bundle. Reuse is `execute` (or HTTP POST) of a published function, not importing or forking source. Do not use Cloudflare Artifacts. Do not stand up a Git host for package trees.
+Canonical source stays with the author (local tree / their Git). Functhis stores a published artifact (R2) and a KV hot copy of `bundle.mjs`. Git commit is optional provenance on `build.json`. Reuse is `execute` (or HTTP POST) of a published function, not importing or forking source. Do not use Cloudflare Artifacts. Do not stand up a Git host for package trees.
 
-R2 is not the source of truth. Use it later for optional read-only source snapshots on the function page and for large execution outputs (PDFs, archives), not for the hot-path bundle.
+R2 is the source of truth for the published artifact. KV is the execute hot path. R2 is also later used for large execution outputs (PDFs, archives), not as a Git host.
 
 Do not copy Kody’s in-platform Git workspace or Gram’s third-party MCP Registry catalog. Functhis `search` domain `library` is later discovery of **our** published functions, not proxying other MCP servers.
 
@@ -264,9 +267,9 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 
 | Table | Notes |
 | --- | --- |
-| `package` | `slug`, `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
-| `function` | `packageId`, `exportName`, `path`, `slug`, contract JSON, `search_text`, `embedding vector(768)`. Unique `(packageId, slug)` |
-| `package_version` | Immutable: source hash, bundle hash, contracts, createdBy |
+| `package` | `slug`, `scopeKind` (`user` \| `organization`), `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
+| `function` | `packageId`, `exportName`, `path`, `slug` (may include `/` namespaces), contract JSON, `search_text`, `embedding vector(768)`. Unique `(packageId, slug)` |
+| `package_version` | Immutable: semver, source hash, bundle hash, artifact key, contracts, git sha, runtime version, createdBy |
 | `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
 
 Local Docker is `pgvector/pgvector:pg16`. Production is Neon Postgres. Workers use `drizzle-orm` + `pg` through Hyperdrive (`createDb` in `packages/db`). Migrations use `DATABASE_URL` from `packages/db/.env`, never Hyperdrive.
@@ -332,10 +335,10 @@ apps/console      OAuth issuer + thin dashboard
 apps/mcp          hosted: mcp.functhis.now, MCP tools + Worker Loader execute
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
-packages/cli      OSS: login, deploy, local run/dev
+packages/cli      OSS: login, publish, local run/dev
 packages/db       schema
 packages/api      shared oRPC / business logic (see below)
-packages/deploy   deploy schemas, bundle hashing, catalog reads, execute helpers
+packages/publish   publish schemas, bundle hashing, catalog reads, execute helpers
 packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
 packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts
@@ -346,7 +349,7 @@ packages/ui       existing
 
 OSS: CLI, `runtime`, `protocol`. Hosted: auth, ACL, Dynamic Workers, URLs, quotas, history.
 
-CLI: `functhis login` (device), `functhis deploy`, `functhis run` / `dev`. No Docker. No author wrangler.toml.
+CLI: `functhis login` (device), `functhis publish`, `functhis rollback <semver>`, `functhis run` / `dev`. `deploy` remains a hidden alias of `publish`. No Docker. No author wrangler.toml.
 
 ## Flows
 
@@ -359,8 +362,8 @@ Human:  GET  functhis.now/@xmazu/pkg/fn  page
         POST functhis.now/@xmazu/pkg/fn  run
 
 CLI:    login → console.functhis.now/device
-        deploy → source hash + KV bundle + package_version
-        → https://functhis.now/@xmazu/package/function
+        publish → artifact (R2 + KV) + package_version
+        → https://functhis.now/@scope/package/namespace/function
 ```
 
 ## Defer

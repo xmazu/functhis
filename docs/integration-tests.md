@@ -17,7 +17,7 @@ Pick the lowest layer that proves the behavior. Do not push full deploy persiste
 
 1. Seed an integration user (`int_db_*` handle prefix for cleanup).
 2. Seed auth prerequisites (opaque deploy token, OAuth client rows) instead of driving GitHub or device login.
-3. Call production handlers from `@functhis/deploy/http` with `createIntegrationDeployContext` (database, stub KV, deploy auth).
+3. Call production handlers from `@functhis/publish/http` with `createIntegrationPublishContext` (database, stub KV, deploy auth).
 4. Assert Postgres rows and any stubbed side effects (KV keys, etc.).
 
 Use `createDbFromUrl` from `@functhis/db/node-postgres` against the dedicated `integration` database. Migrations use `migrateDatabaseFromUrl` from `@functhis/db/integration-migrate` (Drizzle migrator). Stub Cloudflare bindings in the test context; do not import `cloudflare:workers` in fast DB tests.

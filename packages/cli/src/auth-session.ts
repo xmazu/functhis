@@ -1,4 +1,4 @@
-import { CLI_CLIENT_ID, DEPLOY_API_RESOURCE } from '@functhis/deploy/oauth';
+import { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
 
 import { loadConfig, resolveConsoleUrl, saveConfig } from './config';
 import type { CliConfig } from './config';
@@ -29,7 +29,7 @@ const refreshAccessToken = async (config: CliConfig): Promise<CliConfig> => {
       client_id: CLI_CLIENT_ID,
       grant_type: 'refresh_token',
       refresh_token: config.refreshToken,
-      resource: DEPLOY_API_RESOURCE,
+      resource: PUBLISH_API_RESOURCE,
     }),
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     method: 'POST',

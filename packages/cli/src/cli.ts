@@ -1,17 +1,40 @@
 #!/usr/bin/env node
 
-import { parseFlag, parseJsonInput } from './argv';
-import { runDeploy, runDev } from './deploy';
-import { parseDeployVisibility } from './deploy-sharing';
-import { runLogin } from './login';
+import type { VersionBump } from '@functhis/publish/semver';
 
-const usage = `functhis - deploy TypeScript functions
+import { parseBooleanFlag, parseFlag, parseJsonInput } from './argv';
+import { runLogin } from './login';
+import { runPublish, runDev, runRollback } from './publish';
+import { parsePublishVisibility } from './publish-sharing';
+
+const usage = `functhis - publish TypeScript functions
 
 Usage:
   functhis login [--console-url URL] [--web-url URL]
-  functhis deploy [--slug NAME] [--visibility private|organization|library] [--organization SLUG] [--web-url URL] [--project-root PATH]
+  functhis publish [--slug NAME] [--scope HANDLE] [--major|--minor|--patch] [--visibility private|library] [--web-url URL] [--project-root PATH]
+  functhis rollback VERSION [--slug NAME] [--scope HANDLE] [--web-url URL] [--project-root PATH]
   functhis run|dev [--slug FUNCTION] [--input JSON] [--project-root PATH]
 `;
+
+const parseBump = (rest: string[]): VersionBump | undefined => {
+  const major = parseBooleanFlag(rest, '--major');
+  const minor = parseBooleanFlag(rest, '--minor');
+  const patch = parseBooleanFlag(rest, '--patch');
+  const selected = Number(major) + Number(minor) + Number(patch);
+  if (selected > 1) {
+    throw new Error('Use only one of --major, --minor, or --patch.');
+  }
+  if (major) {
+    return 'major';
+  }
+  if (minor) {
+    return 'minor';
+  }
+  if (patch) {
+    return 'patch';
+  }
+  return undefined;
+};
 
 const runLocal = async (rest: string[]): Promise<void> => {
   const inputRaw = parseFlag(rest, '--input');
@@ -26,6 +49,16 @@ const runLocal = async (rest: string[]): Promise<void> => {
   });
 };
 
+const publishOptions = (rest: string[]) => ({
+  bump: parseBump(rest),
+  organizationSlug: parseFlag(rest, '--organization'),
+  projectRoot: parseFlag(rest, '--project-root'),
+  scope: parseFlag(rest, '--scope'),
+  slug: parseFlag(rest, '--slug'),
+  visibility: parsePublishVisibility(parseFlag(rest, '--visibility')),
+  webUrl: parseFlag(rest, '--web-url'),
+});
+
 const main = async (): Promise<void> => {
   const command = process.argv.at(2);
   const rest = process.argv.slice(3);
@@ -38,12 +71,20 @@ const main = async (): Promise<void> => {
       });
       return;
     }
-    case 'deploy': {
-      await runDeploy({
-        organizationSlug: parseFlag(rest, '--organization'),
+    case 'publish': {
+      await runPublish(publishOptions(rest));
+      return;
+    }
+    case 'rollback': {
+      const [semver] = rest;
+      if (!semver || semver.startsWith('--')) {
+        throw new Error('Usage: functhis rollback <semver>');
+      }
+      await runRollback({
         projectRoot: parseFlag(rest, '--project-root'),
+        scope: parseFlag(rest, '--scope') ?? parseFlag(rest, '--organization'),
+        semver,
         slug: parseFlag(rest, '--slug'),
-        visibility: parseDeployVisibility(parseFlag(rest, '--visibility')),
         webUrl: parseFlag(rest, '--web-url'),
       });
       return;

@@ -209,7 +209,7 @@ const WithPanel = () => (
       </div>
       <div className="flex items-center gap-2 border-t border-zinc-800 px-4 py-3 font-mono text-xs text-zinc-200">
         <Terminal aria-hidden="true" className="size-3.5 text-zinc-500" />
-        <span>functhis deploy</span>
+        <span>functhis publish</span>
       </div>
       <div className="flex flex-col gap-1 border-t border-zinc-800 px-4 py-3 font-mono text-[12px] leading-6">
         <p className="break-all text-zinc-300">{WITH_URL}</p>

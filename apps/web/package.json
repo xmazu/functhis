@@ -16,7 +16,7 @@
     "@functhis/api": "workspace:*",
     "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",
-    "@functhis/deploy": "workspace:*",
+    "@functhis/publish": "workspace:*",
     "@functhis/ui": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

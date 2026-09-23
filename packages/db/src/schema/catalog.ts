@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -19,6 +20,11 @@ export const packageVisibility = pgEnum('package_visibility', [
   'library',
 ]);
 
+export const packageScopeKind = pgEnum('package_scope_kind', [
+  'user',
+  'organization',
+]);
+
 export const pkg = pgTable(
   'package',
   {
@@ -33,6 +39,7 @@ export const pkg = pgTable(
     ownerUserId: text('owner_user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+    scopeKind: packageScopeKind('scope_kind').default('user').notNull(),
     slug: text('slug').notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -45,10 +52,12 @@ export const pkg = pgTable(
     visibility: packageVisibility('visibility').default('private').notNull(),
   },
   (table) => [
-    uniqueIndex('package_owner_user_id_slug_uidx').on(
-      table.ownerUserId,
-      table.slug
-    ),
+    uniqueIndex('package_user_scope_slug_uidx')
+      .on(table.ownerUserId, table.slug)
+      .where(sql`${table.scopeKind} = 'user'`),
+    uniqueIndex('package_org_scope_slug_uidx')
+      .on(table.organizationId, table.slug)
+      .where(sql`${table.scopeKind} = 'organization'`),
     index('package_owner_user_id_idx').on(table.ownerUserId),
     index('package_organization_id_idx').on(table.organizationId),
   ]
@@ -57,21 +66,32 @@ export const pkg = pgTable(
 export const packageVersion = pgTable(
   'package_version',
   {
+    artifactKey: text('artifact_key').notNull(),
     bundleHash: text('bundle_hash').notNull(),
     contracts: jsonb('contracts').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     createdBy: text('created_by')
       .notNull()
       .references(() => user.id, { onDelete: 'restrict' }),
+    gitDirty: boolean('git_dirty').default(false).notNull(),
+    gitSha: text('git_sha'),
     id: text('id')
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     packageId: text('package_id')
       .notNull()
       .references(() => pkg.id, { onDelete: 'cascade' }),
+    runtimeVersion: text('runtime_version').notNull(),
+    semver: text('semver').notNull(),
     sourceHash: text('source_hash').notNull(),
   },
-  (table) => [index('package_version_package_id_idx').on(table.packageId)]
+  (table) => [
+    index('package_version_package_id_idx').on(table.packageId),
+    uniqueIndex('package_version_package_id_semver_uidx').on(
+      table.packageId,
+      table.semver
+    ),
+  ]
 );
 
 export const pkgFunction = pgTable(

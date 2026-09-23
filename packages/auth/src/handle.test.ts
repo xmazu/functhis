@@ -4,6 +4,7 @@ import {
   allocateUniqueHandle,
   isValidHandle,
   normalizeHandleCandidate,
+  userHandleExists,
 } from './handle';
 
 describe('normalizeHandleCandidate', () => {
@@ -78,5 +79,20 @@ describe('allocateUniqueHandle', () => {
     occupied.add('xmazu');
     const handle = await allocateUniqueHandle(database as never, 'xmazu');
     expect(handle).toBe('xmazu-2');
+  });
+});
+
+describe('userHandleExists', () => {
+  test('is true when a user row exists', async () => {
+    const database = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: () => Promise.resolve([{ id: '1' }]),
+          }),
+        }),
+      }),
+    };
+    expect(await userHandleExists(database as never, 'neroli')).toBe(true);
   });
 });

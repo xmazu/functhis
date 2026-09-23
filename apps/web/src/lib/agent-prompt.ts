@@ -5,7 +5,7 @@ Functhis turns default-exported TypeScript functions into live tools (HTTP + MCP
 Do this:
 1. Run \`npx functhis login\` so the developer can authorize the CLI.
 2. Put default-exported functions at the project root or under \`functions/\`.
-3. Run \`npx functhis deploy\`.
+3. Run \`npx functhis publish\`.
 4. Give the developer the printed package and function URLs.
 5. To let an agent call the tools, connect MCP to https://mcp.functhis.now/mcp (OAuth). Tools are \`search\` and \`execute\`.
 

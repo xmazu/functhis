@@ -18,7 +18,7 @@
     "@better-auth/oauth-provider": "1.7.3",
     "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",
-    "@functhis/deploy": "workspace:*",
+    "@functhis/publish": "workspace:*",
     "@functhis/ui": "workspace:*",
     "@tabler/icons-react": "^3.46.0",
     "@tailwindcss/vite": "^4.3.3",

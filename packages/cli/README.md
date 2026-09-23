@@ -1,6 +1,6 @@
 # functhis
 
-Deploy TypeScript functions to [Functhis](https://functhis.now).
+Publish TypeScript functions to [Functhis](https://functhis.now).
 
 ## Install
 
@@ -16,16 +16,17 @@ Requires Node 20+.
 
 ```bash
 functhis login
-functhis deploy --slug my-package --project-root .
+functhis publish --slug my-package --project-root .
+functhis rollback 1.0.0
 functhis run --slug my-function --input '{"name":"Ada"}'
 ```
 
-`run` and `dev` are aliases for local execution against your project’s `functions/` tree.
+`run` and `dev` are aliases for local execution against your package (`src/`, `functions/`, or `"functhis.root"`).
 
 Production defaults:
 
 - Console (OAuth): `https://console.functhis.now`
-- Web / deploy API: `https://functhis.now`
+- Web / publish API: `https://functhis.now`
 
 Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.
 

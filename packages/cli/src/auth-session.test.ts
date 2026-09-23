@@ -39,6 +39,42 @@ describe('ensureValidAccessToken', () => {
     await expect(ensureValidAccessToken(config)).resolves.toBe(config);
   });
 
+  test('requires a refresh token when the access token is expired', async () => {
+    const config: CliConfig = {
+      accessToken: 'stale-token',
+      consoleUrl: 'http://localhost:3002',
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+      webUrl: 'http://localhost:3001',
+    };
+    await expect(ensureValidAccessToken(config)).rejects.toThrow(
+      /functhis login/u
+    );
+  });
+
+  test('requires login when refresh fails', async () => {
+    previousHome = process.env.HOME;
+    const home = await mkdtemp(path.join(tmpdir(), 'functhis-auth-fail-'));
+    process.env.HOME = home;
+    globalThis.fetch = ((): Promise<Response> =>
+      Promise.resolve(new Response('nope', { status: 400 }))) as typeof fetch;
+
+    const config: CliConfig = {
+      accessToken: 'stale-token',
+      consoleUrl: 'http://localhost:3002',
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+      refreshToken: 'refresh-me',
+      webUrl: 'http://localhost:3001',
+    };
+
+    try {
+      await expect(ensureValidAccessToken(config)).rejects.toThrow(
+        /Failed to refresh access token/u
+      );
+    } finally {
+      await rm(home, { force: true, recursive: true });
+    }
+  });
+
   test('refreshes an expired access token', async () => {
     previousHome = process.env.HOME;
     const home = await mkdtemp(path.join(tmpdir(), 'functhis-auth-refresh-'));

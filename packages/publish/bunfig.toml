@@ -1,0 +1,9 @@
+[test]
+coveragePath = "src"
+coverageSkip = [
+  "../**",
+  "http-handlers.ts",
+  "catalog-read.ts",
+  "**/private/**",
+  "**/var/**",
+]

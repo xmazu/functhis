@@ -31,7 +31,7 @@
         "@better-auth/oauth-provider": "1.7.3",
         "@functhis/auth": "workspace:*",
         "@functhis/db": "workspace:*",
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "@functhis/ui": "workspace:*",
         "@tabler/icons-react": "^3.46.0",
         "@tailwindcss/vite": "^4.3.3",
@@ -98,7 +98,7 @@
       "dependencies": {
         "@better-auth/mcp": "1.7.3",
         "@functhis/db": "workspace:*",
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "@modelcontextprotocol/server": "2.0.0",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
@@ -117,7 +117,7 @@
         "@functhis/api": "workspace:*",
         "@functhis/auth": "workspace:*",
         "@functhis/db": "workspace:*",
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "@functhis/ui": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
@@ -179,7 +179,7 @@
         "@better-auth/mcp": "1.7.3",
         "@better-auth/oauth-provider": "1.7.3",
         "@functhis/db": "workspace:*",
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "better-auth": "catalog:",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
@@ -198,7 +198,7 @@
         "functhis": "./dist/cli.js",
       },
       "dependencies": {
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "esbuild": "^0.25.12",
         "ts-morph": "^26.0.0",
         "typescript": "catalog:",
@@ -239,8 +239,15 @@
         "varlock": "catalog:",
       },
     },
-    "packages/deploy": {
-      "name": "@functhis/deploy",
+    "packages/infra": {
+      "name": "@functhis/infra",
+      "devDependencies": {
+        "@functhis/config": "workspace:*",
+        "wrangler": "^4.40.2",
+      },
+    },
+    "packages/publish": {
+      "name": "@functhis/publish",
       "dependencies": {
         "@functhis/db": "workspace:*",
         "drizzle-orm": "^0.45.2",
@@ -250,13 +257,6 @@
         "@functhis/config": "workspace:*",
         "@types/bun": "latest",
         "typescript": "catalog:",
-      },
-    },
-    "packages/infra": {
-      "name": "@functhis/infra",
-      "devDependencies": {
-        "@functhis/config": "workspace:*",
-        "wrangler": "^4.40.2",
       },
     },
     "packages/ui": {
@@ -290,7 +290,7 @@
       "dependencies": {
         "@functhis/auth": "workspace:*",
         "@functhis/db": "workspace:*",
-        "@functhis/deploy": "workspace:*",
+        "@functhis/publish": "workspace:*",
         "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
@@ -545,13 +545,13 @@
 
     "@functhis/db": ["@functhis/db@workspace:packages/db"],
 
-    "@functhis/deploy": ["@functhis/deploy@workspace:packages/deploy"],
-
     "@functhis/infra": ["@functhis/infra@workspace:packages/infra"],
 
     "@functhis/integration-tests": ["@functhis/integration-tests@workspace:tests/integration"],
 
     "@functhis/mcp": ["@functhis/mcp@workspace:apps/mcp"],
+
+    "@functhis/publish": ["@functhis/publish@workspace:packages/publish"],
 
     "@functhis/ui": ["@functhis/ui@workspace:packages/ui"],
 

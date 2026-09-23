@@ -2,7 +2,7 @@ import { setTimeout as sleepMs } from 'node:timers/promises';
 
 import {
   CLI_CLIENT_ID,
-  DEPLOY_API_RESOURCE,
+  PUBLISH_API_RESOURCE,
   loadConfig,
   resolveConsoleUrl,
   resolveWebUrl,
@@ -39,7 +39,7 @@ export const runLogin = async (options?: {
   const deviceResponse = await fetch(`${consoleUrl}/api/auth/device/code`, {
     body: new URLSearchParams({
       client_id: CLI_CLIENT_ID,
-      resource: DEPLOY_API_RESOURCE,
+      resource: PUBLISH_API_RESOURCE,
     }),
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     method: 'POST',
@@ -71,7 +71,7 @@ export const runLogin = async (options?: {
         client_id: CLI_CLIENT_ID,
         device_code: device.device_code,
         grant_type: DEVICE_CODE_GRANT,
-        resource: DEPLOY_API_RESOURCE,
+        resource: PUBLISH_API_RESOURCE,
       }),
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       method: 'POST',

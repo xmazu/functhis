@@ -1,7 +1,7 @@
 import type { Database } from '@functhis/db';
 
-import { parseBearerToken, validateDeployBearerToken } from './deploy-token';
-import type { DeployAuthOptions } from './deploy-token';
+import { parseBearerToken, validatePublishBearerToken } from './publish-token';
+import type { PublishAuthOptions } from './publish-token';
 
 export type CallerAuthResult =
   | { ok: true; userId: string }
@@ -22,7 +22,7 @@ interface SessionPayload {
 
 export const resolveSessionUserId = async (
   request: Request,
-  options: DeployAuthOptions
+  options: PublishAuthOptions
 ): Promise<string | null> => {
   const cookie = request.headers.get('Cookie');
   if (!cookie) {
@@ -62,11 +62,11 @@ export const resolveSessionUserId = async (
 export const resolveCallerUserId = async (
   database: Database,
   request: Request,
-  options: DeployAuthOptions
+  options: PublishAuthOptions
 ): Promise<CallerAuthResult> => {
   const bearer = parseBearerToken(request);
   if (bearer) {
-    const deployAuth = await validateDeployBearerToken(
+    const deployAuth = await validatePublishBearerToken(
       database,
       request,
       options

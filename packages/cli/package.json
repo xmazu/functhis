@@ -1,7 +1,7 @@
 {
   "name": "functhis",
   "version": "0.1.0",
-  "description": "Deploy TypeScript functions to Functhis",
+  "description": "Publish TypeScript functions to Functhis",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "test": "bun scripts/check-src-coverage.ts"
   },
   "dependencies": {
-    "@functhis/deploy": "workspace:*",
+    "@functhis/publish": "workspace:*",
     "esbuild": "^0.25.12",
     "ts-morph": "^26.0.0",
     "typescript": "catalog:",

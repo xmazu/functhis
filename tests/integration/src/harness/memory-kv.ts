@@ -4,7 +4,7 @@ export interface MemoryBundles {
   keys: () => string[];
 }
 
-export const createMemoryBundles = (): MemoryBundles => {
+export const createMemoryStore = (): MemoryBundles => {
   const store = new Map<string, string>();
 
   return {
@@ -18,3 +18,5 @@ export const createMemoryBundles = (): MemoryBundles => {
     keys: () => [...store.keys()],
   };
 };
+
+export const createMemoryBundles = (): MemoryBundles => createMemoryStore();
