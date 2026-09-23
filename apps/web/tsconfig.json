@@ -1,6 +1,7 @@
 {
   "references": [{ "path": "../../packages/api" }],
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "*.d.ts"],
+  "exclude": ["worker-configuration.d.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

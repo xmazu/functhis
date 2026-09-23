@@ -1,4 +1,4 @@
-# Functhis web — visual language
+# Functhis web - visual language
 
 > Night operator page. Near-black canvas, porcelain type, one white action. Proof lives in windows, not in decoration.
 
@@ -8,15 +8,15 @@ This file is the visual language for `apps/web` only. It records how the surface
 
 Do not add screens, sections, widgets, or capabilities here. Those belong in code and in product docs (`vision.md`, `architecture.md`). Console visuals stay in [`apps/console/DESIGN.md`](../console/DESIGN.md).
 
-The page should feel like a quiet instrument panel that happens to be a marketing site: one reading column, one primary action, hairlines instead of shadows, and product proof shown as a terminal or a browser chrome — never as a gallery of equal cards.
+The page should feel like a quiet instrument panel that happens to be a marketing site: one reading column, one primary action, hairlines instead of shadows, and product proof shown as a terminal or a browser chrome - never as a gallery of equal cards.
 
 Reference lock:
 
-- **Primary:** here.now inverted — void field, zinc-50 type, sticky frosted header, copy-first hero, 780px measure, brand-mark rules as section punctuation, porcelain pill as the only conversion color.
+- **Primary:** here.now inverted - void field, zinc-50 type, sticky frosted header, copy-first hero, 780px measure, brand-mark rules as section punctuation, porcelain pill as the only conversion color.
 - **Borrow:** Linear surface stepping (void / graphite / iron) and compact chrome radius on small controls.
 - **Reject:** cream editorial, Inter 300 headlines, indigo UI chrome, mesh backgrounds, three equal feature towers, serif display swaps.
 
-## Tokens — color
+## Tokens - color
 
 | Name          | Value     | Role                                     |
 | ------------- | --------- | ---------------------------------------- |
@@ -34,7 +34,7 @@ Filled actions invert: porcelain fill, canvas label. Hover steps to `zinc-200`. 
 
 Selection: porcelain wash on canvas (`porcelain` text on `porcelain/12`).
 
-## Tokens — type
+## Tokens - type
 
 **Face:** Geist Variable (`--font-sans`). Substitute: `ui-sans-serif`, then `system-ui`.
 
@@ -55,7 +55,7 @@ Weights: 400 default, 500 for controls and emphasis, 600 for display and section
 
 Headings use `text-wrap: balance`. Body uses `text-wrap: pretty` only on long FAQ answers. Display is left-aligned in the reading column, never centered except on a closing conversion band.
 
-## Tokens — space and shape
+## Tokens - space and shape
 
 **Base unit:** 4px. Density is airy: tight groups, large section gaps.
 
@@ -83,7 +83,7 @@ One reading column (`max-w-[780px]`) on a full-bleed void canvas. The first view
 
 Header is sticky, full-width, frosted (`bg-zinc-950/70`, blur, saturate). It does not become an island.
 
-Section punctuation is a hairline rule interrupted by the brand mark — not a numbered kicker, not a colored slab.
+Section punctuation is a hairline rule interrupted by the brand mark - not a numbered kicker, not a colored slab.
 
 Do not hide the primary action below `md`. Do not pin scroll theaters on this surface.
 
@@ -114,7 +114,7 @@ Window chrome uses three 10px dots (structure, not brand color) and mono URL tex
 
 ## Imagery
 
-No photography on this surface. No mesh, no spheres, no stock devices. Marks are monochrome and inherit porcelain. Agent and tool names are wordmarks or simple geometric glyphs at one optical size, never vendor-color logos. Missing assets stay empty — do not fake a screenshot with stacked gray bars pretending to be a photo.
+No photography on this surface. No mesh, no spheres, no stock devices. Marks are monochrome and inherit porcelain. Agent and tool names are wordmarks or simple geometric glyphs at one optical size, never vendor-color logos. Missing assets stay empty - do not fake a screenshot with stacked gray bars pretending to be a photo.
 
 ## Do
 

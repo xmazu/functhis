@@ -8,14 +8,12 @@ interface CloudflareEnv {
   NODE_ENV: string;
 }
 
-declare global {
-  type Env = CloudflareEnv;
-}
+type Env = CloudflareEnv;
 
 declare module 'cloudflare:workers' {
+  export const env: Env;
+
   namespace Cloudflare {
     export type Env = CloudflareEnv;
   }
 }
-
-export type { CloudflareEnv };

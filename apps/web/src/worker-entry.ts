@@ -1,3 +1,4 @@
+import type { ExecutionContext } from '@cloudflare/workers-types';
 import { createEvlogTanstackWorkerEntry } from '@functhis/config/evlog-worker-entry';
 
 import {

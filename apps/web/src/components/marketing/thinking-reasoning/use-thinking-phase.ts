@@ -38,7 +38,7 @@ export const useThinkingPhase = (
       return;
     }
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const timers: number[] = [];
     const at = (ms: number, fn: () => void) => {
       timers.push(window.setTimeout(fn, ms));
     };
