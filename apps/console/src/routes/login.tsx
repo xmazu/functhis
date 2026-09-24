@@ -54,9 +54,10 @@ export const Route = createFileRoute('/login')({
     callbackURL: safeCallbackURL(search.callbackURL),
   }),
   beforeLoad: async ({ search }) => {
+    const { callbackURL } = search;
     const session = await resolveSession();
     if (session) {
-      throw redirect({ to: search.callbackURL });
+      throw redirect({ to: callbackURL });
     }
   },
 });

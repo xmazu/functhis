@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { AuthCanvas } from '@/components/auth-canvas';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
+import { redirectToLogin } from '@/lib/login-redirect';
 
 const AcceptInvitationPage = () => {
   const { id } = Route.useParams();
@@ -79,12 +80,10 @@ const AcceptInvitationPage = () => {
 
 export const Route = createFileRoute('/accept-invitation/$id')({
   beforeLoad: async ({ params }) => {
+    const invitationId = params.id;
     const session = await resolveSession();
     if (!session) {
-      throw redirect({
-        search: { callbackURL: `/accept-invitation/${params.id}` },
-        to: '/login',
-      });
+      throw redirectToLogin(`/accept-invitation/${invitationId}`);
     }
   },
   component: AcceptInvitationPage,

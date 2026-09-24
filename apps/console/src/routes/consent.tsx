@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { resolveSession } from '@/functions/resolve-session';
 import { authClient } from '@/lib/auth-client';
-import { redirectToLogin } from '@/lib/login-redirect';
+import { callbackURLFromLocation, redirectToLogin } from '@/lib/login-redirect';
 
 const buildOauthQuery = ({
   client_id,
@@ -133,7 +133,7 @@ const ConsentPage = () => {
 export const Route = createFileRoute('/consent')({
   component: ConsentPage,
   beforeLoad: async ({ location }) => {
-    const callbackURL = `${location.pathname}${location.search}`;
+    const callbackURL = callbackURLFromLocation(location);
     const session = await resolveSession();
     if (!session) {
       throw redirectToLogin(callbackURL);

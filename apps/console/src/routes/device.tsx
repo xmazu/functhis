@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { resolveSession } from '@/functions/resolve-session';
 import { lookupDeviceCode, postDeviceAction } from '@/lib/device-api';
 import type { DeviceVerification } from '@/lib/device-api';
-import { redirectToLogin } from '@/lib/login-redirect';
+import { callbackURLFromLocation, redirectToLogin } from '@/lib/login-redirect';
 
 const normalizeUserCode = (code: string): string => code.trim();
 
@@ -191,7 +191,7 @@ const DevicePage = () => {
 export const Route = createFileRoute('/device')({
   component: DevicePage,
   beforeLoad: async ({ location }) => {
-    const callbackURL = `${location.pathname}${location.search}`;
+    const callbackURL = callbackURLFromLocation(location);
     const session = await resolveSession();
     if (!session) {
       throw redirectToLogin(callbackURL);
