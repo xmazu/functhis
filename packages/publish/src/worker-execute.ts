@@ -1,5 +1,10 @@
 import { createDb } from '@functhis/db';
 import { execution } from '@functhis/db/schema/catalog';
+import {
+  createRuntimeModuleSource,
+  dynamicWorkerLoaderId,
+  RUNTIME_MODULE_ID,
+} from '@functhis/runtime';
 
 import type { WorkerLoaderBundleShape } from './bundle';
 import { bundleKvKey, utf8ByteLength } from './bundle';
@@ -32,6 +37,7 @@ export interface ExecuteWorkerLoader {
     id: string,
     factory: () => {
       compatibilityDate: string;
+      compatibilityFlags?: string[];
       env: Record<string, never>;
       limits: { cpuMs: number; subRequests: number };
       mainModule: string;
@@ -130,9 +136,11 @@ export const runDynamicWorker = async (
   bindings: Pick<WorkerExecuteBindings, 'LOADER'>,
   input: {
     bundle: WorkerLoaderBundleShape;
+    callerUserId?: string | null;
     functionSlug?: string;
     requestBytes: number;
     runInput: unknown;
+    runtimeSecrets?: Record<string, string>;
     versionId: string;
   }
 ): Promise<DynamicRunResult> => {
@@ -141,19 +149,38 @@ export const runDynamicWorker = async (
     subRequests: EXECUTE_SUB_REQUESTS,
   };
 
-  const worker = bindings.LOADER.get(input.versionId, () => ({
-    compatibilityDate: WORKER_COMPATIBILITY_DATE,
-    env: {},
-    limits,
-    mainModule: input.bundle.mainModule,
-    modules: input.bundle.modules,
-  }));
+  const functionSlug = input.functionSlug ?? '';
+  const executionId = crypto.randomUUID();
+
+  const worker = bindings.LOADER.get(
+    dynamicWorkerLoaderId(input.versionId),
+    () => ({
+      compatibilityDate: WORKER_COMPATIBILITY_DATE,
+      compatibilityFlags: ['nodejs_compat'],
+      env: {},
+      limits,
+      mainModule: input.bundle.mainModule,
+      modules: {
+        ...input.bundle.modules,
+        [RUNTIME_MODULE_ID]: createRuntimeModuleSource(),
+      },
+    })
+  );
 
   const entrypoint = worker.getEntrypoint(undefined, { limits });
   const runRequest = new Request('https://worker.internal/run', {
     body: JSON.stringify({
       functionSlug: input.functionSlug,
       input: input.runInput ?? {},
+      runtime: {
+        context: {
+          callerUserId: input.callerUserId ?? null,
+          executionId,
+          functionSlug,
+          packageVersionId: input.versionId,
+        },
+        secrets: input.runtimeSecrets ?? {},
+      },
     }),
     headers: { 'content-type': 'application/json' },
     method: 'POST',

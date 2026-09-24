@@ -1,0 +1,22 @@
+{
+  "name": "@functhis/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "check-types": "bun run build && tsc --noEmit",
+    "test": "bun run build && bun scripts/check-src-coverage.ts"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "esbuild": "^0.25.12",
+    "typescript": "catalog:"
+  }
+}

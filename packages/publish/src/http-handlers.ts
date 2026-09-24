@@ -1,6 +1,7 @@
 import { user } from '@functhis/db/schema/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import { and, eq, notInArray } from 'drizzle-orm';
+import type { z } from 'zod';
 
 import { artifactObjectKey, hashPublishArtifact } from './artifact';
 import type { PublishArtifact } from './artifact';
@@ -159,6 +160,33 @@ const canPublishPackage = async (
   return organizationIds.includes(packageRow.organizationId);
 };
 
+type PublishStartBody = z.infer<typeof publishStartBodySchema>;
+
+const readPublishStartBody = async (
+  request: Request
+): Promise<
+  { ok: true; data: PublishStartBody } | { ok: false; response: Response }
+> => {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return { ok: false, response: badRequest('Invalid JSON body') };
+  }
+
+  const parsed = publishStartBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return { ok: false, response: badRequest(parsed.error.message) };
+  }
+
+  const manifestError = validateManifest(parsed.data.filesManifest);
+  if (manifestError) {
+    return { ok: false, response: badRequest(manifestError) };
+  }
+
+  return { data: parsed.data, ok: true };
+};
+
 export const handlePublishStart = async (
   request: Request,
   ctx: PublishHandlerContext
@@ -173,22 +201,11 @@ export const handlePublishStart = async (
     return auth.response;
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return badRequest('Invalid JSON body');
+  const startBody = await readPublishStartBody(request);
+  if (!startBody.ok) {
+    return startBody.response;
   }
-
-  const parsed = publishStartBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return badRequest(parsed.error.message);
-  }
-
-  const manifestError = validateManifest(parsed.data.filesManifest);
-  if (manifestError) {
-    return badRequest(manifestError);
-  }
+  const parsed = { data: startBody.data };
 
   const sharingPreview = await resolvePublishSharingForPublishStart(
     database,

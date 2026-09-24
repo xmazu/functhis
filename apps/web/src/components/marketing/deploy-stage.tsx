@@ -11,7 +11,7 @@ export const DeployStage = () => (
         npx functhis publish
       </code>{' '}
       from the project. Functhis versions the functions and prints live URLs.
-      People open a page. Agents call search and execute.
+      Inspect them in console. Agents call search and execute.
     </p>
     <div className="mt-10">
       <DeployConsole />

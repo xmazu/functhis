@@ -29,6 +29,8 @@ describe('isBannedNodeSpecifier', () => {
     expect(isBannedNodeSpecifier('fs')).toBe(true);
     expect(isBannedNodeSpecifier('node:fs')).toBe(true);
     expect(isBannedNodeSpecifier('child_process')).toBe(true);
+    expect(isBannedNodeSpecifier('async_hooks')).toBe(true);
+    expect(isBannedNodeSpecifier('node:async_hooks')).toBe(true);
     expect(isBannedNodeSpecifier('zod')).toBe(false);
   });
 });

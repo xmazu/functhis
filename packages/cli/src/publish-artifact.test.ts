@@ -21,6 +21,39 @@ afterEach(async () => {
 });
 
 describe('buildPublishArtifact', () => {
+  test('records runtime secret names from sources', () => {
+    const { manifest } = buildPublishArtifact({
+      build: {
+        builtAt: '2026-01-01T00:00:00.000Z',
+        bundler: { name: 'esbuild', version: '0.25.0' },
+        cliVersion: '0.1.0',
+        gitDirty: false,
+        runtimeVersion: WORKER_COMPATIBILITY_DATE,
+      },
+      bundle: {
+        bundleHash: 'abc',
+        mainModule: 'bundle.mjs',
+        modules: { 'bundle.mjs': 'export default {};' },
+        sourceMap: '{}',
+      },
+      files: {
+        'hello.ts':
+          "import { secret } from 'functhis:runtime';\nexport default () => secret('API_KEY');",
+      },
+      functions: [
+        {
+          contract: { description: 'hello' },
+          exportName: 'default',
+          path: 'hello.ts',
+          slug: 'hello',
+        },
+      ],
+      packageSlug: 'tools',
+    });
+
+    expect(manifest.secrets).toEqual(['API_KEY']);
+  });
+
   test('builds a four-file artifact with empty secrets', () => {
     const { artifact, manifest } = buildPublishArtifact({
       build: {

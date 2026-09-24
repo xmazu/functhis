@@ -38,6 +38,93 @@ describe('loadStoredBundle', () => {
 });
 
 describe('runDynamicWorker', () => {
+  test('injects runtime module and passes runtime bag to fetch', async () => {
+    let factoryConfig:
+      | {
+          compatibilityFlags?: string[];
+          modules: Record<string, string>;
+        }
+      | undefined;
+    let capturedBody: unknown;
+
+    await runDynamicWorker(
+      {
+        LOADER: {
+          get: (id, factory) => {
+            expect(id).toBe('ver_test:1');
+            factoryConfig = factory();
+            return {
+              getEntrypoint: () => ({
+                fetch: async (request) => {
+                  capturedBody = JSON.parse(await request.text());
+                  return Response.json({ result: null });
+                },
+              }),
+            };
+          },
+        },
+      },
+      {
+        bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        callerUserId: 'user-9',
+        functionSlug: 'hello',
+        requestBytes: 10,
+        runInput: { ok: true },
+        versionId: 'ver_test',
+      }
+    );
+
+    expect(factoryConfig?.compatibilityFlags).toEqual(['nodejs_compat']);
+    expect(factoryConfig?.modules['./__functhis_runtime.mjs']).toContain(
+      'AsyncLocalStorage'
+    );
+    expect(capturedBody).toMatchObject({
+      functionSlug: 'hello',
+      input: { ok: true },
+      runtime: {
+        context: {
+          callerUserId: 'user-9',
+          functionSlug: 'hello',
+          packageVersionId: 'ver_test',
+        },
+        secrets: {},
+      },
+    });
+  });
+
+  test('forwards runtime secrets into the worker run body', async () => {
+    let capturedBody: unknown;
+
+    await runDynamicWorker(
+      {
+        LOADER: {
+          get: (_id, factory) => {
+            factory();
+            return {
+              getEntrypoint: () => ({
+                fetch: async (request) => {
+                  capturedBody = JSON.parse(await request.text());
+                  return Response.json({ result: null });
+                },
+              }),
+            };
+          },
+        },
+      },
+      {
+        bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        requestBytes: 1,
+        runInput: {},
+        runtimeSecrets: { API_KEY: 'shh' },
+        versionId: 'ver_test',
+      }
+    );
+
+    expect(capturedBody).toMatchObject({
+      runtime: { secrets: { API_KEY: 'shh' } },
+    });
+  });
+
   test('preserves non-OK worker HTTP status', async () => {
     const result = await runDynamicWorker(
       {

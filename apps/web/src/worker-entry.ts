@@ -5,25 +5,15 @@ import {
   handlePublicFunctionRequest,
   handlePublicPackageRequest,
 } from './server/public-url/handlers';
+import { matchPublicPath } from './server/public-url/routing';
 
 const tanstack = createEvlogTanstackWorkerEntry('functhis-web');
 
-const PUBLIC_PATH =
-  /^\/@(?<handle>[^/]+)\/(?<package>[^/]+)(?:\/(?<function>.+?))?\/?$/u;
-
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const match = PUBLIC_PATH.exec(new URL(request.url).pathname);
-    if (match?.groups) {
-      const {
-        function: functionSlug,
-        handle,
-        package: packageSlug,
-      } = match.groups;
-
-      if (!handle || !packageSlug) {
-        return Promise.resolve(new Response('Not Found', { status: 404 }));
-      }
+    const publicParams = matchPublicPath(new URL(request.url).pathname);
+    if (publicParams) {
+      const { functionSlug, handle, packageSlug } = publicParams;
 
       if (functionSlug) {
         return handlePublicFunctionRequest(request, {

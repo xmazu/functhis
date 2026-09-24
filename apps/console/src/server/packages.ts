@@ -1,12 +1,9 @@
 import {
   buildPackageAccessContext,
   canAccessPackage,
-  formatFunctionId,
   getPackageBySlugs,
   listAccessiblePackagesForUser,
   listRecentExecutions,
-  publicFunctionPath,
-  publicPackagePath,
   resolveOrganizationSlugById,
   updatePackageSharing,
 } from '@functhis/publish';
@@ -15,6 +12,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { env } from '@/env.server';
 import { authMiddleware } from '@/middleware/auth';
 import { getDb } from '@/services';
+
+import { buildPackageDetailViewModel } from './package-detail-view-model';
 
 export const listPackagesForSession = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -57,31 +56,15 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
     const executions = isOwner
       ? await listRecentExecutions(database, userId, catalog.id)
       : [];
-    const webOrigin = env.WEB_URL.replace(/\/$/u, '');
-    const mcpResource = env.MCP_RESOURCE.replace(/\/$/u, '');
 
-    return {
+    return buildPackageDetailViewModel({
+      catalog,
       executions,
-      functions: catalog.functions.map((fn) => {
-        const id = formatFunctionId({
-          functionSlug: fn.functionSlug,
-          handle: fn.handle,
-          packageSlug: fn.packageSlug,
-        });
-        return {
-          id,
-          mcpSnippet: `POST ${mcpResource}/mcp\nTool: execute\nArguments: { "id": "${id}", "arguments": {} }`,
-          slug: fn.functionSlug,
-          url: `${webOrigin}${publicFunctionPath(fn)}`,
-        };
-      }),
       isOwner,
-      organizationId: catalog.organizationId,
+      mcpResource: env.MCP_RESOURCE,
       organizationSlug,
-      packageSlug: catalog.packageSlug,
-      packageUrl: `${webOrigin}${publicPackagePath(catalog)}`,
-      visibility: catalog.visibility,
-    };
+      webOrigin: env.WEB_URL,
+    });
   });
 
 export const updatePackageSharingForSession = createServerFn({

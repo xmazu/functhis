@@ -186,8 +186,9 @@ Not Workers for Platforms. Customer packages are not persisted as account script
 
 Package code runs as a **Dynamic Worker** on `functhis-mcp` via a Worker Loader binding (`env.LOADER`). Implementation lives in `apps/mcp` (`src/execute.ts`); HTTP `search` / `execute` tools ship in phase 6.
 
-- Authors write ordinary TypeScript; no Functhis SDK. No author `wrangler.toml`.
-- One isolate per **package version**. `LOADER.get(versionId, () => bundle)` reuses a warm isolate; `load()` is only for one-off try-it of unpublished code.
+- Authors write ordinary TypeScript; no required Functhis SDK. No author `wrangler.toml`.
+- Optional `import { context, secret } from 'functhis:runtime'`. The host injects `./__functhis_runtime.mjs` at `LOADER.get` time (not in the published KV blob). Per-invocation context and secrets use AsyncLocalStorage inside that module. Published bundles must be built with a CLI that externalizes `functhis:runtime` and wraps handlers in `__runInRuntime`; republish after upgrading the runtime kernel. Hosted execute passes invocation `context` today; package `secret()` is local CLI (`functhis run --secret`) until hosted secret wiring ships.
+- One isolate per **package version** plus runtime kernel version. `LOADER.get(versionId:runtimeVersion, () => bundle + injected runtime)` reuses a warm isolate; `load()` is only for one-off try-it of unpublished code.
 - Isolation: no parent `env`. Bindings the Dynamic Worker receives are explicit and empty in alpha.
 - Limits on `getEntrypoint()`: `cpuMs` and `subRequests` from the caller’s plan. Fail closed.
 - Network: omit `globalOutbound` in the loader config so Dynamic Workers use default outbound (tools wrap APIs in alpha). Later: host allowlist / intercept. Never inherit origin secrets (`env: {}`).
@@ -248,7 +249,7 @@ sequenceDiagram
   Agent->>MCP: execute @handle/pkg/fn
   MCP->>DB: ACL + quota
   MCP->>KV: load bundle by hash
-  MCP->>DW: LOADER.get(versionId)
+  MCP->>DW: LOADER.get(versionId:runtimeVersion)
   DW-->>MCP: fetch result
   MCP->>DB: execution row
 ```

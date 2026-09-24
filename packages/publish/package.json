@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "@functhis/db": "workspace:*",
+    "@functhis/runtime": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "zod": "catalog:"
   },

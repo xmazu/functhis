@@ -32,6 +32,10 @@ export interface CatalogFunctionRow {
 }
 
 export interface CatalogPackageRow {
+  currentVersion: {
+    publishedAt: Date;
+    semver: string;
+  };
   functions: CatalogFunctionRow[];
   handle: string;
   id: string;
@@ -207,6 +211,19 @@ export const getPackageBySlugs = async (
     return null;
   }
 
+  const [versionRow] = await database
+    .select({
+      createdAt: packageVersion.createdAt,
+      semver: packageVersion.semver,
+    })
+    .from(packageVersion)
+    .where(eq(packageVersion.id, packageRow.currentVersionId))
+    .limit(1);
+
+  if (!versionRow) {
+    return null;
+  }
+
   const functions = await database
     .select({
       contract: pkgFunction.contract,
@@ -219,6 +236,11 @@ export const getPackageBySlugs = async (
     .where(eq(pkgFunction.packageId, packageRow.id));
 
   return {
+    currentVersion: {
+      // `package_version` has no separate published_at; version row creation time is the catalog publish instant.
+      publishedAt: versionRow.createdAt,
+      semver: versionRow.semver,
+    },
     functions: functions.map((fn) => ({
       contract: fn.contract,
       exportName: fn.exportName,

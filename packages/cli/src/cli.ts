@@ -2,7 +2,12 @@
 
 import type { VersionBump } from '@functhis/publish/semver';
 
-import { parseBooleanFlag, parseFlag, parseJsonInput } from './argv';
+import {
+  parseBooleanFlag,
+  parseFlag,
+  parseJsonInput,
+  parseSecretFlags,
+} from './argv';
 import { runLogin } from './login';
 import { runPublish, runDev, runRollback } from './publish';
 import { parsePublishVisibility } from './publish-sharing';
@@ -13,7 +18,7 @@ Usage:
   functhis login [--console-url URL] [--web-url URL]
   functhis publish [--slug NAME] [--scope HANDLE] [--major|--minor|--patch] [--visibility private|library] [--web-url URL] [--project-root PATH]
   functhis rollback VERSION [--slug NAME] [--scope HANDLE] [--web-url URL] [--project-root PATH]
-  functhis run|dev [--slug FUNCTION] [--input JSON] [--project-root PATH]
+  functhis run|dev [--slug FUNCTION] [--input JSON] [--secret NAME=value] [--project-root PATH]
 `;
 
 const parseBump = (rest: string[]): VersionBump | undefined => {
@@ -46,6 +51,7 @@ const runLocal = async (rest: string[]): Promise<void> => {
     functionSlug: parseFlag(rest, '--slug'),
     input: parsedInput.value,
     projectRoot: parseFlag(rest, '--project-root'),
+    secrets: parseSecretFlags(rest),
   });
 };
 

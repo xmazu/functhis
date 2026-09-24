@@ -3,6 +3,8 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { createRuntimeModuleSource } from '@functhis/runtime';
+
 import { createBootstrapSource } from './bundle';
 import type { DiscoveredFunction } from './discover';
 
@@ -34,6 +36,11 @@ describe('createBootstrapSource', () => {
     );
     const bootstrapPath = path.join(tempDir, 'bootstrap.mjs');
     await writeFile(bootstrapPath, source, 'utf-8');
+    await writeFile(
+      path.join(tempDir, '__functhis_runtime.mjs'),
+      createRuntimeModuleSource(),
+      'utf-8'
+    );
 
     try {
       const mod = (await import(bootstrapPath)) as {
@@ -69,6 +76,11 @@ describe('createBootstrapSource', () => {
     );
     const bootstrapPath = path.join(tempDir, 'bootstrap.mjs');
     await writeFile(bootstrapPath, source, 'utf-8');
+    await writeFile(
+      path.join(tempDir, '__functhis_runtime.mjs'),
+      createRuntimeModuleSource(),
+      'utf-8'
+    );
     try {
       const mod = (await import(bootstrapPath)) as {
         default: { fetch: (request: Request) => Promise<Response> };

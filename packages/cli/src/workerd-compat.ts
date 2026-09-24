@@ -1,6 +1,7 @@
 import type { Plugin } from 'esbuild';
 
 const BANNED_SPECIFIERS = new Set([
+  'async_hooks',
   'child_process',
   'cluster',
   'dgram',

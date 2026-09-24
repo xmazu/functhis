@@ -10,7 +10,7 @@ const getServerSession = async () => {
 };
 
 /** Session lookup for route guards - direct on SSR, RPC from the browser. */
-export const resolveSession = async () => {
+export const resolveSession = () => {
   if (import.meta.env.SSR) {
     return getServerSession();
   }

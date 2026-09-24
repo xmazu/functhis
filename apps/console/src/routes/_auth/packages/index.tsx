@@ -19,9 +19,12 @@ const PackagesPage = () => {
             <code className="font-mono">functhis publish</code> from a project.
           </p>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col">
             {packages.map((pkg) => (
-              <li key={pkg.id}>
+              <li
+                className="flex h-[var(--app-density-row-height,1.75rem)] items-center"
+                key={pkg.id}
+              >
                 <Link
                   className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
                   params={{ handle: pkg.handle, slug: pkg.packageSlug }}

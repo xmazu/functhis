@@ -17,6 +17,7 @@ import {
   stableBundlePayload,
 } from './bundle';
 import type { DiscoveredFunction } from './discover';
+import { runtimeExternalPlugin } from './runtime-external';
 import {
   assertBundleHasNoBannedNodeImports,
   assertSourceHasNoBannedNodeImports,
@@ -33,23 +34,31 @@ export interface WorkerLoaderBundle {
 const collectNodeModulePaths = async (
   packageRoot: string
 ): Promise<string[]> => {
-  const paths: string[] = [];
+  const candidates: string[] = [];
   let directory = path.resolve(packageRoot);
   for (;;) {
-    const candidate = path.join(directory, 'node_modules');
-    try {
-      await access(candidate);
-      paths.push(candidate);
-    } catch {
-      // no node_modules at this level
-    }
+    candidates.push(path.join(directory, 'node_modules'));
     const parent = path.dirname(directory);
     if (parent === directory) {
       break;
     }
     directory = parent;
   }
-  return paths;
+
+  const existing = await Promise.all(
+    candidates.map(async (candidate) => {
+      try {
+        await access(candidate);
+        return candidate;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return existing.filter(
+    (candidate): candidate is string => candidate !== null
+  );
 };
 
 export const buildWorkerBundle = async (input: {
@@ -88,7 +97,7 @@ export const buildWorkerBundle = async (input: {
       nodePaths: nodePaths.length > 0 ? nodePaths : undefined,
       outfile: outPath,
       platform: 'browser',
-      plugins: [workerdCompatibilityPlugin()],
+      plugins: [runtimeExternalPlugin(), workerdCompatibilityPlugin()],
       sourcemap: true,
       target: 'es2022',
       write: true,

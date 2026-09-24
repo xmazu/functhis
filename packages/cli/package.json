@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@functhis/publish": "workspace:*",
+    "@functhis/runtime": "workspace:*",
     "esbuild": "^0.25.12",
     "ts-morph": "^26.0.0",
     "typescript": "catalog:",

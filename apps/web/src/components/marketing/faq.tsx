@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     answer:
-      'npm distributes source code that every consumer must install, configure, and run. Functhis distributes a running capability. People can open its page, applications can call it over HTTP, and agents can find and execute it through MCP.',
+      'npm distributes source code that every consumer must install, configure, and run. Functhis distributes a running capability. Applications can call it over HTTP, and agents can find and execute it through MCP.',
     question: 'How is this different from publishing an npm package?',
   },
   {
@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     answer:
-      'Packages can be private, shared with an organization, or published to the public library. The browser page, HTTP execution, and MCP execution all follow the same access rules. Organization members can publish under a shared handle such as @acme/package.',
+      'Packages can be private, shared with an organization, or published to the public library. HTTP and MCP execution follow the same access rules. Organization members can publish under a shared handle such as @acme/package.',
     question: 'Can packages be private or shared with a team?',
   },
   {

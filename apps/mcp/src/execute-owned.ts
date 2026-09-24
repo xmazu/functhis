@@ -142,6 +142,7 @@ export const executeOwnedFunction = async (
 
   const run = await runDynamicWorker(env, {
     bundle,
+    callerUserId,
     functionSlug: parsedId.functionSlug,
     requestBytes,
     runInput,

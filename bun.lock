@@ -199,6 +199,7 @@
       },
       "dependencies": {
         "@functhis/publish": "workspace:*",
+        "@functhis/runtime": "workspace:*",
         "esbuild": "^0.25.12",
         "ts-morph": "^26.0.0",
         "typescript": "catalog:",
@@ -250,12 +251,23 @@
       "name": "@functhis/publish",
       "dependencies": {
         "@functhis/db": "workspace:*",
+        "@functhis/runtime": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "zod": "catalog:",
       },
       "devDependencies": {
         "@functhis/config": "workspace:*",
         "@types/bun": "latest",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/runtime": {
+      "name": "@functhis/runtime",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@functhis/config": "workspace:*",
+        "@types/bun": "latest",
+        "esbuild": "^0.25.12",
         "typescript": "catalog:",
       },
     },
@@ -552,6 +564,8 @@
     "@functhis/mcp": ["@functhis/mcp@workspace:apps/mcp"],
 
     "@functhis/publish": ["@functhis/publish@workspace:packages/publish"],
+
+    "@functhis/runtime": ["@functhis/runtime@workspace:packages/runtime"],
 
     "@functhis/ui": ["@functhis/ui@workspace:packages/ui"],
 

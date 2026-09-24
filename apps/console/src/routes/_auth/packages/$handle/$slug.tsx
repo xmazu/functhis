@@ -1,36 +1,41 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import type { ReactElement } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { CommandRow } from '@/components/command-row';
+import { CopyButton } from '@/components/copy-button';
+import {
+  MetaItem,
+  SectionHeading,
+  packageDetailUiClass,
+} from '@/components/package-detail-primitives';
+import { PackageSharingPanel } from '@/components/package-sharing-panel';
 import { authClient } from '@/lib/auth-client';
 import {
-  getPackageDetailForSession,
-  updatePackageSharingForSession,
-} from '@/server/packages';
+  formatPackageDate,
+  formatPackageDateTime,
+  toPackageIso,
+} from '@/lib/package-dates';
+import { getPackageDetailForSession } from '@/server/packages';
 
-const VISIBILITY_OPTIONS = ['private', 'organization', 'library'] as const;
+const ui = packageDetailUiClass;
 
-const PackageDetailPage = () => {
+const VISIBILITY_LABEL = {
+  library: 'Library',
+  organization: 'Organization',
+  private: 'Private',
+} as const;
+
+const PackageDetailPage = (): ReactElement => {
   const { handle, slug } = Route.useParams();
   const detail = Route.useLoaderData();
   const { data: organizations } = authClient.useListOrganizations();
-  const [visibility, setVisibility] = useState(detail?.visibility ?? 'private');
-  const [organizationSlug, setOrganizationSlug] = useState(
-    detail?.organizationSlug ?? ''
-  );
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   if (!detail) {
     return (
       <main className="flex min-h-0 flex-1 flex-col p-4">
-        <p className="text-[length:var(--app-font-size-ui,12px)]">
-          Package not found.
-        </p>
+        <p className={ui}>Package not found.</p>
         <Link
-          className="mt-2 text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
+          className={`${ui} mt-2 underline-offset-2 hover:underline`}
           to="/packages"
         >
           Back to packages
@@ -39,168 +44,226 @@ const PackageDetailPage = () => {
     );
   }
 
-  const handleSaveSharing = async (): Promise<void> => {
-    setSaveError(null);
-    setSaved(false);
-    try {
-      await updatePackageSharingForSession({
-        data: {
-          handle,
-          organizationSlug:
-            organizationSlug.trim().length > 0
-              ? organizationSlug.trim()
-              : undefined,
-          packageSlug: slug,
-          visibility,
-        },
-      });
-      setSaved(true);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed');
-    }
-  };
+  const packageName = `@${detail.handle}/${detail.packageSlug}`;
+  const description =
+    detail.functions.find((fn) => fn.description !== null)?.description ?? null;
+  const [firstFunction] = detail.functions;
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col">
-      <header className="border-b px-4 py-2.5">
-        <h1 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-          @{handle}/{detail.packageSlug}
-        </h1>
-        <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
-          {detail.visibility}
-          {detail.isOwner ? '' : ' · shared with you'}
-        </p>
-      </header>
-      <div className="flex flex-col gap-4 p-4">
-        {detail.isOwner ? (
-          <section className="flex max-w-md flex-col gap-2 border p-3">
-            <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-              Sharing
-            </h2>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="visibility">Visibility</Label>
-              <select
-                className="bg-input border px-2 py-1 text-[length:var(--app-font-size-ui,12px)]"
-                id="visibility"
-                onChange={(event) => {
-                  setVisibility(
-                    event.target.value as (typeof VISIBILITY_OPTIONS)[number]
-                  );
-                }}
-                value={visibility}
-              >
-                {VISIBILITY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="organization">Organization slug</Label>
-              <Input
-                id="organization"
-                onChange={(event) => {
-                  setOrganizationSlug(event.target.value);
-                }}
-                placeholder="Required for organization visibility"
-                value={organizationSlug}
-              />
-              {(organizations ?? []).length > 0 ? (
-                <p className="text-muted-foreground text-[11px]">
-                  Your orgs:{' '}
-                  {(organizations ?? []).map((org) => org.slug).join(', ')}
-                </p>
-              ) : null}
-            </div>
-            {saveError ? (
-              <p className="text-destructive text-[length:var(--app-font-size-ui,12px)]">
-                {saveError}
-              </p>
-            ) : null}
-            {saved ? (
-              <p className="text-[length:var(--app-font-size-ui,12px)]">
-                Saved.
-              </p>
-            ) : null}
-            <Button
-              onClick={() => {
-                void handleSaveSharing();
-              }}
-              size="sm"
-            >
-              Save sharing
-            </Button>
-          </section>
-        ) : null}
-        <section className="flex flex-col gap-1">
-          <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-            Public URL
-          </h2>
-          <a
-            className="font-mono text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-            href={detail.packageUrl}
-            rel="noopener noreferrer"
-            target="_blank"
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 border-b px-4 pt-4 pb-2">
+        <div className="flex min-w-0 items-center gap-1">
+          <h1
+            className={`${ui} min-w-0 font-mono font-medium break-all`}
+            title={packageName}
           >
-            {detail.packageUrl}
-          </a>
-        </section>
-        <section className="flex flex-col gap-2">
-          <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-            Functions
-          </h2>
-          {detail.functions.map((fn) => (
-            <div className="border p-3" key={fn.slug}>
-              <p className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-                {fn.slug}
-              </p>
+            {packageName}
+          </h1>
+          <CopyButton label="Copy package name" value={packageName} />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className={`${ui} font-mono`}>{detail.semver}</p>
+          {detail.isOwner ? null : (
+            <p className={`${ui} text-muted-foreground`}>Shared with you</p>
+          )}
+        </div>
+      </header>
+      <article className="flex flex-col px-4 pt-4 pb-6">
+        <section>
+          {description ? (
+            <p className={`${ui} text-muted-foreground max-w-2xl text-pretty`}>
+              {description}
+            </p>
+          ) : null}
+          <ul
+            className={`${ui} mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5`}
+          >
+            <li>
+              <span
+                className={`${ui} text-muted-foreground border-border inline-flex rounded-md border px-2 py-0.5 font-mono`}
+              >
+                {VISIBILITY_LABEL[detail.visibility]}
+              </span>
+            </li>
+            <li>
               <a
-                className="font-mono text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-                href={fn.url}
+                className="font-mono underline-offset-2 hover:underline"
+                href={detail.packageUrl}
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                {fn.url}
+                Public URL
               </a>
-              <pre className="mt-2 overflow-x-auto font-mono text-[11px] leading-relaxed">
-                {fn.mcpSnippet}
-              </pre>
-            </div>
-          ))}
+            </li>
+          </ul>
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-y py-4 sm:grid-cols-3 sm:gap-4">
+            <MetaItem label="Functions">{detail.functions.length}</MetaItem>
+            <MetaItem label="Version">{detail.semver}</MetaItem>
+            <MetaItem label="Published">
+              <time dateTime={toPackageIso(detail.publishedAt)}>
+                {formatPackageDate(detail.publishedAt)}
+              </time>
+            </MetaItem>
+          </dl>
         </section>
-        {detail.isOwner ? (
-          <section className="flex flex-col gap-2">
-            <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-              Recent executions
-            </h2>
-            {detail.executions.length === 0 ? (
-              <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
-                No executions recorded yet.
+        <section className="mt-5 scroll-mt-10" id="get-started">
+          <div className="mb-2">
+            <SectionHeading>Get started</SectionHeading>
+          </div>
+          <div
+            className={`${ui} border-border overflow-hidden rounded-lg border`}
+          >
+            <div className="space-y-1 overflow-x-auto px-3 py-3">
+              <CommandRow
+                command={`curl '${detail.packageUrl}'`}
+                label="Copy inspect command"
+              />
+              {firstFunction ? (
+                <>
+                  <p className="text-muted-foreground pt-1 font-mono select-none">
+                    # Call
+                  </p>
+                  <CommandRow
+                    command={firstFunction.httpSnippet}
+                    label="Copy call command"
+                  />
+                </>
+              ) : null}
+            </div>
+          </div>
+        </section>
+        <div className="mt-6 flex flex-col-reverse gap-8 lg:flex-row">
+          <section className="min-w-0 flex-1 scroll-mt-10" id="functions">
+            <SectionHeading>Functions</SectionHeading>
+            {detail.functions.length === 0 ? (
+              <p className={`${ui} text-muted-foreground mt-2`}>
+                No functions.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1">
-                {detail.executions.map((row) => (
+              <ul className="mt-2 flex flex-col">
+                {detail.functions.map((fn) => (
                   <li
-                    className="text-[length:var(--app-font-size-ui,12px)]"
-                    key={row.id}
+                    className="border-border scroll-mt-10 border-b py-3 last:border-b-0"
+                    id={`fn-${fn.slug}`}
+                    key={fn.slug}
                   >
-                    {row.createdAt.toISOString()} · {row.functionSlug ?? '-'} ·{' '}
-                    {row.status}
-                    {row.cpuMs === null ? '' : ` · ${row.cpuMs}ms`}
+                    <div className="flex min-w-0 items-center gap-1">
+                      <h3 className={`${ui} min-w-0 font-mono font-medium`}>
+                        {fn.slug}
+                      </h3>
+                      <CopyButton label={`Copy ${fn.slug} id`} value={fn.id} />
+                    </div>
+                    {fn.description ? (
+                      <p
+                        className={`${ui} text-muted-foreground mt-1 text-pretty`}
+                      >
+                        {fn.description}
+                      </p>
+                    ) : null}
+                    <div className={`${ui} mt-2`}>
+                      <CommandRow
+                        command={fn.httpSnippet}
+                        label={`Copy ${fn.slug} call command`}
+                      />
+                    </div>
+                    <div className="mt-1 flex items-start gap-2">
+                      <pre
+                        className={`${ui} text-muted-foreground min-w-0 flex-1 overflow-x-auto font-mono`}
+                      >
+                        {fn.mcpSnippet}
+                      </pre>
+                      <CopyButton
+                        label={`Copy ${fn.slug} MCP snippet`}
+                        value={fn.mcpSnippet}
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </section>
-        ) : null}
-        <Link
-          className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-          to="/packages"
-        >
-          Back to packages
-        </Link>
-      </div>
+          <aside className="flex w-full shrink-0 flex-col gap-6 lg:w-56">
+            <section className="scroll-mt-10" id="current-version">
+              <SectionHeading>Current version</SectionHeading>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className={`${ui} font-mono`}>{detail.semver}</span>
+                <time
+                  className={`${ui} text-muted-foreground`}
+                  dateTime={toPackageIso(detail.publishedAt)}
+                >
+                  {formatPackageDate(detail.publishedAt)}
+                </time>
+              </div>
+            </section>
+            <section>
+              <SectionHeading>
+                Functions ({detail.functions.length})
+              </SectionHeading>
+              {detail.functions.length === 0 ? (
+                <p className={`${ui} text-muted-foreground mt-1`}>None</p>
+              ) : (
+                <ul className="mt-1 flex flex-col">
+                  {detail.functions.map((fn) => (
+                    <li
+                      className="flex h-[var(--app-density-row-height,1.75rem)] items-center"
+                      key={fn.slug}
+                    >
+                      <a
+                        className={`${ui} truncate font-mono underline-offset-2 hover:underline`}
+                        href={`#fn-${fn.slug}`}
+                      >
+                        {fn.slug}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+            {detail.isOwner ? (
+              <PackageSharingPanel
+                handle={handle}
+                initialOrganizationSlug={detail.organizationSlug ?? ''}
+                initialVisibility={detail.visibility}
+                key={`${handle}/${slug}`}
+                organizationSlugs={(organizations ?? []).map((org) => org.slug)}
+                packageSlug={slug}
+              />
+            ) : null}
+            {detail.isOwner ? (
+              <section>
+                <SectionHeading>Recent executions</SectionHeading>
+                {detail.executions.length === 0 ? (
+                  <p className={`${ui} text-muted-foreground mt-1`}>
+                    No executions recorded yet.
+                  </p>
+                ) : (
+                  <ul className="mt-1 flex flex-col">
+                    {detail.executions.map((row) => (
+                      <li
+                        className={`${ui} text-muted-foreground border-border border-b py-1.5 last:border-b-0`}
+                        key={row.id}
+                      >
+                        <time dateTime={toPackageIso(row.createdAt)}>
+                          {formatPackageDateTime(row.createdAt)}
+                        </time>
+                        <span className="text-foreground ms-1 font-mono">
+                          {row.functionSlug ?? '—'}
+                        </span>
+                        <span className="ms-1">{row.status}</span>
+                        {row.cpuMs === null ? null : (
+                          <span className="ms-1 font-mono tabular-nums">
+                            {row.cpuMs}&nbsp;ms
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ) : null}
+          </aside>
+        </div>
+      </article>
     </main>
   );
 };

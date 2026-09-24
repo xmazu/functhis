@@ -7,6 +7,7 @@ import { WORKER_COMPATIBILITY_DATE } from '@functhis/publish/constants';
 
 import type { WorkerLoaderBundle } from './build-bundle';
 import type { DiscoveredFunction } from './discover';
+import { detectRuntimeSecretNames } from './runtime-secrets';
 
 export interface PublishManifestFunction {
   description: string;
@@ -79,7 +80,7 @@ export const buildPublishArtifact = (input: {
     package: input.packageSlug,
     runtimeVersion: WORKER_COMPATIBILITY_DATE,
     scope: input.scope,
-    secrets: [],
+    secrets: detectRuntimeSecretNames(input.files),
   };
 
   return {

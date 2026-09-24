@@ -18,6 +18,7 @@ export const createBootstrapSource = (
     .join('\n');
 
   return `${imports}
+import { __runInRuntime } from './__functhis_runtime.mjs';
 
 const routes = {
 ${routeEntries}
@@ -38,11 +39,18 @@ export default {
       const body = await request.json();
       const slug = body.functionSlug;
       const input = body.input ?? {};
+      const runtime = body.runtime ?? { context: {}, secrets: {} };
       const handler = routes[slug];
       if (!handler) {
         return Response.json({ error: 'Unknown function slug: ' + slug, logs }, { status: 404 });
       }
-      const result = await handler(input);
+      const result = await __runInRuntime(
+        {
+          context: runtime.context ?? {},
+          secrets: runtime.secrets ?? {},
+        },
+        () => handler(input)
+      );
       return Response.json({ result, logs });
     } catch (error) {
       return Response.json({ error: error instanceof Error ? error.message : String(error), logs }, { status: 500 });

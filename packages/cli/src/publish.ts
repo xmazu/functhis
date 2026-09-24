@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -12,6 +13,7 @@ import {
 } from '@functhis/publish/schemas';
 import type { VersionBump } from '@functhis/publish/semver';
 import { validateContractInput } from '@functhis/publish/validate-input';
+import { createRuntimeModuleSource } from '@functhis/runtime';
 
 import { loadAuthenticatedConfig } from './auth-session';
 import { buildWorkerBundle } from './build-bundle';
@@ -301,6 +303,7 @@ export const runDev = async (options?: {
   functionSlug?: string;
   input?: unknown;
   projectRoot?: string;
+  secrets?: Record<string, string>;
 }): Promise<void> => {
   const projectRoot = options?.projectRoot
     ? path.resolve(process.cwd(), options.projectRoot)
@@ -338,7 +341,9 @@ export const runDev = async (options?: {
 
   const tempDir = await mkdtemp(path.join(tmpdir(), 'functhis-dev-'));
   const modulePath = path.join(tempDir, 'worker.mjs');
+  const runtimePath = path.join(tempDir, '__functhis_runtime.mjs');
   await writeFile(modulePath, moduleCode, 'utf-8');
+  await writeFile(runtimePath, createRuntimeModuleSource(), 'utf-8');
   try {
     const mod = (await import(modulePath)) as {
       default: { fetch: (request: Request) => Promise<Response> };
@@ -348,6 +353,15 @@ export const runDev = async (options?: {
         body: JSON.stringify({
           functionSlug: slug,
           input: runInput,
+          runtime: {
+            context: {
+              callerUserId: null,
+              executionId: randomUUID(),
+              functionSlug: slug,
+              packageVersionId: 'local',
+            },
+            secrets: options?.secrets ?? {},
+          },
         }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',

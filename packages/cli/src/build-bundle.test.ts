@@ -3,6 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { createRuntimeModuleSource } from '@functhis/runtime';
+
 import { buildWorkerBundle } from './build-bundle';
 import { discoverProject } from './discover';
 import type { DiscoveredFunction } from './discover';
@@ -72,6 +74,11 @@ const runBundledFetch = async (
   const tempDir = await mkdtemp(path.join(tmpdir(), 'functhis-bundle-run-'));
   const modulePath = path.join(tempDir, 'out.mjs');
   await writeFile(modulePath, code, 'utf-8');
+  await writeFile(
+    path.join(tempDir, '__functhis_runtime.mjs'),
+    createRuntimeModuleSource(),
+    'utf-8'
+  );
   try {
     const mod = (await import(modulePath)) as {
       default: { fetch: (request: Request) => Promise<Response> };
@@ -199,6 +206,24 @@ describe('buildWorkerBundle', () => {
         packageRoot,
       })
     ).rejects.toThrow(/Native addon/u);
+  });
+
+  test('keeps functhis:runtime as an external import', async () => {
+    const packageRoot = await makeTinyDepProject({
+      handlerSource:
+        "import { secret } from 'functhis:runtime';\nexport default () => secret('K');\n",
+    });
+    const files = {
+      'hello.ts': await Bun.file(path.join(packageRoot, 'hello.ts')).text(),
+    };
+    const bundle = await buildWorkerBundle({
+      files,
+      functions: [sampleFunction()],
+      packageRoot,
+    });
+    const code = bundle.modules['bundle.mjs'] ?? '';
+    expect(code).toContain('from "./__functhis_runtime.mjs"');
+    expect(code).not.toContain('AsyncLocalStorage');
   });
 
   test('rejects dynamic import of npm packages', async () => {
