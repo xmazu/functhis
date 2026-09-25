@@ -32,6 +32,20 @@ export interface ExecuteBundlesKv {
   get: (key: string) => Promise<string | null>;
 }
 
+interface WorkerLoaderJsModule {
+  js: string;
+}
+
+const asWorkerLoaderJsModules = (
+  modules: Record<string, string>
+): Record<string, WorkerLoaderJsModule> => {
+  const result: Record<string, WorkerLoaderJsModule> = {};
+  for (const [name, source] of Object.entries(modules)) {
+    result[name] = { js: source };
+  }
+  return result;
+};
+
 export interface ExecuteWorkerLoader {
   get: (
     id: string,
@@ -41,7 +55,7 @@ export interface ExecuteWorkerLoader {
       env: Record<string, never>;
       limits: { cpuMs: number; subRequests: number };
       mainModule: string;
-      modules: Record<string, string>;
+      modules: Record<string, WorkerLoaderJsModule>;
     }
   ) => {
     getEntrypoint: (
@@ -160,10 +174,10 @@ export const runDynamicWorker = async (
       env: {},
       limits,
       mainModule: input.bundle.mainModule,
-      modules: {
+      modules: asWorkerLoaderJsModules({
         ...input.bundle.modules,
         [RUNTIME_MODULE_ID]: createRuntimeModuleSource(),
-      },
+      }),
     })
   );
 

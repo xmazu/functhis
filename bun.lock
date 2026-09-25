@@ -139,11 +139,12 @@
         "functhis": "./dist/cli.js",
       },
       "dependencies": {
+        "@functhis/publish": "workspace:*",
         "@functhis/runtime": "workspace:*",
         "esbuild": "^0.25.12",
         "ts-morph": "^26.0.0",
-        "typescript": "^6.0.3",
-        "zod": "^4.5.4",
+        "typescript": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@functhis/config": "workspace:*",
@@ -197,6 +198,7 @@
         "zod": "catalog:",
       },
       "devDependencies": {
+        "@cloudflare/workers-types": "^5.20260906.1",
         "@functhis/config": "workspace:*",
         "@types/bun": "latest",
         "typescript": "catalog:",

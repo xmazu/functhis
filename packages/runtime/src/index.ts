@@ -10,7 +10,7 @@ export const RUNTIME_SPECIFIER = 'functhis:runtime';
 
 export const RUNTIME_MODULE_ID = './__functhis_runtime.mjs';
 
-export const RUNTIME_MODULE_VERSION = '1';
+export const RUNTIME_MODULE_VERSION = '2';
 
 export const dynamicWorkerLoaderId = (versionId: string): string =>
   `${versionId}:${RUNTIME_MODULE_VERSION}`;

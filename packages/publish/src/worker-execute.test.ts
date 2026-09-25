@@ -42,7 +42,7 @@ describe('runDynamicWorker', () => {
     let factoryConfig:
       | {
           compatibilityFlags?: string[];
-          modules: Record<string, string>;
+          modules: Record<string, string | { js: string }>;
         }
       | undefined;
     let capturedBody: unknown;
@@ -51,7 +51,7 @@ describe('runDynamicWorker', () => {
       {
         LOADER: {
           get: (id, factory) => {
-            expect(id).toBe('ver_test:1');
+            expect(id).toBe('ver_test:2');
             factoryConfig = factory();
             return {
               getEntrypoint: () => ({
@@ -75,9 +75,10 @@ describe('runDynamicWorker', () => {
     );
 
     expect(factoryConfig?.compatibilityFlags).toEqual(['nodejs_compat']);
-    expect(factoryConfig?.modules['./__functhis_runtime.mjs']).toContain(
-      'AsyncLocalStorage'
-    );
+    const runtimeModule = factoryConfig?.modules['./__functhis_runtime.mjs'];
+    expect(runtimeModule).toEqual({
+      js: expect.stringContaining('AsyncLocalStorage'),
+    });
     expect(capturedBody).toMatchObject({
       functionSlug: 'hello',
       input: { ok: true },
@@ -89,6 +90,47 @@ describe('runDynamicWorker', () => {
         },
         secrets: {},
       },
+    });
+  });
+
+  test('passes published .mjs modules as explicit js objects for Worker Loader', async () => {
+    let factoryConfig:
+      | {
+          mainModule: string;
+          modules: Record<string, string | { js: string }>;
+        }
+      | undefined;
+
+    await runDynamicWorker(
+      {
+        LOADER: {
+          get: (_id, factory) => {
+            factoryConfig = factory();
+            return {
+              getEntrypoint: () => ({
+                fetch: () => Promise.resolve(Response.json({ result: null })),
+              }),
+            };
+          },
+        },
+      },
+      {
+        bundle: {
+          mainModule: 'bundle.mjs',
+          modules: { 'bundle.mjs': 'export default {};' },
+        },
+        requestBytes: 1,
+        runInput: {},
+        versionId: 'ver_test',
+      }
+    );
+
+    expect(factoryConfig?.mainModule).toBe('bundle.mjs');
+    expect(factoryConfig?.modules['bundle.mjs']).toEqual({
+      js: 'export default {};',
+    });
+    expect(factoryConfig?.modules['./__functhis_runtime.mjs']).toEqual({
+      js: expect.stringContaining('AsyncLocalStorage'),
     });
   });
 
