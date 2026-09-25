@@ -28,11 +28,11 @@ export const canAccessPackage = (
   packageRow: PackageAccessRow,
   context: PackageAccessContext
 ): boolean => {
-  if (packageRow.visibility === 'library') {
-    return true;
+  if (context.userId === null) {
+    return false;
   }
 
-  if (context.userId !== null && packageRow.ownerUserId === context.userId) {
+  if (packageRow.ownerUserId === context.userId) {
     return true;
   }
 

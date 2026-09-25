@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     answer:
-      'Packages can be private, shared with an organization, or published to the public library. HTTP and MCP execution follow the same access rules. Organization members can publish under a shared handle such as @acme/package.',
+      'Packages can be private or shared with an organization. Only you and org members can open package pages in the browser. MCP execution uses the same access rules with a bearer token.',
     question: 'Can packages be private or shared with a team?',
   },
   {

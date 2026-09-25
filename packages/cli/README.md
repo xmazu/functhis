@@ -25,7 +25,7 @@ functhis run --slug my-function --input '{"name":"Ada"}'
 
 Production defaults:
 
-- Console (OAuth): `https://console.functhis.now`
+- Console (OAuth): `https://functhis.now` (same origin as the site; device flow at `/device`)
 - Web / publish API: `https://functhis.now`
 
 Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.

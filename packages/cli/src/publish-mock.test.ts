@@ -64,7 +64,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
@@ -139,7 +139,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
@@ -203,7 +203,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
@@ -247,7 +247,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       await expect(
@@ -272,7 +272,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
@@ -342,7 +342,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
@@ -380,7 +380,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       await expect(
@@ -411,7 +411,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       await expect(

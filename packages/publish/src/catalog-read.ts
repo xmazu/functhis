@@ -61,28 +61,17 @@ export const canViewPackage = (
   context: PackageAccessContext
 ): boolean => canAccessPackage(packageRow, context);
 
-/** GET pages: in local dev, show private URLs without a web session (console cookies do not cross ports). */
+/** GET pages: requires a signed-in viewer with package ACL. */
 export const canViewCatalogPage = (
   packageRow: PackageAccessRow,
-  context: PackageAccessContext,
-  options?: { relaxInDevelopment?: boolean }
-): boolean => {
-  if (canAccessPackage(packageRow, context)) {
-    return true;
-  }
-  return Boolean(options?.relaxInDevelopment);
-};
+  context: PackageAccessContext
+): boolean => canAccessPackage(packageRow, context);
 
-const anonymousViewer: PackageAccessContext = {
-  organizationIds: [],
-  userId: null,
-};
-
-/** GET/POST policy for callers without a session (library + optional dev relax). */
+/** @deprecated Anonymous catalog access is not supported. */
 export const canViewCatalogWithoutAuth = (
-  packageRow: PackageAccessRow,
-  options?: { relaxInDevelopment?: boolean }
-): boolean => canViewCatalogPage(packageRow, anonymousViewer, options);
+  packageRow: PackageAccessRow
+): boolean =>
+  canViewCatalogPage(packageRow, { organizationIds: [], userId: null });
 
 export interface PackageListRow {
   functionCount: number;

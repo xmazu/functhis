@@ -11,14 +11,11 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
-import Header from '#/components/header';
-import { SiteFooter } from '#/components/marketing/site-footer';
 import type { orpc } from '#/utils/orpc';
 
 import appCss from '#/index.css?url';
 
 export interface RouterAppContext {
-  consoleUrl: string;
   orpc: typeof orpc;
   queryClient: QueryClient;
 }
@@ -29,11 +26,7 @@ const RootDocument = () => (
       <HeadContent />
     </head>
     <body>
-      <div className="flex min-h-svh flex-col">
-        <Header />
-        <Outlet />
-        <SiteFooter />
-      </div>
+      <Outlet />
       <Toaster richColors />
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
@@ -43,11 +36,6 @@ const RootDocument = () => (
 );
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  beforeLoad: async () => {
-    const { resolveConsoleUrl } =
-      await import('#/functions/resolve-console-url');
-    return { consoleUrl: await resolveConsoleUrl() };
-  },
   server: {
     middleware: [createMiddleware().server(evlogErrorHandler)],
   },

@@ -10,13 +10,12 @@ One Cloudflare account.
 
 | Host | Role |
 | --- | --- |
-| `https://functhis.now` | Marketing, public registry, deploy API audience |
-| `https://console.functhis.now` | OAuth issuer, owner dashboard; login, consent, device approval |
+| `https://functhis.now` | Marketing, OAuth issuer, owner UI (`/d`), deploy API, `@` package pages |
 | `https://mcp.functhis.now` | MCP resource. Tools: `search`, `execute`. Token `aud`. |
 
-No `run.` host. Cookies: `.functhis.now`. `trustedOrigins`: apex + console.
+No `run.` host. Cookies: `.functhis.now`. `trustedOrigins`: apex + mcp.
 
-Alpha ships three first-party Workers: web, console, mcp (see [Fleet](#fleet)). Do not add a package-app zone.
+Alpha ships two first-party Workers: web, mcp (see [Fleet](#fleet)). Do not add a package-app zone.
 
 ## Public URLs
 
@@ -31,23 +30,23 @@ https://functhis.now/@xmazu/presentation-tools/generate-presentation
 - GET `Accept: application/json`: contract only. Never execute.
 - POST JSON: execute. Same ACL and quotas as MCP `execute`.
 - `@` is reserved. Marketing routes do not start with `@`.
-- Private: locked GET (or 404). POST needs a Functhis bearer token.
+- Private: signed-in GET; owner or org member only. Anonymous GET redirects to `/login`. No access → 404. POST needs session or bearer token.
 - MCP ids are the path: `@xmazu/presentation-tools/generate-presentation`.
 
 Compute identity is the package version id (`ver_{versionId}`). Slugs can change without moving the isolate.
 
 ## Auth
 
-GitHub is the IdP (`socialProviders.github`). Functhis is the OAuth 2.1 authorization server at **`https://console.functhis.now`**.
+GitHub is the IdP (`socialProviders.github`). Functhis is the OAuth 2.1 authorization server at **`https://functhis.now`**.
 
 Mount **`mcp()`**, not `oauthProvider()`. `mcp()` is that provider with MCP defaults. Do not register both.
 
 ```text
 GitHub           → session into Functhis
-Functhis (mcp()) → AS on console.functhis.now
+Functhis (mcp()) → AS on functhis.now
 mcp.functhis.now → MCP resource
 deploy API       → CLI resource (same AS, different audience)
-console          → session cookies + issuer pages
+console          → session cookies + issuer pages (same origin as web)
 ```
 
 `createAuth` plugins:
@@ -59,9 +58,9 @@ console          → session cookies + issuer pages
 - `organization()` - Better Auth org plugin; thin console admin at `/organizations` (create, invite via copy link, accept). No outbound invite email in alpha.
 - `crossSubDomainCookies` on `.functhis.now`
 
-Login / consent / device pages: `https://console.functhis.now/...`. Issuer: `https://console.functhis.now`.
+Login / consent / device pages: `https://functhis.now/...`. Issuer: `https://functhis.now`.
 
-Workers: do not use the Node CIMD transport. Use `global_fetch_strictly_public` on `functhis-console` so `fetch()` refuses private/special-use IPs after DNS. `fetchClientMetadataResource` enforces HTTPS, no credentials/fragments, GET/HEAD only, `redirect: "error"`, timeout + size cap. No userland IP pinning.
+Workers: do not use the Node CIMD transport. Use `global_fetch_strictly_public` on `functhis-web` so `fetch()` refuses private/special-use IPs after DNS. `fetchClientMetadataResource` enforces HTTPS, no credentials/fragments, GET/HEAD only, `redirect: "error"`, timeout + size cap. No userland IP pinning.
 
 Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 
@@ -72,11 +71,11 @@ Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 
 MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI device token is bound to the deploy API resource (`https://functhis.now`), not MCP.
 
-## Console
+## Owner UI
 
-Thin owner app at `apps/console`. Not the shareable object. Visual system: [apps/console/DESIGN.md](apps/console/DESIGN.md).
+Signed-in owner app at `apps/web` under `/d` (pkgs, orgs). Visual system: [apps/web/src/modules/d/DESIGN.md](apps/web/src/modules/d/DESIGN.md).
 
-Alpha: GitHub login, MCP consent, device approval, signed-in home, package list at `/packages` (owned + org-shared), package detail at `/packages/:handle/:slug` (not `/packages/:slug` alone), organizations at `/organizations`, sharing controls on owned packages.
+Alpha: GitHub login, MCP consent, device approval, signed-in home, package list at `/d/pkgs`, package detail at `/d/pkgs/:handle/:slug`, organizations at `/d/orgs`, sharing controls on owned packages.
 
 Try-it lives on the public function page. No billing or library browse/catalog UI in alpha.
 
@@ -90,62 +89,18 @@ Try-it lives on the public function page. No billing or library browse/catalog U
 
 ## Fleet
 
-Three product Workers (web, console, mcp). Untrusted package code must not share a failure domain with login or OAuth issuer HTTP.
+Two product Workers (web, mcp). Untrusted package code runs on MCP (Dynamic Workers), not on the web Worker.
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now` | TanStack Start, public GET pages, deploy API, `@` POST (phase 5) | Neon via Hyperdrive (catalog, cache on), bundle KV (hot path), artifacts R2 (canonical), Workers AI, service binding to mcp |
-| `functhis-console` | `console.functhis.now` | TanStack Start, OAuth issuer, login/consent/device | Neon via Hyperdrive (auth, cache off), `global_fetch_strictly_public` |
-| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution (phase 6) | Neon via Hyperdrive (catalog, cache on), bundle KV, `LOADER`, Analytics Engine, Workers AI |
+| `functhis-web` | `functhis.now` | TanStack Start, marketing, OAuth issuer, `/d` owner UI, `@` pages, deploy API | Neon via Hyperdrive, bundle KV, artifacts R2, Workers AI, `global_fetch_strictly_public`, service binding to mcp |
+| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution | Neon via Hyperdrive, bundle KV, `LOADER`, Analytics Engine, Workers AI |
 
-```mermaid
-flowchart TB
-  subgraph clients [Clients]
-    Browser
-    CLI
-    Agent
-  end
-
-  subgraph workers [Cloudflare Workers]
-    Web["functhis-web<br/>functhis.now"]
-    Console["functhis-console<br/>console.functhis.now"]
-    MCP["functhis-mcp<br/>mcp.functhis.now"]
-    Loader["Dynamic Worker isolate<br/>LOADER.get(versionId)"]
-  end
-
-  subgraph data [Data]
-    Neon["Neon Postgres"]
-    HDAuth["Hyperdrive auth<br/>cache off"]
-    HDCat["Hyperdrive catalog<br/>cache on"]
-    KV["KV bundles"]
-    AE["Analytics Engine"]
-    AI["Workers AI<br/>embeddings"]
-  end
-
-  Browser --> Web
-  Browser --> Console
-  CLI --> Console
-  CLI --> Web
-  Agent --> Console
-  Agent --> MCP
-
-  Web --> HDCat --> Neon
-  Console --> HDAuth --> Neon
-  MCP --> HDCat
-  Web -->|service binding| MCP
-  MCP --> KV
-  MCP --> Loader
-  MCP --> AE
-  MCP --> AI
-  Web --> KV
-  Web --> AI
-```
-
-Local `bun run dev` runs web (3001), console (3002), and MCP (3003). `bun run db:migrate:local` applies Drizzle migrations to Neon. Production deploys Workers independently (**mcp first**, then web, then console) before Terraform custom domains point `mcp.*` at `functhis-mcp`.
+Local `bun run dev` runs web (3001) and MCP (3003). Production deploys **mcp first**, then web.
 
 Cross-worker calls use service bindings. Do not proxy Postgres through RPC; scripts that need the database bind the same Hyperdrive config.
 
-Do not put Durable Object classes on `functhis-web` or `functhis-console`. If a DO is needed later, add a third script rather than attaching it to origin.
+Do not put Durable Object classes on `functhis-web`. If a DO is needed later, add a dedicated script rather than attaching it to origin.
 
 ## Infra
 
@@ -320,8 +275,7 @@ Package ACL (GET, POST, MCP `search`, MCP `execute`):
 
 ```text
 ownerUserId = me
-or (organizationId in memberships and visibility in organization|library)
-or visibility = library
+or (organizationId in memberships and visibility = organization)
 ```
 
 `private` is owner-only even when `organizationId` is set. Deploy and console set `visibility` + optional `organizationId`; CLI: `--visibility`, `--organization`.
@@ -331,8 +285,7 @@ Quotas fail closed from day one: CPU, concurrency, request/response size.
 ## Repo
 
 ```text
-apps/web          hosted origin: public pages + deploy API + public POST execute
-apps/console      OAuth issuer + thin dashboard
+apps/web          hosted origin: marketing, OAuth, /d owner UI, @ pages, deploy API
 apps/mcp          hosted: mcp.functhis.now, MCP tools + Worker Loader execute
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
@@ -355,14 +308,14 @@ CLI: `functhis login` (device), `functhis publish`, `functhis rollback <semver>`
 ## Flows
 
 ```text
-Agent:  OAuth at console.functhis.now → consent on console
+Agent:  OAuth at functhis.now → consent on functhis.now
         POST mcp.functhis.now/mcp execute { id: "@xmazu/pkg/fn", arguments }
         → ACL → functhis-mcp → Dynamic Worker
 
-Human:  GET  functhis.now/@xmazu/pkg/fn  page
+Human:  GET  functhis.now/@xmazu/pkg/fn  page (signed in, ACL)
         POST functhis.now/@xmazu/pkg/fn  run
 
-CLI:    login → console.functhis.now/device
+CLI:    login → functhis.now/device
         publish → artifact (R2 + KV) + package_version
         → https://functhis.now/@scope/package/namespace/function
 ```

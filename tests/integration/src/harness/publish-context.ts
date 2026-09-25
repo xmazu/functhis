@@ -5,7 +5,7 @@ import type { PublishHandlerContext } from '@functhis/publish/http';
 import { createMemoryBundles } from './memory-kv';
 import type { MemoryBundles } from './memory-kv';
 
-const INTEGRATION_CONSOLE_URL = 'http://localhost:3002';
+const INTEGRATION_CONSOLE_URL = 'http://localhost:3001';
 
 export const createIntegrationPublishContext = (
   db: Database,

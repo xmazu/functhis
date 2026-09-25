@@ -7,7 +7,7 @@ import { getDb } from '../../services';
 export const createPublishHandlerContext =
   async (): Promise<PublishHandlerContext> => {
     const db = await getDb();
-    const consoleUrl = env.CONSOLE_URL;
+    const consoleUrl = env.BETTER_AUTH_URL;
     const ai =
       env.AI === undefined ? undefined : { run: env.AI.run.bind(env.AI) };
     return {

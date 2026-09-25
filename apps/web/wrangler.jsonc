@@ -2,7 +2,7 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "functhis-web",
   "compatibility_date": "2025-09-15",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./src/worker-entry.ts",
   "observability": {
     "enabled": true,
@@ -33,7 +33,9 @@
   ],
   "vars": {
     "NODE_ENV": "development",
-    "CONSOLE_URL": "http://localhost:3002",
+    "BETTER_AUTH_URL": "http://localhost:3001",
+    "MCP_RESOURCE": "http://localhost:3003",
+    "TRUSTED_ORIGINS": "http://localhost:3001,http://localhost:3003,https://functhis.now,https://mcp.functhis.now",
     "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
   },
   "services": [
@@ -46,7 +48,7 @@
     "preview": {
       "name": "functhis-web-preview",
       "compatibility_date": "2025-09-15",
-      "compatibility_flags": ["nodejs_compat"],
+      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
       "ai": {
         "binding": "AI",
       },
@@ -68,9 +70,28 @@
           "bucket_name": "functhis-artifacts-preview",
         },
       ],
+      "secrets_store_secrets": [
+        {
+          "binding": "BETTER_AUTH_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "BETTER_AUTH_SECRET",
+        },
+        {
+          "binding": "GITHUB_CLIENT_ID",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "GITHUB_CLIENT_ID",
+        },
+        {
+          "binding": "GITHUB_CLIENT_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000020",
+          "secret_name": "GITHUB_CLIENT_SECRET",
+        },
+      ],
       "vars": {
         "NODE_ENV": "production",
-        "CONSOLE_URL": "https://console.preview.functhis.now",
+        "BETTER_AUTH_URL": "https://preview.functhis.now",
+        "MCP_RESOURCE": "https://mcp.preview.functhis.now",
+        "TRUSTED_ORIGINS": "https://preview.functhis.now,https://mcp.preview.functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
       },
       "services": [
@@ -83,7 +104,7 @@
     "production": {
       "name": "functhis-web",
       "compatibility_date": "2025-09-15",
-      "compatibility_flags": ["nodejs_compat"],
+      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
       "ai": {
         "binding": "AI",
       },
@@ -105,9 +126,28 @@
           "bucket_name": "functhis-artifacts-production",
         },
       ],
+      "secrets_store_secrets": [
+        {
+          "binding": "BETTER_AUTH_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "BETTER_AUTH_SECRET",
+        },
+        {
+          "binding": "GITHUB_CLIENT_ID",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "GITHUB_CLIENT_ID",
+        },
+        {
+          "binding": "GITHUB_CLIENT_SECRET",
+          "store_id": "00000000-0000-0000-0000-000000000021",
+          "secret_name": "GITHUB_CLIENT_SECRET",
+        },
+      ],
       "vars": {
         "NODE_ENV": "production",
-        "CONSOLE_URL": "https://console.functhis.now",
+        "BETTER_AUTH_URL": "https://functhis.now",
+        "MCP_RESOURCE": "https://mcp.functhis.now",
+        "TRUSTED_ORIGINS": "https://functhis.now,https://mcp.functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
       },
       "services": [

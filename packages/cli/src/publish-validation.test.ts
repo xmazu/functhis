@@ -20,7 +20,7 @@ describe('runPublish validation', () => {
     try {
       await saveConfig({
         accessToken: 'token',
-        consoleUrl: 'http://localhost:3002',
+        consoleUrl: 'http://localhost:3001',
         webUrl: 'http://localhost:3001',
       });
       await expect(

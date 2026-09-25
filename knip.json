@@ -23,7 +23,11 @@
     "tailwindcss",
     "web-vitals"
   ],
-  "ignoreUnresolved": ["./routeTree.gen", "scripts/check-src-coverage.ts"],
+  "ignoreUnresolved": [
+    "./routeTree.gen",
+    "scripts/check-src-coverage.ts",
+    "scripts/build.ts"
+  ],
   "ignoreIssues": {
     "apps/**/src/env.server.ts": ["unlisted"],
     "apps/fumadocs/src/components/mdx.tsx": ["duplicates"],
@@ -38,15 +42,6 @@
       "entry": ["src/**/*.{ts,tsx}"],
       "vite": false,
       "ignoreDependencies": ["zod"]
-    },
-    "apps/console": {
-      "entry": ["src/**/*.{ts,tsx}"],
-      "vite": false,
-      "ignoreDependencies": ["zod"]
-    },
-    "apps/fumadocs": {
-      "entry": ["src/**/*.{ts,tsx}"],
-      "vite": false
     },
     "packages/auth": {
       "entry": ["src/index.ts"],

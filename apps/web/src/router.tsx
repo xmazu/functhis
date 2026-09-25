@@ -9,7 +9,7 @@ export const getRouter = () => {
   const queryClient = createQueryClient();
 
   const router = createTanStackRouter({
-    context: { consoleUrl: 'http://localhost:3002', orpc, queryClient },
+    context: { orpc, queryClient },
     defaultNotFoundComponent: () => <div>Not Found</div>,
     defaultPendingComponent: () => <Loader />,
     defaultPreloadStaleTime: 0,

@@ -24,6 +24,10 @@ export const resolveSessionUserId = async (
   request: Request,
   options: PublishAuthOptions
 ): Promise<string | null> => {
+  if (options.resolveSessionUserId) {
+    return options.resolveSessionUserId(request);
+  }
+
   const cookie = request.headers.get('Cookie');
   if (!cookie) {
     return null;

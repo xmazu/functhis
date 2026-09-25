@@ -1,12 +1,17 @@
 interface CloudflareEnv {
   AI: Ai;
   ARTIFACTS: R2Bucket;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL: string;
   BUNDLES: KVNamespace;
-  CONSOLE_URL: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
   HYPERDRIVE: Hyperdrive;
   INTERNAL_EXECUTE_TOKEN: string;
   MCP: Fetcher;
+  MCP_RESOURCE: string;
   NODE_ENV: string;
+  TRUSTED_ORIGINS: string;
 }
 
 type Env = CloudflareEnv;

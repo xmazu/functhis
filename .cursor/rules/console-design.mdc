@@ -1,12 +1,12 @@
 ---
 description: Functhis console native design system. Apply when editing apps/console UI, CSS, routes, or components.
-globs: apps/console/**
+globs: apps/web/src/modules/d/**,apps/web/src/routes/d/**,apps/web/src/routes/login.tsx,apps/web/src/routes/consent.tsx,apps/web/src/routes/device.tsx
 alwaysApply: false
 ---
 
 # Console UI
 
-Read [apps/console/DESIGN.md](../../apps/console/DESIGN.md) before changing console visuals. That file is the source of truth.
+Read [apps/web/src/modules/d/DESIGN.md](../../apps/web/src/modules/d/DESIGN.md) before changing owner UI visuals. That file is the source of truth.
 
 - Forced dark native desktop: `#0e0e0e`, 12px system UI, 4% hairlines, no drop shadows, ~28px rows
 - Primitives from `@coss` into `apps/console/src/components/ui`. Overlay Functhis tokens. Never `@coss/style` or dump `@coss/ui`

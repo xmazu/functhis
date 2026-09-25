@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
-    "CONSOLE_URL": "http://localhost:3002",
+    "CONSOLE_URL": "http://localhost:3001",
     "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
     "MCP_RESOURCE": "http://localhost:3003",
   },
@@ -51,7 +51,7 @@
         "binding": "AI",
       },
       "vars": {
-        "CONSOLE_URL": "https://console.preview.functhis.now",
+        "CONSOLE_URL": "https://preview.functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
         "MCP_RESOURCE": "https://mcp.preview.functhis.now",
       },
@@ -86,7 +86,7 @@
         "binding": "AI",
       },
       "vars": {
-        "CONSOLE_URL": "https://console.functhis.now",
+        "CONSOLE_URL": "https://functhis.now",
         "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
         "MCP_RESOURCE": "https://mcp.functhis.now",
       },

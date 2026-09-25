@@ -2,12 +2,9 @@ import { buildCatalogLoginUrl } from '../catalog/access';
 import { wantsJsonCatalogResponse } from './accept';
 import { catalogSignInHtmlResponse } from './catalog-pages';
 
-export const catalogUnauthorizedResponse = (
-  request: Request,
-  consoleUrl: string
-): Response => {
+export const catalogUnauthorizedResponse = (request: Request): Response => {
   if (request.method === 'GET' && !wantsJsonCatalogResponse(request)) {
-    return catalogSignInHtmlResponse(request.url, consoleUrl);
+    return catalogSignInHtmlResponse(request.url);
   }
 
   return Response.json(

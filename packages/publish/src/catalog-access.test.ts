@@ -15,7 +15,7 @@ const orgPkg = {
 };
 
 describe('canAccessPackage', () => {
-  test('allows library visibility without a viewer', () => {
+  test('denies library visibility without a signed-in viewer', () => {
     expect(
       canAccessPackage(
         {
@@ -25,7 +25,7 @@ describe('canAccessPackage', () => {
         },
         { organizationIds: [], userId: null }
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test('denies private packages without owner session', () => {
@@ -99,7 +99,7 @@ describe('canAccessPackage', () => {
     ).toBe(false);
   });
 
-  test('library visibility is visible to non-members', () => {
+  test('library visibility does not grant access to strangers', () => {
     expect(
       canAccessPackage(
         {
@@ -109,7 +109,7 @@ describe('canAccessPackage', () => {
         },
         { organizationIds: [], userId: 'stranger' }
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 

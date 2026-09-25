@@ -9,22 +9,20 @@ export type CatalogAccessResult =
       access: 'allow';
       context: PackageAccessContext;
     }
-  | { access: 'sign-in' };
+  | { access: 'sign-in' }
+  | { access: 'not-found'; context: PackageAccessContext };
 
 export const evaluateCatalogAccess = (
   catalog: CatalogPackageRow,
-  context: PackageAccessContext,
-  options?: { relaxInDevelopment?: boolean }
+  context: PackageAccessContext
 ): CatalogAccessResult => {
-  const relaxInDevelopment = options?.relaxInDevelopment ?? false;
-
-  if (
-    canViewCatalogPage(catalog, context, {
-      relaxInDevelopment,
-    })
-  ) {
+  if (canViewCatalogPage(catalog, context)) {
     return { access: 'allow', context };
   }
 
-  return { access: 'sign-in' };
+  if (context.userId === null) {
+    return { access: 'sign-in' };
+  }
+
+  return { access: 'not-found', context };
 };

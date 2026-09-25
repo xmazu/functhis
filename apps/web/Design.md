@@ -6,7 +6,7 @@
 
 This file is the visual language for `apps/web` only. It records how the surface looks and feels: color, type, space, motion, and elevation. It is not a product spec, a feature list, or a component catalog.
 
-Do not add screens, sections, widgets, or capabilities here. Those belong in code and in product docs (`vision.md`, `architecture.md`). Console visuals stay in [`apps/console/DESIGN.md`](../console/DESIGN.md).
+Do not add screens, sections, widgets, or capabilities here. Those belong in code and in product docs (`vision.md`, `architecture.md`). Owner UI visuals live in [`src/modules/d/DESIGN.md`](src/modules/d/DESIGN.md).
 
 The page should feel like a quiet instrument panel that happens to be a marketing site: one reading column, one primary action, hairlines instead of shadows, and product proof shown as a terminal or a browser chrome - never as a gallery of equal cards.
 
@@ -130,4 +130,4 @@ No photography on this surface. No mesh, no spheres, no stock devices. Marks are
 - Do not use indigo, violet, ember, or lime on chrome.
 - Do not add page-wide gradients or glass as decoration.
 - Do not catalog features, flows, or components in this file.
-- Do not restyle `apps/console` or `packages/ui` from this language.
+- Do not restyle the owner UI (`/d`) or `packages/ui` from this language.

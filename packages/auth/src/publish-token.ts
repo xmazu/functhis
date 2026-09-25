@@ -11,8 +11,10 @@ export type PublishAuthResult =
   | { ok: false; response: Response };
 
 export interface PublishAuthOptions {
-  /** OAuth issuer origin (console), e.g. `http://localhost:3002`. */
+  /** OAuth issuer origin, e.g. `https://functhis.now`. */
   consoleUrl: string;
+  /** When the issuer runs in-process (same Worker), avoid cross-fetch for cookies. */
+  resolveSessionUserId?: (request: Request) => Promise<string | null>;
 }
 
 const unauthorized = (): PublishAuthResult => ({

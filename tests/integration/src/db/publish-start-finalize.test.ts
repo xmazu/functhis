@@ -162,7 +162,7 @@ describe('deploy start and finalize', () => {
 
     const catalog = await getPackageBySlugs(db, handle, slug);
     expect(catalog?.scopeKind).toBe('user');
-    expect(catalog?.currentVersion.semver).toBe('0.0.1');
+    expect(catalog?.currentVersion.semver).toBe('1.0.0');
     expect(catalog?.currentVersion.publishedAt).toBeInstanceOf(Date);
     expect(catalog?.functions.map((fn) => fn.functionSlug)).toEqual(['hello']);
   });

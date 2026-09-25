@@ -1,6 +1,5 @@
 import { resolveCallerUserId } from '@functhis/auth';
 import {
-  canViewCatalogWithoutAuth,
   formatFunctionId,
   getPackageBySlugs,
   publicFunctionPath,
@@ -8,11 +7,8 @@ import {
 import { z } from 'zod';
 
 import { env } from '../../env.server';
-import { getDb } from '../../services';
-import {
-  catalogPageRelaxInDevelopment,
-  resolveCatalogAccess,
-} from '../catalog/access';
+import { createAuth, getDb } from '../../services';
+import { resolveCatalogAccess } from '../catalog/access';
 import { executeViaMcp } from '../execute-via-mcp';
 import { wantsJsonCatalogResponse } from './accept';
 import {
@@ -26,6 +22,18 @@ const postBodySchema = z.object({
 });
 
 const notFound = (): Response => new Response('Not Found', { status: 404 });
+
+const publishAuthOptions = (database: Awaited<ReturnType<typeof getDb>>) => ({
+  consoleUrl: env.BETTER_AUTH_URL,
+  resolveSessionUserId: async (request: Request) => {
+    const auth = await createAuth(database);
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+    const userId = session?.user?.id;
+    return typeof userId === 'string' && userId.length > 0 ? userId : null;
+  },
+});
 
 export const handlePublicFunctionRequest = async (
   request: Request,
@@ -50,24 +58,21 @@ export const handlePublicFunctionRequest = async (
     return notFound();
   }
 
-  const authOptions = { consoleUrl: env.CONSOLE_URL };
-  const auth = await resolveCallerUserId(database, request, authOptions);
-
-  if (request.method === 'POST' && !auth.ok) {
-    const allowsAnonymousPost = canViewCatalogWithoutAuth(catalog, {
-      relaxInDevelopment: catalogPageRelaxInDevelopment(),
-    });
-    if (!allowsAnonymousPost) {
-      return catalogUnauthorizedResponse(request, env.CONSOLE_URL);
-    }
-  }
+  const auth = await resolveCallerUserId(
+    database,
+    request,
+    publishAuthOptions(database)
+  );
 
   const access = await resolveCatalogAccess(request, catalog, {
     database,
     resolvedUserId: auth.ok ? auth.userId : null,
   });
   if (access.access === 'sign-in') {
-    return catalogUnauthorizedResponse(request, env.CONSOLE_URL);
+    return catalogUnauthorizedResponse(request);
+  }
+  if (access.access === 'not-found') {
+    return notFound();
   }
 
   const accessContext = access.context;
@@ -91,15 +96,16 @@ export const handlePublicFunctionRequest = async (
       return Response.json(payload);
     }
 
-    return new Response(
-      renderFunctionCatalogHtml(fn, catalog, functionId, env.CONSOLE_URL),
-      {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      }
-    );
+    return new Response(renderFunctionCatalogHtml(fn, catalog, functionId), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 
   if (request.method === 'POST') {
+    if (!auth.ok) {
+      return catalogUnauthorizedResponse(request);
+    }
+
     let body: unknown = {};
     try {
       const text = await request.text();
@@ -158,7 +164,10 @@ export const handlePublicPackageRequest = async (
 
   const access = await resolveCatalogAccess(request, catalog);
   if (access.access === 'sign-in') {
-    return catalogUnauthorizedResponse(request, env.CONSOLE_URL);
+    return catalogUnauthorizedResponse(request);
+  }
+  if (access.access === 'not-found') {
+    return notFound();
   }
 
   const payload = {

@@ -25,23 +25,19 @@ locals {
   }
 
   hostnames = var.env == "production" ? {
-    web     = "functhis.now"
-    console = "console.functhis.now"
-    mcp     = "mcp.functhis.now"
+    web = "functhis.now"
+    mcp   = "mcp.functhis.now"
     } : {
-    web     = "preview.functhis.now"
-    console = "console.preview.functhis.now"
-    mcp     = "mcp.preview.functhis.now"
+    web = "preview.functhis.now"
+    mcp   = "mcp.preview.functhis.now"
   }
 
   worker_names = var.env == "production" ? {
-    web     = "functhis-web"
-    console = "functhis-console"
-    mcp     = "functhis-mcp"
+    web = "functhis-web"
+    mcp   = "functhis-mcp"
     } : {
-    web     = "functhis-web-preview"
-    console = "functhis-console-preview"
-    mcp     = "functhis-mcp-preview"
+    web = "functhis-web-preview"
+    mcp   = "functhis-mcp-preview"
   }
 
   analytics_execution_dataset = var.env == "production" ? "functhis_executions" : "functhis_executions_preview"
@@ -52,10 +48,6 @@ locals {
     web = {
       hostname = local.hostnames.web
       service  = local.worker_names.web
-    }
-    console = {
-      hostname = local.hostnames.console
-      service  = local.worker_names.console
     }
     mcp = {
       hostname = local.hostnames.mcp

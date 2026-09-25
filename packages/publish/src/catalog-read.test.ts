@@ -9,7 +9,7 @@ import {
 const noViewer = { organizationIds: [] as string[], userId: null };
 
 describe('canViewPackage', () => {
-  test('allows library visibility without a viewer', () => {
+  test('denies library visibility without a viewer', () => {
     expect(
       canViewPackage(
         {
@@ -19,7 +19,7 @@ describe('canViewPackage', () => {
         },
         noViewer
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test('denies private packages without owner session', () => {
@@ -50,7 +50,7 @@ describe('canViewPackage', () => {
 });
 
 describe('canViewCatalogPage', () => {
-  test('relaxes private pages in development without a viewer', () => {
+  test('requires auth for private pages without a viewer', () => {
     expect(
       canViewCatalogPage(
         {
@@ -58,48 +58,43 @@ describe('canViewCatalogPage', () => {
           ownerUserId: 'owner-1',
           visibility: 'private',
         },
-        noViewer,
-        { relaxInDevelopment: true }
-      )
-    ).toBe(true);
-  });
-
-  test('still requires auth in production mode', () => {
-    expect(
-      canViewCatalogPage(
-        {
-          organizationId: null,
-          ownerUserId: 'owner-1',
-          visibility: 'private',
-        },
-        noViewer,
-        { relaxInDevelopment: false }
+        noViewer
       )
     ).toBe(false);
+  });
+
+  test('allows private pages for the owner', () => {
+    expect(
+      canViewCatalogPage(
+        {
+          organizationId: null,
+          ownerUserId: 'owner-1',
+          visibility: 'private',
+        },
+        { organizationIds: [], userId: 'owner-1' }
+      )
+    ).toBe(true);
   });
 });
 
 describe('canViewCatalogWithoutAuth', () => {
-  test('allows library visibility', () => {
+  test('denies library visibility without a session', () => {
     expect(
       canViewCatalogWithoutAuth({
         organizationId: null,
         ownerUserId: 'owner-1',
         visibility: 'library',
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  test('matches dev relax for private packages', () => {
+  test('denies private packages without a session', () => {
     expect(
-      canViewCatalogWithoutAuth(
-        {
-          organizationId: null,
-          ownerUserId: 'owner-1',
-          visibility: 'private',
-        },
-        { relaxInDevelopment: true }
-      )
-    ).toBe(true);
+      canViewCatalogWithoutAuth({
+        organizationId: null,
+        ownerUserId: 'owner-1',
+        visibility: 'private',
+      })
+    ).toBe(false);
   });
 });

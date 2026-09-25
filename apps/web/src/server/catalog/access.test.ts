@@ -22,28 +22,25 @@ const privateCatalog = (): CatalogPackageRow => ({
 const noViewer = { organizationIds: [] as string[], userId: null };
 
 describe('evaluateCatalogAccess', () => {
-  test('allows library packages without a viewer', () => {
-    const catalog = privateCatalog();
-    catalog.visibility = 'library';
-
-    const result = evaluateCatalogAccess(catalog, noViewer, {
-      relaxInDevelopment: false,
-    });
-
-    expect(result.access).toBe('allow');
-  });
-
-  test('denies private packages in production mode', () => {
-    const result = evaluateCatalogAccess(privateCatalog(), noViewer, {
-      relaxInDevelopment: false,
-    });
+  test('requires sign-in when there is no viewer', () => {
+    const result = evaluateCatalogAccess(privateCatalog(), noViewer);
 
     expect(result).toEqual({ access: 'sign-in' });
   });
 
-  test('relaxes private packages in development when enabled', () => {
-    const result = evaluateCatalogAccess(privateCatalog(), noViewer, {
-      relaxInDevelopment: true,
+  test('returns not-found for signed-in non-owners on private packages', () => {
+    const result = evaluateCatalogAccess(privateCatalog(), {
+      organizationIds: [],
+      userId: 'other-user',
+    });
+
+    expect(result.access).toBe('not-found');
+  });
+
+  test('allows owners', () => {
+    const result = evaluateCatalogAccess(privateCatalog(), {
+      organizationIds: [],
+      userId: 'owner-1',
     });
 
     expect(result.access).toBe('allow');

@@ -11,7 +11,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **oRPC** - End-to-end type-safe APIs with OpenAPI integration
 - **Drizzle** - TypeScript-first ORM
 - **Neon Postgres + Hyperdrive** - Database engine
-- **Authentication** - Better Auth on `apps/console` (OAuth issuer)
+- **Authentication** - Better Auth on `apps/web` (OAuth issuer at `functhis.now`)
 - **Husky** - Git hooks for code quality
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
@@ -50,20 +50,14 @@ DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
 
 ### 3. App secrets
 
-**`apps/console/.env`** - OAuth issuer:
+**`apps/web/.env`** - OAuth + site (see [`apps/web/.env.schema`](apps/web/.env.schema)):
 
 ```bash
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
-BETTER_AUTH_URL=http://localhost:3002
+BETTER_AUTH_URL=http://localhost:3001
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
-TRUSTED_ORIGINS=http://localhost:3002,http://localhost:3001
-```
-
-**`apps/web/.env`** - optional; defaults in `.env.schema` are enough for local dev:
-
-```bash
-CONSOLE_URL=http://localhost:3002
+TRUSTED_ORIGINS=http://localhost:3001,http://localhost:3003
 ```
 
 After editing any `.env.schema`, regenerate types:
@@ -78,10 +72,10 @@ Create a GitHub OAuth app (Settings → Developer settings → OAuth Apps):
 
 | Field | Value |
 | --- | --- |
-| Homepage URL | `http://localhost:3002` |
-| Authorization callback URL | `http://localhost:3002/api/auth/callback/github` |
+| Homepage URL | `http://localhost:3001` |
+| Authorization callback URL | `http://localhost:3001/api/auth/callback/github` |
 
-Copy the client ID and secret into `apps/console/.env`.
+Copy the client ID and secret into `apps/web/.env`.
 
 ### 5. Database migrations
 
@@ -106,8 +100,7 @@ bun run dev
 
 | App | URL | Role |
 | --- | --- | --- |
-| Web | [http://localhost:3001](http://localhost:3001) | Marketing, public pages |
-| Console | [http://localhost:3002](http://localhost:3002) | OAuth issuer, login, consent, device |
+| Web | [http://localhost:3001](http://localhost:3001) | Marketing, OAuth, `/d` owner UI, deploy API |
 | MCP | [http://localhost:3003](http://localhost:3003) | MCP `search` / `execute` (local) |
 
 ### CLI
@@ -122,7 +115,7 @@ functhis run --slug my-function --input '{"name":"Ada"}'
 
 Monorepo dev without building: `bun run --filter functhis dev -- login`
 
-Production defaults: `https://console.functhis.now` and `https://functhis.now`. Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.
+Production defaults: `https://functhis.now` for login and publish. Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL` (both default to the apex).
 
 Local deploy against `bun run dev`:
 
@@ -137,7 +130,7 @@ Run a single app:
 
 ```bash
 bun run dev:web       # port 3001
-bun run dev:console   # port 3002
+bun run dev:web   # port 3001 only (web + auth)
 ```
 
 Optional: both Workers in one Wrangler dev session (exercises Hyperdrive bindings when configured):
@@ -148,7 +141,7 @@ bun run --filter @functhis/infra dev:workers
 
 ### 7. Verify
 
-- Open [http://localhost:3002/login](http://localhost:3002/login) and sign in with GitHub
+- Open [http://localhost:3001/login](http://localhost:3001/login) and sign in with GitHub
 - Run `bun run check-types` and `bun run check` before pushing
 
 ## Production database (Neon + Hyperdrive)

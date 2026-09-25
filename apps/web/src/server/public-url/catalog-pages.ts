@@ -12,12 +12,9 @@ const escapeHtml = (value: string): string =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
-export const renderCatalogSignInHtml = (
-  requestUrl: string,
-  consoleUrl: string
-): string => {
+export const renderCatalogSignInHtml = (requestUrl: string): string => {
   const callbackPath = safeCallbackURLFromRequest(requestUrl);
-  const loginUrl = new URL('/login', consoleUrl);
+  const loginUrl = new URL('/login', new URL(requestUrl).origin);
   loginUrl.searchParams.set('callbackURL', callbackPath);
 
   return `<!doctype html>
@@ -32,18 +29,14 @@ export const renderCatalogSignInHtml = (
 </head>
 <body>
   <h1>Sign in required</h1>
-  <p>This package is not public. Sign in on the console with an account that owns it or belongs to its organization, then open this URL again.</p>
-  <p>On <code>localhost</code>, console login on port 3002 does not share cookies with web on 3001 - use local dev (pages are open in development) or call POST with your CLI bearer token.</p>
-  <p><a href="${escapeHtml(loginUrl.href)}">Sign in on console</a></p>
+  <p>Sign in with an account that owns this package or belongs to its organization, then open this URL again.</p>
+  <p><a href="${escapeHtml(loginUrl.href)}">Sign in</a></p>
 </body>
 </html>`;
 };
 
-export const catalogSignInHtmlResponse = (
-  requestUrl: string,
-  consoleUrl: string
-): Response =>
-  new Response(renderCatalogSignInHtml(requestUrl, consoleUrl), {
+export const catalogSignInHtmlResponse = (requestUrl: string): Response =>
+  new Response(renderCatalogSignInHtml(requestUrl), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
     status: 401,
   });
@@ -96,8 +89,7 @@ const defaultArgumentsJson = (contract: unknown): string => {
 export const renderFunctionCatalogHtml = (
   fn: CatalogFunctionRow,
   catalog: CatalogPackageRow,
-  functionId: string,
-  consoleUrl: string
+  functionId: string
 ): string => {
   const title = functionId;
   const description =
@@ -131,7 +123,7 @@ export const renderFunctionCatalogHtml = (
   <h2>Contract</h2>
   <pre>${escapeHtml(JSON.stringify(fn.contract, null, 2))}</pre>
   <h2>Try it</h2>
-  <p>Sign in on ${escapeHtml(consoleUrl)} so your session cookie can authorize POST.</p>
+  <p>POST uses your signed-in session on this site.</p>
   <form id="try-it">
     <label for="arguments">Arguments (JSON)</label>
     <textarea id="arguments" name="arguments">${argsDefault}</textarea>
