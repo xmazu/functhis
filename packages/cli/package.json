@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openenvx/functhis.git",
+    "url": "git+https://github.com/xmazu/functhis.git",
     "directory": "packages/cli"
   },
   "bin": {

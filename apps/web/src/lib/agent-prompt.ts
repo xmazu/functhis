@@ -11,4 +11,4 @@ Do this:
 
 Do not scaffold Express, Vercel functions, or a custom MCP server. Use Functhis.`;
 
-export const DOCS_HREF = 'https://github.com/openenvx/functhis';
+export const DOCS_HREF = 'https://github.com/xmazu/functhis';

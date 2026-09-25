@@ -51,11 +51,11 @@ After `functhis login`, tokens are stored in `~/.config/functhis/config.json`.
 
 ## Publishing (maintainers)
 
-Releases are cut from GitHub Actions on `openenvx/functhis` — see [PUBLISHING.md](https://github.com/openenvx/functhis/blob/main/PUBLISHING.md) in the monorepo root.
+Releases are cut from GitHub Actions on `xmazu/functhis` — see [PUBLISHING.md](https://github.com/xmazu/functhis/blob/main/PUBLISHING.md) in the monorepo root.
 
 ## Monorepo development
 
-From the [functhis](https://github.com/openenvx/functhis) repository:
+From the [functhis](https://github.com/xmazu/functhis) repository:
 
 ```bash
 bun packages/cli/src/cli.ts login

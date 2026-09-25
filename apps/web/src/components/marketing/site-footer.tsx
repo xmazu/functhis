@@ -7,11 +7,11 @@ const linkClass =
 
 const FOOTER_LINKS = [
   { href: DOCS_HREF, label: 'Docs' },
-  { href: 'https://github.com/openenvx/functhis', label: 'GitHub' },
+  { href: 'https://github.com/xmazu/functhis', label: 'GitHub' },
   { href: 'https://mcp.functhis.now/mcp', label: 'MCP' },
 ] as const;
 
-const LICENSE_HREF = 'https://github.com/openenvx/functhis/blob/main/LICENSE';
+const LICENSE_HREF = 'https://github.com/xmazu/functhis/blob/main/LICENSE';
 
 export const SiteFooter = () => (
   <footer className="w-full border-t border-zinc-800 bg-zinc-950">
