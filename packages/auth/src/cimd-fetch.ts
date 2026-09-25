@@ -1,5 +1,7 @@
 const MAX_METADATA_BYTES = 5 * 1024;
 const FETCH_TIMEOUT_MS = 10_000;
+/** Workers reject `redirect: "error"`; use manual and treat 3xx as blocked. */
+const CIMD_FETCH_REDIRECT = 'manual' as const;
 
 const SPECIAL_USE_IPV4_PATTERNS = [
   /^127\./u,
@@ -141,9 +143,13 @@ export const fetchClientMetadataResource = async (
     const response = await fetch(url, {
       ...init,
       method,
-      redirect: 'error',
+      redirect: CIMD_FETCH_REDIRECT,
       signal: init?.signal ?? controller.signal,
     });
+
+    if (response.status >= 300 && response.status < 400) {
+      throw new Error('CIMD metadata fetch must not follow redirects');
+    }
 
     if (method === 'HEAD') {
       return response;

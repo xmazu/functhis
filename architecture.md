@@ -54,7 +54,7 @@ web              → session cookies + issuer pages (same origin)
 
 Login / consent / device pages: `https://functhis.now/...`. Issuer: `https://functhis.now`.
 
-Workers: do not use the Node CIMD transport. Use `global_fetch_strictly_public` on `functhis-web` so `fetch()` refuses private/special-use IPs after DNS. `fetchClientMetadataResource` enforces HTTPS, no credentials/fragments, GET/HEAD only, `redirect: "error"`, timeout + size cap. No userland IP pinning.
+Workers: do not use the Node CIMD transport. Use `global_fetch_strictly_public` on `functhis-web` so `fetch()` refuses private/special-use IPs after DNS. `fetchClientMetadataResource` enforces HTTPS, no credentials/fragments, GET/HEAD only, `redirect: "manual"` (Workers do not support `"error"`), rejects 3xx, timeout + size cap. No userland IP pinning.
 
 Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 

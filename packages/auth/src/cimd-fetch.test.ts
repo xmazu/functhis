@@ -65,7 +65,7 @@ describe('fetchClientMetadataResource', () => {
     ).rejects.toThrow('GET and HEAD');
   });
 
-  test('uses redirect error and returns HEAD responses unchanged', async () => {
+  test('uses redirect manual and returns HEAD responses unchanged', async () => {
     let fetchInit: RequestInit | undefined;
     globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) => {
       fetchInit = init;
@@ -78,7 +78,7 @@ describe('fetchClientMetadataResource', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(fetchInit?.redirect).toBe('error');
+    expect(fetchInit?.redirect).toBe('manual');
     expect(fetchInit?.method).toBe('HEAD');
   });
 
