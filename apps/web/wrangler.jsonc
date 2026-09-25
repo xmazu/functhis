@@ -16,13 +16,14 @@
       "id": "00000000-0000-0000-0000-000000000001",
     },
   ],
-  "ai": {
-    "binding": "AI",
-  },
   "kv_namespaces": [
     {
       "binding": "BUNDLES",
       "id": "00000000-0000-0000-0000-000000000030",
+    },
+    {
+      "binding": "HOT",
+      "id": "00000000-0000-0000-0000-000000000031",
     },
   ],
   "r2_buckets": [
@@ -49,9 +50,6 @@
       "name": "functhis-web-preview",
       "compatibility_date": "2025-09-15",
       "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-      "ai": {
-        "binding": "AI",
-      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
@@ -62,6 +60,10 @@
         {
           "binding": "BUNDLES",
           "id": "00000000-0000-0000-0000-000000000010",
+        },
+        {
+          "binding": "HOT",
+          "id": "00000000-0000-0000-0000-000000000012",
         },
       ],
       "r2_buckets": [
@@ -105,9 +107,6 @@
       "name": "functhis-web",
       "compatibility_date": "2025-09-15",
       "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-      "ai": {
-        "binding": "AI",
-      },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
@@ -118,6 +117,10 @@
         {
           "binding": "BUNDLES",
           "id": "00000000-0000-0000-0000-000000000011",
+        },
+        {
+          "binding": "HOT",
+          "id": "00000000-0000-0000-0000-000000000013",
         },
       ],
       "r2_buckets": [

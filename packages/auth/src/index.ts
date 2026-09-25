@@ -29,6 +29,7 @@ export {
   resolveSessionUserId,
   type CallerAuthResult,
 } from './caller-auth';
+export { validateMcpBearerToken } from './publish-token';
 export { ensureCliOAuthClient } from './seed-cli-client';
 export {
   allocateUniqueHandle,
@@ -45,6 +46,8 @@ export interface AuthConfig {
   GITHUB_CLIENT_SECRET: string;
   MCP_RESOURCE: string;
   TRUSTED_ORIGINS: string[];
+  /** Invalidate HOT membership cache when org membership changes. */
+  syncMembershipHot?: (userId: string) => Promise<void>;
 }
 
 const crossSubdomainCookies = (baseURL: string) => {
@@ -122,6 +125,12 @@ export const createAuth = (env: AuthConfig, database: Database) => {
       oauthDeviceAuthorization({ verificationUri: '/device' }),
       organization({
         organizationHooks: {
+          afterAddMember: async ({ member }) => {
+            await env.syncMembershipHot?.(member.userId);
+          },
+          afterRemoveMember: async ({ member }) => {
+            await env.syncMembershipHot?.(member.userId);
+          },
           beforeCreateOrganization: async ({ organization: created }) => {
             await assertOrgSlugAvailable(created.slug);
           },

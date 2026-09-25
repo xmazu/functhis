@@ -1,10 +1,12 @@
 import {
+  asHotKvBinding,
   buildPackageAccessContext,
   canAccessPackage,
   getPackageBySlugs,
   listAccessiblePackagesForUser,
   listRecentExecutions,
   resolveOrganizationSlugById,
+  syncPackageToHot,
   updatePackageSharing,
 } from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
@@ -87,6 +89,15 @@ export const updatePackageSharingForSession = createServerFn({
     }
 
     const database = await getDb();
+    const catalog = await getPackageBySlugs(
+      database,
+      data.handle,
+      data.packageSlug
+    );
+    if (!catalog) {
+      throw new Error('Package not found');
+    }
+
     const result = await updatePackageSharing(
       database,
       userId,
@@ -99,6 +110,12 @@ export const updatePackageSharingForSession = createServerFn({
     );
     if (!result.ok) {
       throw new Error(result.error);
+    }
+
+    try {
+      await syncPackageToHot(asHotKvBinding(env.HOT), database, catalog.id);
+    } catch {
+      // HOT is best-effort
     }
 
     return { ok: true as const };

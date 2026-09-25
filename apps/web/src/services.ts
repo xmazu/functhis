@@ -5,6 +5,12 @@ import {
 import type { AuthConfig } from '@functhis/auth';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
+import {
+  asHotKvBinding,
+  listMembershipOrganizationIds,
+  writeJwksHot,
+  writeMembershipHot,
+} from '@functhis/publish';
 
 import { env } from './env.server';
 
@@ -44,6 +50,17 @@ const ensureCliClientSeeded = (): Promise<void> => {
   cliSeedPromise ??= (async () => {
     const db = await getDb();
     await ensureCliOAuthClient(db, env.MCP_RESOURCE);
+    const hot = asHotKvBinding(env.HOT);
+    try {
+      const jwksResponse = await fetch(
+        new URL('/api/auth/jwks', env.BETTER_AUTH_URL)
+      );
+      if (jwksResponse.ok) {
+        await writeJwksHot(hot, await jwksResponse.json());
+      }
+    } catch {
+      // JWKS snapshot is best-effort; MCP can still fetch on miss
+    }
     cliClientSeeded = true;
   })();
 
@@ -66,6 +83,15 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       GITHUB_CLIENT_SECRET: githubClientSecret,
       MCP_RESOURCE: env.MCP_RESOURCE,
       TRUSTED_ORIGINS: parseTrustedOrigins(env.TRUSTED_ORIGINS),
+      syncMembershipHot: async (userId) => {
+        const db = await getDb();
+        const organizationIds = await listMembershipOrganizationIds(db, userId);
+        await writeMembershipHot(
+          asHotKvBinding(env.HOT),
+          userId,
+          organizationIds
+        );
+      },
     };
   })();
 

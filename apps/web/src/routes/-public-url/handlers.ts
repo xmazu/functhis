@@ -26,6 +26,7 @@ const notFound = (): Response => new Response('Not Found', { status: 404 });
 
 const publishAuthOptions = (database: Awaited<ReturnType<typeof getDb>>) => ({
   consoleUrl: env.BETTER_AUTH_URL,
+  mcpResource: env.MCP_RESOURCE,
   resolveSessionUserId: async (request: Request) => {
     const auth = await createAuth(database);
     const session = await auth.api.getSession({

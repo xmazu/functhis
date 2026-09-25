@@ -15,6 +15,8 @@ export interface PublishAuthOptions {
   consoleUrl: string;
   /** When the issuer runs in-process (same Worker), avoid cross-fetch for cookies. */
   resolveSessionUserId?: (request: Request) => Promise<string | null>;
+  /** MCP resource URL for agent JWTs on execute paths. */
+  mcpResource?: string;
 }
 
 const unauthorized = (): PublishAuthResult => ({
@@ -71,7 +73,7 @@ const validateOpaqueAccessToken = async (
 
 const validateJwtAccessToken = async (
   token: string,
-  options: PublishAuthOptions
+  options: PublishAuthOptions & { audience: string; clientId?: string | null }
 ): Promise<PublishAuthResult | null> => {
   if (!looksLikeJwt(token)) {
     return null;
@@ -88,7 +90,7 @@ const validateJwtAccessToken = async (
 
   try {
     const { payload } = await jwtVerify(token, jwks, {
-      audience: PUBLISH_API_RESOURCE,
+      audience: options.audience,
       issuer,
     });
 
@@ -97,15 +99,17 @@ const validateJwtAccessToken = async (
       return unauthorized();
     }
 
-    let clientId: string | null = null;
-    if (typeof payload.client_id === 'string') {
-      clientId = payload.client_id;
-    } else if (typeof payload.azp === 'string') {
-      clientId = payload.azp;
-    }
+    if (options.clientId) {
+      let clientId: string | null = null;
+      if (typeof payload.client_id === 'string') {
+        clientId = payload.client_id;
+      } else if (typeof payload.azp === 'string') {
+        clientId = payload.azp;
+      }
 
-    if (clientId !== CLI_CLIENT_ID) {
-      return forbidden();
+      if (clientId !== options.clientId) {
+        return forbidden();
+      }
     }
 
     return { ok: true, userId };
@@ -123,6 +127,36 @@ export const parseBearerToken = (request: Request): string | null => {
   return token.length > 0 ? token : null;
 };
 
+const validatePublishJwtAccessToken = (
+  token: string,
+  options: PublishAuthOptions
+): Promise<PublishAuthResult | null> =>
+  validateJwtAccessToken(token, {
+    ...options,
+    audience: PUBLISH_API_RESOURCE,
+    clientId: CLI_CLIENT_ID,
+  });
+
+export const validateMcpBearerToken = async (
+  request: Request,
+  options: PublishAuthOptions & { mcpResource: string }
+): Promise<PublishAuthResult> => {
+  const token = parseBearerToken(request);
+  if (!token) {
+    return unauthorized();
+  }
+
+  const jwtResult = await validateJwtAccessToken(token, {
+    ...options,
+    audience: options.mcpResource,
+  });
+  if (jwtResult) {
+    return jwtResult;
+  }
+
+  return unauthorized();
+};
+
 export const validatePublishBearerToken = async (
   database: Database,
   request: Request,
@@ -138,7 +172,7 @@ export const validatePublishBearerToken = async (
     return opaque;
   }
 
-  const jwtResult = await validateJwtAccessToken(token, options);
+  const jwtResult = await validatePublishJwtAccessToken(token, options);
   if (jwtResult) {
     return jwtResult;
   }

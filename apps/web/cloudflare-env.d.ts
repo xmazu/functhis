@@ -1,11 +1,11 @@
 interface CloudflareEnv {
-  AI: Ai;
   ARTIFACTS: R2Bucket;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   BUNDLES: KVNamespace;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  HOT: KVNamespace;
   HYPERDRIVE: Hyperdrive;
   INTERNAL_EXECUTE_TOKEN: string;
   MCP: Fetcher;

@@ -3,7 +3,12 @@ import path from 'node:path';
 
 const packageRoot = path.join(import.meta.dirname, '..');
 const minimumLineCoverage = 85;
-const skippedFiles = new Set(['catalog-read.ts', 'http-handlers.ts']);
+const skippedFiles = new Set([
+  'catalog-read.ts',
+  'hot-catalog.ts',
+  'http-handlers.ts',
+  'jwks-hot.ts',
+]);
 const srcDir = path.join(packageRoot, 'src');
 const packageSrcMarker = `packages/${path.basename(packageRoot)}/src/`;
 

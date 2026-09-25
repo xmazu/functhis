@@ -149,7 +149,7 @@ bun run --filter @functhis/infra dev:workers
 Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyperdrive (auth: cache disabled on console; catalog: cache enabled on web).
 
 1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
-2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, `kv_bundles_namespace_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc`, `apps/web/wrangler.jsonc`, and `apps/mcp/wrangler.jsonc` before deploy.
+2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, `kv_bundles_namespace_id`, `kv_hot_namespace_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc`, `apps/web/wrangler.jsonc`, and `apps/mcp/wrangler.jsonc` before deploy.
 
 Auth queries must not use a cached Hyperdrive config on the console Worker.
 

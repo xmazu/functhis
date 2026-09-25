@@ -4,7 +4,11 @@
     "lib": ["ESNext", "DOM"],
     "noEmit": true,
     "rootDir": ".",
-    "types": ["bun"]
+    "types": ["bun", "@cloudflare/workers-types"]
   },
-  "include": ["scripts/**/*.ts", "src/**/*.ts"]
+  "include": [
+    "scripts/**/*.ts",
+    "src/**/*.ts",
+    "../../apps/mcp/cloudflare-env.d.ts"
+  ]
 }

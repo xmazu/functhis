@@ -67,10 +67,38 @@ export {
   type ContractInputValidationIssue,
   type ContractInputValidationResult,
 } from './validate-input';
+export { buildFunctionSearchText } from './function-search-text';
+export { asHotKvBinding } from './hot-kv-binding';
+export { backfillHotCatalog } from './backfill-hot';
+export type { HotFunctionDoc, SearchDomain } from './hot-catalog';
+export type { HotKvBinding } from './http-context';
 export {
-  embedSearchQuery,
-  type TextEmbeddingRunner,
-} from './function-search-text';
+  buildAccessContextFromHot,
+  filterDocsByAccess,
+  getMembershipOrganizationIdsFromHot,
+  loadHotFunctionDocsByIds,
+  loadSearchFunctionIds,
+  resolveHotFunctionDoc,
+  syncPackageToHot,
+  writeHotFunctionDoc,
+  writeMembershipHot,
+} from './hot-catalog';
+export {
+  functionHotKey,
+  HOT_JWKS_KEY,
+  memberHotKey,
+  mineIndexHotKey,
+} from './hot-keys';
+export {
+  resolveJwksVerifier,
+  verifyAccessTokenWithHotJwks,
+  writeJwksHot,
+} from './jwks-hot';
+export {
+  lexicalScore,
+  normalizeSearchText,
+  scoreFunctionDocument,
+} from './search-lexical';
 export {
   CLI_CLIENT_ID,
   CONSOLE_ORIGIN_PRODUCTION,

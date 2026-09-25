@@ -1,20 +1,19 @@
 import { createDb } from '@functhis/db';
-import { user } from '@functhis/db/schema/auth';
-import { pkg, pkgFunction, packageVersion } from '@functhis/db/schema/catalog';
 import {
   assertExecuteRequestSize,
-  buildPackageAccessContext,
+  asHotKvBinding,
+  buildAccessContextFromHot,
   canAccessPackage,
   executeRequestByteLength,
   finalizeExecute,
   loadStoredBundle,
   parseFunctionId,
+  resolveHotFunctionDoc,
   runDynamicWorker,
   StoredBundleLoadError,
   validateContractInput,
 } from '@functhis/publish';
 import type { ContractInputValidationIssue } from '@functhis/publish';
-import { and, eq } from 'drizzle-orm';
 
 export class FunctionNotFoundError extends Error {
   constructor() {
@@ -61,31 +60,13 @@ export const executeOwnedFunction = async (
   assertExecuteRequestSize(requestBody);
   const requestBytes = executeRequestByteLength(requestBody);
 
+  const hot = asHotKvBinding(env.HOT);
   const database = await createDb(env);
-  const accessContext = await buildPackageAccessContext(database, callerUserId);
 
-  const [row] = await database
-    .select({
-      bundleHash: packageVersion.bundleHash,
-      contract: pkgFunction.contract,
-      functionId: pkgFunction.id,
-      organizationId: pkg.organizationId,
-      ownerUserId: pkg.ownerUserId,
-      versionId: packageVersion.id,
-      visibility: pkg.visibility,
-    })
-    .from(pkgFunction)
-    .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(user, eq(pkg.ownerUserId, user.id))
-    .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
-    .where(
-      and(
-        eq(user.handle, parsedId.handle),
-        eq(pkg.slug, parsedId.packageSlug),
-        eq(pkgFunction.slug, parsedId.functionSlug)
-      )
-    )
-    .limit(1);
+  const [row, accessContext] = await Promise.all([
+    resolveHotFunctionDoc(hot, database, parsedId),
+    buildAccessContextFromHot(hot, database, callerUserId),
+  ]);
 
   if (!row) {
     throw new FunctionNotFoundError();

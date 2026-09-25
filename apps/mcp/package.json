@@ -2,6 +2,9 @@
   "name": "@functhis/mcp",
   "private": true,
   "type": "module",
+  "exports": {
+    "./search": "./src/search.ts"
+  },
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev:bare": "wrangler dev",
@@ -9,11 +12,12 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@better-auth/mcp": "1.7.3",
+    "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",
     "@functhis/publish": "workspace:*",
     "@modelcontextprotocol/server": "2.0.0",
-    "drizzle-orm": "^0.45.2",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
+    "ai": "^7",
     "jose": "^6.1.0",
     "zod": "catalog:"
   },

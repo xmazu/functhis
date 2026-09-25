@@ -83,7 +83,7 @@ Try-it lives on the public function page. No billing or library browse/catalog U
 
 `https://mcp.functhis.now/mcp`. Two tools.
 
-**`search`** - `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Hybrid: `ILIKE` on handle / slug / `search_text`, plus optional pgvector distance against a Workers AI embedding. Ranked exact-match first, then nearest neighbors the caller may see under the package ACL.
+**`search`** - `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Lexical ranking over function ids, slugs, handles, and `search_text` loaded from HOT KV (Kody-style token coverage). Exact `@handle/pkg/fn` matches win first. When the shortlist is ambiguous (more than eight hits and no clear lexical winner), stage 2 reranks the top 20 with OpenRouter **`typesafe/jev-1.13`** via Vercel **AI SDK 7** `experimental_evaluate` and `@openrouter/ai-sdk-provider` (`OPENROUTER_API_KEY`), and falls back to lexical order on missing key, low mean confidence, or Score errors. No pgvector or query embeddings on the hot path.
 
 **`execute`** - id + JSON arguments. ACL, quota, Dynamic Worker, execution row. Not one MCP tool per function.
 
@@ -93,8 +93,8 @@ Two product Workers (web, mcp). Untrusted package code runs on MCP (Dynamic Work
 
 | Script | Public surface | Owns | Binds |
 | --- | --- | --- | --- |
-| `functhis-web` | `functhis.now` | TanStack Start, marketing, OAuth issuer, `/d` owner UI, `@` pages, deploy API | Neon via Hyperdrive, bundle KV, artifacts R2, Workers AI, `global_fetch_strictly_public`, service binding to mcp |
-| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution | Neon via Hyperdrive, bundle KV, `LOADER`, Analytics Engine, Workers AI |
+| `functhis-web` | `functhis.now` | TanStack Start, marketing, OAuth issuer, `/d` owner UI, `@` pages, deploy API | Neon via Hyperdrive, bundle KV, HOT KV, artifacts R2, service binding to mcp |
+| `functhis-mcp` | `mcp.functhis.now` | MCP `search` / `execute`, Dynamic Worker execution | Neon via Hyperdrive (miss-fill + execution rows), bundle KV, HOT KV, `LOADER`, Analytics Engine, Workers AI |
 
 Local `bun run dev` runs web (3001) and MCP (3003). Production deploys **mcp first**, then web.
 
@@ -118,7 +118,7 @@ apps/mcp/wrangler.jsonc      functhis-mcp (+ preview/production env blocks)
 - Zone `functhis.now` (data source), Workers custom domains for the three hostnames (`enable_domains` after first deploy)
 - Neon Postgres project stays in the dashboard; connection string in Secrets Store and Hyperdrive origin (Neon **direct** / unpooled host)
 - Hyperdrive `functhis-auth-{env}` (caching disabled - console) and `functhis-catalog-{env}` (cache enabled - web and mcp)
-- KV `functhis-bundles-{env}`
+- KV `functhis-bundles-{env}` (compiled bundles) and `functhis-hot-{env}` (function docs, search indexes, membership, JWKS snapshot)
 - R2 `functhis-artifacts-{env}` (published package artifacts; Terraform; not the Terraform state bucket)
 - R2 `functhis-tf-state` (state backend only - create once with `wrangler r2 bucket create`; not a Terraform resource)
 - Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
@@ -159,7 +159,8 @@ Three layers. Do not collapse them.
 Source hash        deterministic hash of the published source tree (metadata only in alpha).
 R2 artifact        canonical bundle.mjs, bundle.mjs.map, manifest.json, build.json, keyed by content hash.
 KV bundle          hot copy of bundle.mjs for Worker Loader, keyed by bundle hash.
-Postgres catalog   ACL, slugs, currentVersionId, semver, execution rows.
+KV HOT             function pointers, domain search indexes, membership, JWKS for MCP.
+Postgres catalog   ACL source of truth, slugs, currentVersionId, semver, execution rows (dashboard + miss-fill).
 ```
 
 Publish:
@@ -202,7 +203,7 @@ sequenceDiagram
   Web->>DB: insert package_version, point currentVersionId
   Note over CLI,DB: later execute
   Agent->>MCP: execute @handle/pkg/fn
-  MCP->>DB: ACL + quota
+  MCP->>HOT: ACL + search docs
   MCP->>KV: load bundle by hash
   MCP->>DW: LOADER.get(versionId:runtimeVersion)
   DW-->>MCP: fetch result
@@ -224,11 +225,11 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 | Table | Notes |
 | --- | --- |
 | `package` | `slug`, `scopeKind` (`user` \| `organization`), `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
-| `function` | `packageId`, `exportName`, `path`, `slug` (may include `/` namespaces), contract JSON, `search_text`, `embedding vector(768)`. Unique `(packageId, slug)` |
+| `function` | `packageId`, `exportName`, `path`, `slug` (may include `/` namespaces), contract JSON, `search_text`. Unique `(packageId, slug)` |
 | `package_version` | Immutable: semver, source hash, bundle hash, artifact key, contracts, git sha, runtime version, createdBy |
 | `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
 
-Local Docker is `pgvector/pgvector:pg16`. Production is Neon Postgres. Workers use `drizzle-orm` + `pg` through Hyperdrive (`createDb` in `packages/db`). Migrations use `DATABASE_URL` from `packages/db/.env`, never Hyperdrive.
+Local Docker is stock Postgres 16. Production is Neon Postgres. Workers use `drizzle-orm` + `pg` through Hyperdrive (`createDb` in `packages/db`). Migrations use `DATABASE_URL` from `packages/db/.env`, never Hyperdrive.
 
 ```mermaid
 erDiagram
@@ -254,7 +255,6 @@ erDiagram
     text slug
     jsonb contract
     text search_text
-    vector embedding
   }
   package_version {
     text id PK

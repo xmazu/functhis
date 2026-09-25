@@ -21,6 +21,11 @@ output "kv_bundles_namespace_id" {
   description = "KV namespace for compiled bundles; bind BUNDLES on functhis-web and functhis-mcp"
 }
 
+output "kv_hot_namespace_id" {
+  value       = cloudflare_workers_kv_namespace.hot.id
+  description = "KV namespace for HOT catalog cache; bind HOT on functhis-web and functhis-mcp"
+}
+
 output "r2_artifacts_bucket_name" {
   value       = cloudflare_r2_bucket.artifacts.name
   description = "R2 bucket for published artifacts; bind ARTIFACTS on functhis-web"

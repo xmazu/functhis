@@ -20,7 +20,8 @@ import {
   MAX_SOURCE_MANIFEST_FILES,
   WORKER_COMPATIBILITY_DATE,
 } from './constants';
-import { buildFunctionSearchText, embedTexts } from './function-search-text';
+import { buildFunctionSearchText } from './function-search-text';
+import { syncPackageToHot } from './hot-catalog';
 import type { PublishHandlerContext } from './http-context';
 import {
   resolvePublishSharingForPublishStart,
@@ -454,17 +455,6 @@ export const handlePublishFinalize = async (
     return { fn, searchText };
   });
 
-  let embeddings: (number[] | null)[] = preparedFunctions.map(() => null);
-  if (ctx.ai) {
-    const vectors = await embedTexts(
-      ctx.ai,
-      preparedFunctions.map((row) => row.searchText)
-    );
-    if (vectors) {
-      embeddings = vectors;
-    }
-  }
-
   let version;
   try {
     version = await database.transaction(async (tx) => {
@@ -491,14 +481,12 @@ export const handlePublishFinalize = async (
       const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
 
       await Promise.all(
-        preparedFunctions.map((row, index) => {
-          const embedding = embeddings[index] ?? null;
+        preparedFunctions.map((row) => {
           const { fn } = row;
           return tx
             .insert(pkgFunction)
             .values({
               contract: fn.contract,
-              embedding,
               exportName: fn.exportName,
               packageId: packageRow.id,
               path: fn.path,
@@ -508,7 +496,6 @@ export const handlePublishFinalize = async (
             .onConflictDoUpdate({
               set: {
                 contract: fn.contract,
-                embedding,
                 exportName: fn.exportName,
                 path: fn.path,
                 searchText: row.searchText,
@@ -537,6 +524,12 @@ export const handlePublishFinalize = async (
     });
   } catch {
     return new Response('Failed to record package version', { status: 500 });
+  }
+
+  try {
+    await syncPackageToHot(ctx.hot, database, packageRow.id);
+  } catch {
+    // HOT is best-effort; Postgres remains source of truth
   }
 
   return json({
@@ -650,6 +643,12 @@ export const handlePublishRollback = async (
   );
   if (!handle) {
     return new Response('Scope handle not found', { status: 500 });
+  }
+
+  try {
+    await syncPackageToHot(ctx.hot, database, packageRow.id);
+  } catch {
+    // HOT is best-effort; Postgres remains source of truth
   }
 
   return json({

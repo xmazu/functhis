@@ -46,6 +46,7 @@ In-process Node, **direct TCP** Postgres (`127.0.0.1:5432/integration`).
 
 - **Deploy start → finalize** - opaque bearer auth, catalog rows, artifact store stub, semver, org scope.
 - **Deploy rollback** - restore a previous semver by slug or package id.
+- **MCP search ranking / rerank** - HOT catalog seed, lexical order, mocked Jev rerank via `searchFunctionsWithContext`.
 
 Cleanup: `int_db_%` user handles and organization slugs only (see `src/harness/cleanup.ts`).
 

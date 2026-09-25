@@ -1,7 +1,13 @@
 import type { Database } from '@functhis/db';
 
-import { parseBearerToken, validatePublishBearerToken } from './publish-token';
+import {
+  parseBearerToken,
+  validatePublishBearerToken,
+  validateMcpBearerToken,
+} from './publish-token';
 import type { PublishAuthOptions } from './publish-token';
+
+const looksLikeJwt = (token: string): boolean => token.split('.').length === 3;
 
 export type CallerAuthResult =
   | { ok: true; userId: string }
@@ -77,6 +83,19 @@ export const resolveCallerUserId = async (
     );
     if (deployAuth.ok) {
       return deployAuth;
+    }
+    if (
+      options.mcpResource &&
+      deployAuth.response.status === 401 &&
+      looksLikeJwt(bearer)
+    ) {
+      const mcpAuth = await validateMcpBearerToken(request, {
+        consoleUrl: options.consoleUrl,
+        mcpResource: options.mcpResource,
+      });
+      if (mcpAuth.ok) {
+        return mcpAuth;
+      }
     }
     if (deployAuth.response.status !== 401) {
       return deployAuth;

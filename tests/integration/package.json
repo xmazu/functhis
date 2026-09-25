@@ -11,10 +11,12 @@
   "dependencies": {
     "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",
+    "@functhis/mcp": "workspace:*",
     "@functhis/publish": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260906.1",
     "@functhis/config": "workspace:*",
     "@types/bun": "latest",
     "@types/pg": "^8.15.5",

@@ -1,8 +1,10 @@
 interface CloudflareEnv {
   AI: Ai;
+  OPENROUTER_API_KEY?: SecretsStoreSecret | string;
   ANALYTICS: AnalyticsEngineDataset;
   BUNDLES: KVNamespace;
   CONSOLE_URL: string;
+  HOT: KVNamespace;
   HYPERDRIVE: Hyperdrive;
   INTERNAL_EXECUTE_TOKEN: string;
   LOADER: WorkerLoader;
