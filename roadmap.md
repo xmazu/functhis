@@ -65,7 +65,7 @@ Extend this foundation rather than rebuilding it.
 - [x] Separate MCP and CLI resource audiences.
 - [x] Support user handles (identity) and organization slugs (public package scope).
 - [x] Provide organization creation, membership, invitations, and acceptance.
-- [x] Require a workspace organization before publish (`/d/setup/workspace` onboarding).
+- [x] Require a workspace organization before publish (`/d/onboard` onboarding).
 - [x] Enforce package visibility in catalog reads and execution.
 - [~] Provide owner package and organization management under `/d`.
 - [ ] Add workspace roles and package-level permissions.

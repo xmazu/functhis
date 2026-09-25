@@ -57,10 +57,10 @@ export const Route = createFileRoute('/d')({
     const hasOrg = await userHasOrganization();
 
     if (!hasOrg && !bootstrap) {
-      throw redirect({ to: '/d/setup/workspace' });
+      throw redirect({ to: '/d/onboard' });
     }
 
-    if (hasOrg && location.pathname.startsWith('/d/setup')) {
+    if (hasOrg && bootstrap) {
       throw redirect({ to: '/d' });
     }
 

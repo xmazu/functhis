@@ -4,7 +4,7 @@ import { isDashboardBootstrapPath } from './dashboard-bootstrap-path';
 
 describe('isDashboardBootstrapPath', () => {
   test('includes workspace onboarding', () => {
-    expect(isDashboardBootstrapPath('/d/setup/workspace')).toBe(true);
+    expect(isDashboardBootstrapPath('/d/onboard')).toBe(true);
   });
 
   test('includes invitation accept', () => {

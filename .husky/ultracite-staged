@@ -2,12 +2,18 @@
 
 set -u
 
-set --
+LINT_FILES=
+FMT_FILES=
 while IFS= read -r file; do
   case "$file" in
-    *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.json|*.jsonc|*.css)
+    *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs)
       if [ -f "$file" ]; then
-        set -- "$@" "$file"
+        LINT_FILES="${LINT_FILES}${LINT_FILES:+ }$file"
+      fi
+      ;;
+    *.json|*.jsonc|*.css)
+      if [ -f "$file" ]; then
+        FMT_FILES="${FMT_FILES}${FMT_FILES:+ }$file"
       fi
       ;;
   esac
@@ -15,20 +21,29 @@ done <<EOF
 $(git diff --cached --name-only --diff-filter=ACMR)
 EOF
 
-if [ "$#" -eq 0 ]; then
+if [ -z "${LINT_FILES:-}" ] && [ -z "${FMT_FILES:-}" ]; then
   exit 0
 fi
 
-FORMAT_EXIT_CODE=0
-bun x ultracite fix "$@" || FORMAT_EXIT_CODE=$?
+if [ -n "${LINT_FILES:-}" ]; then
+  set -- $LINT_FILES
+  FORMAT_EXIT_CODE=0
+  bun x ultracite fix "$@" || FORMAT_EXIT_CODE=$?
 
-if [ "$FORMAT_EXIT_CODE" -ne 0 ]; then
-  echo "Ultracite found issues that could not be auto-fixed."
-  exit "$FORMAT_EXIT_CODE"
+  if [ "$FORMAT_EXIT_CODE" -ne 0 ]; then
+    echo "Ultracite found issues that could not be auto-fixed."
+    exit "$FORMAT_EXIT_CODE"
+  fi
+
+  bun x ultracite check "$@" || exit $?
+  git add -- "$@"
 fi
 
-bun x ultracite check "$@" || exit $?
-
-git add -- "$@"
+if [ -n "${FMT_FILES:-}" ]; then
+  set -- $FMT_FILES
+  bun x oxfmt "$@" || exit $?
+  bun x oxfmt --check "$@" || exit $?
+  git add -- "$@"
+fi
 
 echo "✨ Files formatted by Ultracite"

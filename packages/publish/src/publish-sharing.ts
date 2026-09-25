@@ -29,7 +29,7 @@ export interface ExistingPackageSharing {
   visibility: PackageVisibility;
 }
 
-export const WORKSPACE_SETUP_URL = 'https://functhis.now/d/setup/workspace';
+export const WORKSPACE_SETUP_URL = 'https://functhis.now/d/onboard';
 
 export const hasPublishSharingInput = (input: PublishSharingInput): boolean =>
   input.visibility !== undefined ||
