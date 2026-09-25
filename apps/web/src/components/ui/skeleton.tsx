@@ -1,6 +1,6 @@
 import type React from 'react';
 
-import { cn } from '#/routes/d/-lib/utils';
+import { cn } from '#/lib/utils';
 
 export const Skeleton = ({
   className,

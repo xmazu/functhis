@@ -1,8 +1,9 @@
 'use client';
 
-import { cn } from '@functhis/ui/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+
+import { cn } from '#/lib/utils';
 
 const DISCOVERED = [
   { path: 'functions/images/resize.ts', slug: 'resize' },

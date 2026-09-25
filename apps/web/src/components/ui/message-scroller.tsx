@@ -1,10 +1,11 @@
 'use client';
 
-import { Button } from '@functhis/ui/components/button';
-import { cn } from '@functhis/ui/lib/utils';
 import { MessageScroller as MessageScrollerPrimitive } from '@shadcn/react/message-scroller';
 import { ArrowDownIcon } from 'lucide-react';
 import * as React from 'react';
+
+import { Button } from '#/components/ui/button';
+import { cn } from '#/lib/utils';
 
 const MessageScrollerProvider = (
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>

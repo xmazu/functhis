@@ -130,4 +130,4 @@ No photography on this surface. No mesh, no spheres, no stock devices. Marks are
 - Do not use indigo, violet, ember, or lime on chrome.
 - Do not add page-wide gradients or glass as decoration.
 - Do not catalog features, flows, or components in this file.
-- Do not restyle the owner UI (`/d`) or `packages/ui` from this language.
+- Do not restyle the owner UI (`/d`) from this language.

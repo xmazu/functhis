@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@functhis/ui/lib/utils';
 import { useState } from 'react';
 
 import { AGENT_PROMPT } from '#/lib/agent-prompt';
+import { cn } from '#/lib/utils';
 
 interface CopyPromptButtonProps {
   className?: string;

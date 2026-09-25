@@ -2,10 +2,10 @@ import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
-import { Button } from '#/routes/d/-components/ui/button';
-import { Input } from '#/routes/d/-components/ui/input';
-import { Label } from '#/routes/d/-components/ui/label';
 
 const OrganizationsPage = () => {
   const { data: organizations } = authClient.useListOrganizations();

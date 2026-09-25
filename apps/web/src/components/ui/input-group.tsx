@@ -1,12 +1,13 @@
 'use client';
 
-import { Button } from '@functhis/ui/components/button';
-import { Input } from '@functhis/ui/components/input';
-import { Textarea } from '@functhis/ui/components/textarea';
-import { cn } from '@functhis/ui/lib/utils';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import * as React from 'react';
+
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Textarea } from '#/components/ui/textarea';
+import { cn } from '#/lib/utils';
 
 const InputGroup = ({
   className,

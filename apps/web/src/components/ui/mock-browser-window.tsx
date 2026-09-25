@@ -1,5 +1,6 @@
-import { cn } from '@functhis/ui/lib/utils';
 import type React from 'react';
+
+import { cn } from '#/lib/utils';
 
 interface SidebarItem {
   icon?: React.ReactNode;

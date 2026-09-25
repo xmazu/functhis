@@ -10,5 +10,5 @@ Read [apps/web/DESIGN.md](../../apps/web/DESIGN.md) before changing web visuals.
 
 - Dark canvas (`#09090b`), Geist, porcelain type, one white pill CTA, 780px reading column, sticky frosted header
 - DESIGN.md is visual language only. Never add features, sections, or component catalogs to it
-- Do not restyle `apps/console` or `packages/ui`. Marketing is forced dark; do not add a theme toggle
+- Do not restyle the owner UI (`/d`) from this language. Marketing is forced dark; do not add a theme toggle
 - Product facts live in `vision.md` / `architecture.md`. Do not invent metrics, testimonials, or capabilities

@@ -6,8 +6,8 @@ import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import type * as React from 'react';
 
-import { Spinner } from '#/routes/d/-components/ui/spinner';
-import { cn } from '#/routes/d/-lib/utils';
+import { Spinner } from '#/components/ui/spinner';
+import { cn } from '#/lib/utils';
 
 export const buttonVariants = cva(
   "focus-visible:ring-ring/60 focus-visible:ring-offset-background relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border text-[length:var(--app-font-size-ui,12px)] font-medium whitespace-nowrap outline-none focus-visible:ring-1 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-64 data-loading:text-transparent data-loading:select-none pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4",

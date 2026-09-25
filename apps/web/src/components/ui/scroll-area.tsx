@@ -3,7 +3,7 @@
 import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 import type React from 'react';
 
-import { cn } from '#/routes/d/-lib/utils';
+import { cn } from '#/lib/utils';
 
 export const ScrollBar = ({
   className,

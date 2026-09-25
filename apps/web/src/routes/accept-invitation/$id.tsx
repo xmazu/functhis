@@ -1,18 +1,18 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
-import { resolveSession } from '#/functions/resolve-session';
-import { AuthCanvas } from '#/lib/auth/auth-canvas';
-import { authClient } from '#/lib/auth/auth-client';
-import { redirectToLogin } from '#/lib/auth/login-redirect';
-import { Button } from '#/routes/d/-components/ui/button';
+import { Button } from '#/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '#/routes/d/-components/ui/card';
+} from '#/components/ui/card';
+import { resolveSession } from '#/functions/resolve-session';
+import { AuthCanvas } from '#/lib/auth/auth-canvas';
+import { authClient } from '#/lib/auth/auth-client';
+import { redirectToLogin } from '#/lib/auth/login-redirect';
 
 const AcceptInvitationPage = () => {
   const { id } = Route.useParams();

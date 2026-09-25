@@ -9,8 +9,8 @@ alwaysApply: false
 Read [apps/web/src/routes/d/DESIGN.md](../../apps/web/src/routes/d/DESIGN.md) before changing owner UI visuals. That file is the source of truth.
 
 - Forced dark native desktop: `#0e0e0e`, 12px system UI, 4% hairlines, no drop shadows, ~28px rows
-- Primitives from `@coss` into `apps/console/src/components/ui`. Overlay Functhis tokens. Never `@coss/style` or dump `@coss/ui`
+- Primitives from `@coss` into `apps/web/src/components/ui`. Overlay Functhis tokens. Never `@coss/style` or dump `@coss/ui`
 - Signed-in `/_auth`: `AppShell` (frosted sidebar + `app-content-card`). Login / device / consent: `AuthCanvas`, no sidebar
-- Import `@/components/ui/*`. Keep `Toaster` from `@functhis/ui/components/sonner` until `@coss/toast`
-- Do not restyle `apps/web` or `packages/ui`. Do not fake product nav. Do not add Inter/Geist or a theme toggle
-- Add later primitives with `bunx --bun shadcn@latest add @coss/<name>` from `apps/console`, then flatten shadows and convert CLI `function` components to arrows
+- Import `@/components/ui/*` (including `sonner` until `@coss/toast` exists)
+- Do not restyle marketing. Do not fake product nav. Do not add Inter/Geist or a theme toggle
+- Add later primitives with `bunx --bun shadcn@latest add @coss/<name>` from `apps/web`, then flatten shadows and convert CLI `function` components to arrows

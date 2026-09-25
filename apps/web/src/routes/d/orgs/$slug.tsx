@@ -1,10 +1,10 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
-import { Button } from '#/routes/d/-components/ui/button';
-import { Input } from '#/routes/d/-components/ui/input';
-import { Label } from '#/routes/d/-components/ui/label';
 import { invitationIdFromInviteResponse } from '#/routes/d/-lib/organization-invite';
 
 const inviteAcceptUrl = (invitationId: string): string =>

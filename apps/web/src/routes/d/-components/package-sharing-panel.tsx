@@ -2,13 +2,13 @@ import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Label } from '#/components/ui/label';
 import {
   SectionHeading,
   packageDetailUiClass,
 } from '#/routes/d/-components/package-detail-primitives';
-import { Button } from '#/routes/d/-components/ui/button';
-import { Input } from '#/routes/d/-components/ui/input';
-import { Label } from '#/routes/d/-components/ui/label';
 import { updatePackageSharingForSession } from '#/routes/d/-server/packages';
 
 const VISIBILITY_OPTIONS = ['private', 'organization'] as const;

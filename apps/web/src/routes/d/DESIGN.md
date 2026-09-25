@@ -2,7 +2,7 @@
 
 Native desktop owner app. Compact, dark, system chrome. Not marketing.
 
-Product role lives in [architecture.md](../../../../architecture.md). Owner UI visual system for `apps/web` at `/d`. Do not restyle marketing or `packages/ui`.
+Product role lives in [architecture.md](../../../../architecture.md). Owner UI visual system for `apps/web` at `/d`. Do not restyle marketing from this language.
 
 ## Look
 
@@ -59,7 +59,7 @@ Login, device, and consent stay **outside** `/_auth`. Wrap them in `AuthCanvas`:
 
 Kit lives in [`src/components/ui`](src/components/ui). Registry: [`components.json`](components.json) (`base-rhea`, Tabler, `default-translucent`, `@coss` → `https://coss.com/ui/r/{name}.json`).
 
-Add a primitive from `apps/console`:
+Add a primitive from `apps/web`:
 
 ```bash
 bunx --bun shadcn@latest add @coss/<name>
@@ -67,7 +67,7 @@ bunx --bun shadcn@latest add @coss/<name>
 
 Then flatten stock coss elevation (inset/drop shadows) to hairlines + 4% fills, and force 12px system type. Convert CLI `function` output to arrows (`func-style`). Do not `add @coss/ui` (whole kit) and do not `add @coss/style`.
 
-Pages import `@/components/ui/...` only. The one exception is `Toaster` from `@functhis/ui/components/sonner` until `@coss/toast` exists.
+Pages import `@/components/ui/...` only (including `Toaster` from `#/components/ui/sonner` until `@coss/toast` exists).
 
 Icons: `@tabler/icons-react`. One library on this surface.
 
@@ -97,8 +97,8 @@ Prefer existing variants over new ones. Overlay tokens in CSS; do not fork a sec
 
 ## Do not
 
-- Import `@functhis/ui/components/*` except `sonner`
-- Restyle `packages/ui` or `apps/web` to match this look
+- Import UI from outside `#/components/ui`
+- Restyle marketing to match this look
 - Invent nav items the product does not have yet
 - Add a light-mode toggle, command palette, or density settings
 - Load Inter / Geist / Cal Sans

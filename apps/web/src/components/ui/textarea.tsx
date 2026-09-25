@@ -1,5 +1,6 @@
-import { cn } from '@functhis/ui/lib/utils';
 import * as React from 'react';
+
+import { cn } from '#/lib/utils';
 
 const Textarea = ({
   className,

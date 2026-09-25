@@ -1,4 +1,3 @@
-import { Toaster } from '@functhis/ui/components/sonner';
 import type { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import {
@@ -11,6 +10,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { createMiddleware } from '@tanstack/react-start';
 import { evlogErrorHandler } from 'evlog/nitro/v3';
 
+import { Toaster } from '#/components/ui/sonner';
 import type { orpc } from '#/utils/orpc';
 
 import appCss from '#/index.css?url';

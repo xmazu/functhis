@@ -1,4 +1,4 @@
-import { cn } from '@functhis/ui/lib/utils';
+import { cn } from '#/lib/utils';
 
 interface BrandMarkProps {
   className?: string;

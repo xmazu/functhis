@@ -2,6 +2,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { Button } from '#/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card';
 import { resolveSession } from '#/functions/resolve-session';
 import { AuthCanvas } from '#/lib/auth/auth-canvas';
 import { authClient } from '#/lib/auth/auth-client';
@@ -9,14 +17,6 @@ import {
   callbackURLFromLocation,
   redirectToLogin,
 } from '#/lib/auth/login-redirect';
-import { Button } from '#/routes/d/-components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '#/routes/d/-components/ui/card';
 
 const buildOauthQuery = ({
   client_id,

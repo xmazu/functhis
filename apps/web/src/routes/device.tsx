@@ -2,6 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { Button } from '#/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card';
+import { Input } from '#/components/ui/input';
+import { Label } from '#/components/ui/label';
 import { resolveSession } from '#/functions/resolve-session';
 import { AuthCanvas } from '#/lib/auth/auth-canvas';
 import { lookupDeviceCode, postDeviceAction } from '#/lib/auth/device-api';
@@ -10,16 +20,6 @@ import {
   callbackURLFromLocation,
   redirectToLogin,
 } from '#/lib/auth/login-redirect';
-import { Button } from '#/routes/d/-components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '#/routes/d/-components/ui/card';
-import { Input } from '#/routes/d/-components/ui/input';
-import { Label } from '#/routes/d/-components/ui/label';
 
 const normalizeUserCode = (code: string): string => code.trim();
 

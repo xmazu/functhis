@@ -1,4 +1,4 @@
-import { Skeleton } from '@functhis/ui/components/skeleton';
+import { Skeleton } from '#/components/ui/skeleton';
 
 const Loader = () => (
   <div className="flex h-full items-center justify-center p-8">

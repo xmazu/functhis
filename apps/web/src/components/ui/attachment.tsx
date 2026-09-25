@@ -1,10 +1,11 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
-import { Button } from '@functhis/ui/components/button';
-import { cn } from '@functhis/ui/lib/utils';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import * as React from 'react';
+
+import { Button } from '#/components/ui/button';
+import { cn } from '#/lib/utils';
 
 const attachmentVariants = cva(
   'group/attachment bg-card text-card-foreground focus-within:ring-ring/50 has-[>a,>button]:hover:bg-muted/50 data-[state=error]:border-destructive/30 relative flex w-fit max-w-full min-w-0 shrink-0 flex-wrap rounded-none border transition-colors focus-within:ring-1 data-[state=idle]:border-dashed',

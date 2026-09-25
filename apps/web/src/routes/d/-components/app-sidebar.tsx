@@ -8,17 +8,17 @@ import {
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { authClient } from '#/lib/auth/auth-client';
-import { Button } from '#/routes/d/-components/ui/button';
-import { Separator } from '#/routes/d/-components/ui/separator';
+import { Button } from '#/components/ui/button';
+import { Separator } from '#/components/ui/separator';
 import {
   Sheet,
   SheetPanel,
   SheetPopup,
   SheetTitle,
   SheetTrigger,
-} from '#/routes/d/-components/ui/sheet';
-import { cn } from '#/routes/d/-lib/utils';
+} from '#/components/ui/sheet';
+import { authClient } from '#/lib/auth/auth-client';
+import { cn } from '#/lib/utils';
 
 const NAV_ITEMS = [
   { icon: IconHome, label: 'Home', to: '/d' },

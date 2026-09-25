@@ -296,7 +296,6 @@ packages/publish   publish schemas, bundle hashing, catalog reads, execute helpe
 packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
 packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts
-packages/ui       existing
 ```
 
 **`packages/api` sharing rule:** shared oRPC and business logic for code that **more than one app** will call (web, console, MCP HTTP later). Do **not** put procedures or types that only one app uses there. App-only API stays in that app until a second consumer appears; then extract. Console does not depend on `@functhis/api` in the auth phase.

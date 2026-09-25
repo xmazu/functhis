@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@functhis/ui/lib/utils';
 import { useId, useRef } from 'react';
 import type { ReactNode, Ref } from 'react';
 
@@ -24,6 +23,7 @@ import type {
 import { useAgentRunPlayback } from '#/components/marketing/agent-run-playback';
 import type { Outcome } from '#/components/marketing/agent-run-playback';
 import { ThinkingReasoning } from '#/components/marketing/thinking-reasoning/thinking-reasoning';
+import { cn } from '#/lib/utils';
 
 const WindowDots = () => (
   <div className="flex items-center gap-1.5">
