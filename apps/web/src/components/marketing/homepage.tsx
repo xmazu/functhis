@@ -49,8 +49,8 @@ export const Homepage = () => (
         </h2>
         <div className="mt-8">
           <CopyPromptButton
-            copiedLabel="Paste in your agent"
-            idleLabel="Copy prompt for agent"
+            copiedLabel="Paste into your agent"
+            idleLabel="Create your first function"
             size="hero"
           />
         </div>

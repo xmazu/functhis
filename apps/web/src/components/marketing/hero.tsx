@@ -14,8 +14,8 @@ export const Hero = () => (
       <div className="mt-12">
         <div data-hero-cta>
           <CopyPromptButton
-            copiedLabel="Paste in your agent"
-            idleLabel="Copy prompt for agent"
+            copiedLabel="Paste into your agent"
+            idleLabel="Create your first function"
             size="hero"
           />
         </div>

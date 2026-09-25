@@ -107,6 +107,14 @@ bun run dev
 
 Install from npm (`npx functhis`, `bunx functhis`, or `npm i -g functhis`), or from the monorepo after `bun run --filter functhis build`:
 
+For agent-guided authoring, install the Functhis skill in your project:
+
+```bash
+npx skills add xmazu/functhis@functhis-function-authoring -y
+```
+
+The skill teaches compatible agents how to shape, author, verify, publish, connect, evolve, and roll back Functhis functions while keeping publishing and other external actions under the developer's control.
+
 For TypeScript when you use `import from 'functhis:runtime'`, add `functhis` as a dev dependency and `/// <reference types="functhis" />` in a `.d.ts` file your tsconfig includes. See [packages/cli/README.md](packages/cli/README.md).
 
 ```bash

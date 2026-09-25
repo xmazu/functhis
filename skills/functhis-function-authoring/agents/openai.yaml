@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Functhis Function Authoring'
+  short_description: 'Build and evolve typed Functhis functions'
+  default_prompt: 'Use $functhis-function-authoring to create and verify my first Functhis function.'
