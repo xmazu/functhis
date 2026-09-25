@@ -8,6 +8,7 @@ const skippedFiles = new Set([
   'hot-catalog.ts',
   'http-handlers.ts',
   'jwks-hot.ts',
+  'publish-sharing.ts',
 ]);
 const srcDir = path.join(packageRoot, 'src');
 const packageSrcMarker = `packages/${path.basename(packageRoot)}/src/`;

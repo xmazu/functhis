@@ -13,6 +13,10 @@
     "./seed-cli-client": {
       "types": "./src/seed-cli-client.ts",
       "default": "./src/seed-cli-client.ts"
+    },
+    "./stripe-plugin": {
+      "types": "./src/stripe-plugin.ts",
+      "default": "./src/stripe-plugin.ts"
     }
   },
   "scripts": {
@@ -21,14 +25,16 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@better-auth/cimd": "1.7.3",
-    "@better-auth/mcp": "1.7.3",
-    "@better-auth/oauth-provider": "1.7.3",
+    "@better-auth/cimd": "1.7.6",
+    "@better-auth/mcp": "1.7.6",
+    "@better-auth/oauth-provider": "1.7.6",
+    "@better-auth/stripe": "1.7.6",
     "@functhis/db": "workspace:*",
     "@functhis/publish": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.1.0",
+    "stripe": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

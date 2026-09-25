@@ -1,4 +1,3 @@
-import { user } from '@functhis/db/schema/auth';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import { and, eq, notInArray } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -24,9 +23,15 @@ import { buildFunctionSearchText } from './function-search-text';
 import { syncPackageToHot } from './hot-catalog';
 import type { PublishHandlerContext } from './http-context';
 import {
+  OrgQuotaExceededError,
+  insertOrgPackageIfUnderLimit,
+} from './org-entitlements';
+import { resolveOrganizationSlugById } from './org-membership-read';
+import {
   resolvePublishSharingForPublishStart,
-  resolveOrganizationSlugById,
+  resolvePublishStartSharing,
 } from './publish-sharing';
+import type { ExistingPackageSharing } from './publish-sharing';
 import {
   publishFinalizeBodySchema,
   publishRollbackBodySchema,
@@ -86,49 +91,23 @@ const validateArtifactSize = (artifact: PublishArtifact): string | null => {
 
 const publicHandleForPackage = (
   database: PublishHandlerContext['db'],
-  packageRow: typeof pkg.$inferSelect,
-  ownerHandle: string
+  packageRow: typeof pkg.$inferSelect
 ): Promise<string | null> => {
-  if (packageRow.scopeKind !== 'organization' || !packageRow.organizationId) {
-    return Promise.resolve(ownerHandle);
+  if (!packageRow.organizationId) {
+    return Promise.resolve(null);
   }
   return resolveOrganizationSlugById(database, packageRow.organizationId);
 };
 
 const findPackageForIdentity = async (
   database: PublishHandlerContext['db'],
-  userId: string,
   slug: string,
-  identity: {
-    organizationId: string | null;
-    scopeKind: 'organization' | 'user';
-  }
+  organizationId: string
 ): Promise<typeof pkg.$inferSelect | undefined> => {
-  if (identity.scopeKind === 'organization' && identity.organizationId) {
-    const [row] = await database
-      .select()
-      .from(pkg)
-      .where(
-        and(
-          eq(pkg.organizationId, identity.organizationId),
-          eq(pkg.slug, slug),
-          eq(pkg.scopeKind, 'organization')
-        )
-      )
-      .limit(1);
-    return row;
-  }
-
   const [row] = await database
     .select()
     .from(pkg)
-    .where(
-      and(
-        eq(pkg.ownerUserId, userId),
-        eq(pkg.slug, slug),
-        eq(pkg.scopeKind, 'user')
-      )
-    )
+    .where(and(eq(pkg.organizationId, organizationId), eq(pkg.slug, slug)))
     .limit(1);
   return row;
 };
@@ -153,9 +132,6 @@ const canPublishPackage = async (
 ): Promise<boolean> => {
   if (packageRow.ownerUserId === userId) {
     return true;
-  }
-  if (packageRow.scopeKind !== 'organization' || !packageRow.organizationId) {
-    return false;
   }
   const organizationIds = await listMembershipOrganizationIds(database, userId);
   return organizationIds.includes(packageRow.organizationId);
@@ -208,77 +184,72 @@ export const handlePublishStart = async (
   }
   const parsed = { data: startBody.data };
 
-  const sharingPreview = await resolvePublishSharingForPublishStart(
-    database,
-    auth.userId,
-    {
-      organizationSlug: parsed.data.organizationSlug,
-      scope: parsed.data.scope,
-      visibility: parsed.data.visibility,
-    },
-    null
-  );
-  if (!sharingPreview.ok) {
-    return badRequest(sharingPreview.error);
-  }
+  const sharingInput = {
+    organizationSlug: parsed.data.organizationSlug,
+    scope: parsed.data.scope,
+    visibility: parsed.data.visibility,
+  };
 
-  if (
-    sharingPreview.value.scopeKind === 'organization' &&
-    !sharingPreview.value.organizationId
-  ) {
-    return badRequest('Organization scope requires a valid organization');
-  }
-
-  const ownedPackage = await findOwnedPackageBySlug(
+  const ownedRow = await findOwnedPackageBySlug(
     database,
     auth.userId,
     parsed.data.slug
   );
+  const ownedPackage: ExistingPackageSharing | null = ownedRow
+    ? {
+        organizationId: ownedRow.organizationId,
+        visibility: ownedRow.visibility,
+      }
+    : null;
 
-  const existingPackage =
-    (await findPackageForIdentity(
+  let orgPackageInTargetOrg: ExistingPackageSharing | null = null;
+  if (!ownedPackage) {
+    const preview = await resolvePublishStartSharing(
       database,
       auth.userId,
+      sharingInput,
+      null,
+      null
+    );
+    if (!preview.ok) {
+      return badRequest(preview.error);
+    }
+    const orgRow = await findPackageForIdentity(
+      database,
       parsed.data.slug,
-      sharingPreview.value
-    )) ?? ownedPackage;
+      preview.value.organizationId
+    );
+    if (orgRow) {
+      orgPackageInTargetOrg = {
+        organizationId: orgRow.organizationId,
+        visibility: orgRow.visibility,
+      };
+    }
+  }
 
-  const sharing = await resolvePublishSharingForPublishStart(
+  const sharing = await resolvePublishStartSharing(
     database,
     auth.userId,
-    {
-      organizationSlug: parsed.data.organizationSlug,
-      scope: parsed.data.scope,
-      visibility: parsed.data.visibility,
-    },
-    existingPackage
-      ? {
-          organizationId: existingPackage.organizationId,
-          scopeKind: existingPackage.scopeKind,
-          visibility: existingPackage.visibility,
-        }
-      : null
+    sharingInput,
+    ownedPackage,
+    orgPackageInTargetOrg
   );
   if (!sharing.ok) {
     return badRequest(sharing.error);
   }
 
-  const { organizationId, scopeKind, visibility } = sharing.value;
+  const { organizationId, visibility } = sharing.value;
 
-  if (
-    ownedPackage &&
-    (ownedPackage.scopeKind !== scopeKind ||
-      (scopeKind === 'organization' &&
-        ownedPackage.organizationId !== organizationId))
-  ) {
-    return badRequest('Cannot change package scope');
+  if (ownedRow && ownedRow.organizationId !== organizationId) {
+    return badRequest('Cannot change package organization');
   }
 
   let packageRow =
-    (await findPackageForIdentity(database, auth.userId, parsed.data.slug, {
-      organizationId,
-      scopeKind,
-    })) ?? undefined;
+    (await findPackageForIdentity(
+      database,
+      parsed.data.slug,
+      organizationId
+    )) ?? undefined;
   if (packageRow) {
     if (packageRow.visibility !== visibility) {
       await database
@@ -288,20 +259,19 @@ export const handlePublishStart = async (
       packageRow = { ...packageRow, visibility };
     }
   } else {
-    const [inserted] = await database
-      .insert(pkg)
-      .values({
+    try {
+      packageRow = await insertOrgPackageIfUnderLimit(database, {
         organizationId,
         ownerUserId: auth.userId,
-        scopeKind,
         slug: parsed.data.slug,
         visibility,
-      })
-      .returning();
-    if (!inserted) {
-      return new Response('Failed to create package', { status: 500 });
+      });
+    } catch (error) {
+      if (error instanceof OrgQuotaExceededError) {
+        return badRequest(error.message);
+      }
+      throw error;
     }
-    packageRow = inserted;
   }
 
   if (!packageRow) {
@@ -373,21 +343,7 @@ export const handlePublishFinalize = async (
     return new Response('Not Found', { status: 404 });
   }
 
-  const [owner] = await database
-    .select({ handle: user.handle })
-    .from(user)
-    .where(eq(user.id, packageRow.ownerUserId))
-    .limit(1);
-
-  if (!owner?.handle) {
-    return new Response('Owner handle not found', { status: 500 });
-  }
-
-  const handle = await publicHandleForPackage(
-    database,
-    packageRow,
-    owner.handle
-  );
+  const handle = await publicHandleForPackage(database, packageRow);
   if (!handle) {
     return new Response('Scope handle not found', { status: 500 });
   }
@@ -592,9 +548,8 @@ export const handlePublishRollback = async (
     }
     packageRow = await findPackageForIdentity(
       database,
-      auth.userId,
       parsed.data.slug,
-      sharing.value
+      sharing.value.organizationId
     );
   }
 
@@ -626,21 +581,7 @@ export const handlePublishRollback = async (
     .set({ currentVersionId: version.id })
     .where(eq(pkg.id, packageRow.id));
 
-  const [owner] = await database
-    .select({ handle: user.handle })
-    .from(user)
-    .where(eq(user.id, packageRow.ownerUserId))
-    .limit(1);
-
-  if (!owner?.handle) {
-    return new Response('Owner handle not found', { status: 500 });
-  }
-
-  const handle = await publicHandleForPackage(
-    database,
-    packageRow,
-    owner.handle
-  );
+  const handle = await publicHandleForPackage(database, packageRow);
   if (!handle) {
     return new Response('Scope handle not found', { status: 500 });
   }

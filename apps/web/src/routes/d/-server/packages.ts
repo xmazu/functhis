@@ -49,10 +49,10 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       return null;
     }
 
-    const organizationSlug =
-      catalog.organizationId === null
-        ? null
-        : await resolveOrganizationSlugById(database, catalog.organizationId);
+    const organizationSlug = await resolveOrganizationSlugById(
+      database,
+      catalog.organizationId
+    );
 
     const isOwner = catalog.ownerUserId === userId;
     const executions = isOwner

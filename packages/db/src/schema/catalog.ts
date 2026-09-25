@@ -19,11 +19,6 @@ export const packageVisibility = pgEnum('package_visibility', [
   'library',
 ]);
 
-export const packageScopeKind = pgEnum('package_scope_kind', [
-  'user',
-  'organization',
-]);
-
 export const pkg = pgTable(
   'package',
   {
@@ -32,13 +27,14 @@ export const pkg = pgTable(
     id: text('id')
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    organizationId: text('organization_id').references(() => organization.id, {
-      onDelete: 'set null',
-    }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, {
+        onDelete: 'cascade',
+      }),
     ownerUserId: text('owner_user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    scopeKind: packageScopeKind('scope_kind').default('user').notNull(),
     slug: text('slug').notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -51,12 +47,7 @@ export const pkg = pgTable(
     visibility: packageVisibility('visibility').default('private').notNull(),
   },
   (table) => [
-    uniqueIndex('package_user_scope_slug_uidx')
-      .on(table.ownerUserId, table.slug)
-      .where(sql`${table.scopeKind} = 'user'`),
-    uniqueIndex('package_org_scope_slug_uidx')
-      .on(table.organizationId, table.slug)
-      .where(sql`${table.scopeKind} = 'organization'`),
+    uniqueIndex('package_org_slug_uidx').on(table.organizationId, table.slug),
     index('package_owner_user_id_idx').on(table.ownerUserId),
     index('package_organization_id_idx').on(table.organizationId),
   ]
@@ -123,6 +114,23 @@ export const pkgFunction = pgTable(
       table.slug
     ),
     index('function_package_id_idx').on(table.packageId),
+  ]
+);
+
+export const orgUsagePeriod = pgTable(
+  'org_usage_period',
+  {
+    executionCount: integer('execution_count').default(0).notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    periodKey: text('period_key').notNull(),
+  },
+  (table) => [
+    uniqueIndex('org_usage_period_org_period_uidx').on(
+      table.organizationId,
+      table.periodKey
+    ),
   ]
 );
 

@@ -21,6 +21,7 @@ export const user = pgTable('user', {
     .default(sql`gen_random_uuid()`),
   image: text('image'),
   name: text('name').notNull(),
+  stripeCustomerId: text('stripe_customer_id'),
   updatedAt: timestamp('updated_at')
     .defaultNow()
     .$onUpdate(
@@ -358,6 +359,7 @@ export const organization = pgTable('organization', {
   metadata: text('metadata'),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  stripeCustomerId: text('stripe_customer_id'),
 });
 
 export const member = pgTable(
@@ -413,6 +415,32 @@ export const rateLimit = pgTable('rate_limit', {
   key: text('key').notNull().unique(),
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
+
+export const subscription = pgTable(
+  'subscription',
+  {
+    billingInterval: text('billing_interval'),
+    cancelAt: timestamp('cancel_at'),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+    canceledAt: timestamp('canceled_at'),
+    endedAt: timestamp('ended_at'),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    periodEnd: timestamp('period_end'),
+    periodStart: timestamp('period_start'),
+    plan: text('plan').notNull(),
+    referenceId: text('reference_id').notNull(),
+    seats: integer('seats'),
+    status: text('status').default('incomplete').notNull(),
+    stripeCustomerId: text('stripe_customer_id'),
+    stripeScheduleId: text('stripe_schedule_id'),
+    stripeSubscriptionId: text('stripe_subscription_id'),
+    trialEnd: timestamp('trial_end'),
+    trialStart: timestamp('trial_start'),
+  },
+  (table) => [index('subscription_reference_id_idx').on(table.referenceId)]
+);
 
 export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),

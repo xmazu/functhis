@@ -45,7 +45,7 @@ Extend this foundation rather than rebuilding it.
 
 - [x] Provide `functhis login` with OAuth device authorization.
 - [x] Provide local `functhis run` and the initial `functhis dev` alias.
-- [x] Publish packages in user and organization scopes.
+- [x] Publish packages in organization scopes (workspace org required; user scope removed).
 - [x] Support private, organization, and public-library visibility.
 - [x] Build Cloudflare-compatible ESM bundles locally.
 - [x] Externalize and inject `functhis:runtime` into hosted bundles.
@@ -63,8 +63,9 @@ Extend this foundation rather than rebuilding it.
 - [x] Use GitHub as the initial identity provider.
 - [x] Act as an OAuth 2.1 authorization server for MCP clients.
 - [x] Separate MCP and CLI resource audiences.
-- [x] Support user handles and organization slugs as public scopes.
+- [x] Support user handles (identity) and organization slugs (public package scope).
 - [x] Provide organization creation, membership, invitations, and acceptance.
+- [x] Require a workspace organization before publish (`/d/setup/workspace` onboarding).
 - [x] Enforce package visibility in catalog reads and execution.
 - [~] Provide owner package and organization management under `/d`.
 - [ ] Add workspace roles and package-level permissions.
@@ -73,7 +74,7 @@ Extend this foundation rather than rebuilding it.
 ### Discovery and execution
 
 - [x] Expose one MCP resource with compact `search` and `execute` tools.
-- [x] Use `@handle/package/function` as the capability identity.
+- [x] Use `@org/package/function` as the capability identity (org slug is the public scope).
 - [x] Search `mine`, `org`, and `library` through HOT KV indexes.
 - [x] Rank lexical matches and prioritize exact capability IDs.
 - [x] Optionally rerank ambiguous shortlists with a small model and safe fallback.
@@ -403,19 +404,20 @@ Use Cloudflare Dynamic Workflows if validation confirms it can keep user-authore
 
 - [ ] Count runs, CPU, requests, transfer, artifacts, storage, workflow steps, and unique Dynamic Worker days where applicable.
 - [ ] Keep billing truth outside Analytics Engine and log vendors.
-- [ ] Enforce limits at account, organization, package, set, routine, and workflow levels.
+- [~] Enforce limits at organization and package levels (Free/Pro caps on publish and execute).
 - [ ] Reject work before compute when a hard limit is exhausted.
 - [ ] Show usage, forecasts, and 80/100 percent warnings.
 - [ ] Add budgets and circuit breakers for public endpoints.
 
 ### Plans and billing
 
-- [ ] Define Free, Pro, Team, and Enterprise entitlements outside Stripe.
-- [ ] Start with hard included limits instead of automatic overages.
-- [ ] Add Stripe Checkout, Customer Portal, and idempotent webhooks.
+- [x] Define Free and Pro entitlements outside Stripe (`packages/publish/src/org-entitlements.ts`).
+- [x] Start with hard included limits instead of automatic overages.
+- [x] Add Stripe Checkout, Customer Portal, and idempotent webhooks (Better Auth Stripe plugin, org customers).
+- [ ] Define Team and Enterprise entitlements.
 - [ ] Add grace periods and explicit failed-payment behavior.
 - [ ] Add metered overages only after counters are proven.
-- [ ] Support organization billing and temporary overrides.
+- [~] Support organization billing (Free/Pro live; temporary overrides later).
 
 ### Operations
 

@@ -7,6 +7,8 @@ import {
   resolveHotFunctionDoc,
 } from '@functhis/publish/hot-catalog';
 import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { OrgQuotaExceededError } from '@functhis/publish/org-entitlements';
+import { reserveOrgExecution } from '@functhis/publish/org-usage';
 import {
   assertExecuteRequestSize,
   executeRequestByteLength,
@@ -89,6 +91,10 @@ export const executeOwnedFunction = async (
     throw new FunctionNotFoundError();
   }
 
+  if (!row.organizationId) {
+    throw new FunctionNotFoundError();
+  }
+
   const contract =
     row.contract && typeof row.contract === 'object'
       ? (row.contract as Record<string, unknown>)
@@ -102,6 +108,19 @@ export const executeOwnedFunction = async (
       ok: false,
       status: 400,
     };
+  }
+
+  try {
+    await reserveOrgExecution(database, row.organizationId);
+  } catch (error) {
+    if (error instanceof OrgQuotaExceededError) {
+      return {
+        error: error.message,
+        ok: false,
+        status: 429,
+      };
+    }
+    throw error;
   }
 
   let bundle;

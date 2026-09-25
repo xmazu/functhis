@@ -28,7 +28,7 @@ export interface PackageDetailViewModel {
   functions: PackageDetailFunctionView[];
   handle: string;
   isOwner: boolean;
-  organizationId: string | null;
+  organizationId: string;
   organizationSlug: string | null;
   packageSlug: string;
   publishedAt: Date;

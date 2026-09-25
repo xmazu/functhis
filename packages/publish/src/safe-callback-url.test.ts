@@ -8,8 +8,8 @@ import {
 describe('safeCallbackURL', () => {
   test('allows same-origin relative paths', () => {
     expect(safeCallbackURL('/packages')).toBe('/packages');
-    expect(safeCallbackURL('/accept-invitation/abc')).toBe(
-      '/accept-invitation/abc'
+    expect(safeCallbackURL('/d/accept-invitation/abc')).toBe(
+      '/d/accept-invitation/abc'
     );
   });
 

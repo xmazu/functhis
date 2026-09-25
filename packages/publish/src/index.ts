@@ -133,14 +133,37 @@ export {
   hasPublishSharingInput,
   resolvePublishSharing,
   resolvePublishSharingForPublishStart,
-  resolveOrganizationIdForMember,
-  resolveOrganizationSlugById,
+  resolvePublishStartSharing,
   resolveScopeHandle,
   updatePackageSharing,
+  WORKSPACE_SETUP_URL,
   type PublishSharingInput,
   type ExistingPackageSharing,
   type ResolvedPublishSharing,
 } from './publish-sharing';
+export {
+  listMemberOrganizations,
+  resolveOrganizationIdForMember,
+  resolveOrganizationSlugById,
+  type MemberOrganization,
+} from './org-membership-read';
+export {
+  assertOrgCanAddPackage,
+  countOrgPackages,
+  insertOrgPackageIfUnderLimit,
+  limitsForPlan,
+  OrgQuotaExceededError,
+  resolveOrgPlan,
+  type OrgPlanId,
+  type OrgPlanLimits,
+  FREE_ORG_LIMITS,
+  PRO_ORG_LIMITS,
+} from './org-entitlements';
+export {
+  currentUsagePeriodKey,
+  readOrgExecutionCount,
+  reserveOrgExecution,
+} from './org-usage';
 export { type PackageVisibility } from './package-visibility';
 export {
   buildPackageAccessContext,

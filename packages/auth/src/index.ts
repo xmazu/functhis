@@ -19,6 +19,7 @@ import {
   normalizeHandleCandidate,
   userHandleExists,
 } from './handle';
+import { createStripePlugin } from './stripe-plugin';
 
 export interface AuthConfig {
   BETTER_AUTH_SECRET: string;
@@ -26,6 +27,9 @@ export interface AuthConfig {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   MCP_RESOURCE: string;
+  STRIPE_PRO_PRICE_ID?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   TRUSTED_ORIGINS: string[];
   /** Invalidate HOT membership cache when org membership changes. */
   syncMembershipHot?: (userId: string) => Promise<void>;
@@ -58,6 +62,8 @@ export const createAuth = (env: AuthConfig, database: Database) => {
       });
     }
   };
+
+  const stripePlugin = createStripePlugin(env, database);
 
   return betterAuth({
     advanced: {
@@ -106,11 +112,11 @@ export const createAuth = (env: AuthConfig, database: Database) => {
       oauthDeviceAuthorization({ verificationUri: '/device' }),
       organization({
         organizationHooks: {
-          afterAddMember: async ({ member }) => {
-            await env.syncMembershipHot?.(member.userId);
+          afterAddMember: async ({ member: memberRow }) => {
+            await env.syncMembershipHot?.(memberRow.userId);
           },
-          afterRemoveMember: async ({ member }) => {
-            await env.syncMembershipHot?.(member.userId);
+          afterRemoveMember: async ({ member: memberRow }) => {
+            await env.syncMembershipHot?.(memberRow.userId);
           },
           beforeCreateOrganization: async ({ organization: created }) => {
             await assertOrgSlugAvailable(created.slug);
@@ -123,6 +129,7 @@ export const createAuth = (env: AuthConfig, database: Database) => {
           // Console shows copyable invite links; no outbound email in alpha.
         },
       }),
+      ...(stripePlugin ? [stripePlugin] : []),
       tanstackStartCookies(),
     ],
     rateLimit: {

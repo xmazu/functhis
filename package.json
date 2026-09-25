@@ -21,7 +21,8 @@
       "@orpc/client": "^1.15.0",
       "@orpc/openapi": "^1.15.0",
       "@orpc/zod": "^1.15.0",
-      "better-auth": "1.7.3",
+      "better-auth": "1.7.6",
+      "stripe": "^22.4.0",
       "@types/react": "^19.2.18",
       "@types/react-dom": "^19.2.7"
     }

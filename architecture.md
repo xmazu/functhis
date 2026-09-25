@@ -69,7 +69,7 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 Signed-in owner app at `apps/web` under `/d` (pkgs, orgs). Visual system: [apps/web/src/routes/d/DESIGN.md](apps/web/src/routes/d/DESIGN.md).
 
-Alpha: GitHub login, MCP consent, device approval, signed-in home, package list at `/d/pkgs`, package detail at `/d/pkgs/:handle/:slug`, organizations at `/d/orgs`, sharing controls on owned packages. Package detail copies MCP ids; there is no try-it playground. No billing or library browse/catalog UI in alpha.
+Alpha: GitHub login, workspace onboarding at `/d/setup/workspace`, MCP consent, device approval, signed-in home at `/d`, package list at `/d/pkgs`, package detail at `/d/pkgs/:handle/:slug` (handle is org slug), organizations at `/d/orgs` with Free/Pro billing via Stripe Checkout and Customer Portal, sharing controls on owned packages. Package detail copies MCP ids; there is no try-it playground. Library browse/catalog UI remains later.
 
 ## MCP
 
@@ -215,7 +215,7 @@ Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. 
 
 | Table | Notes |
 | --- | --- |
-| `package` | `slug`, `scopeKind` (`user` \| `organization`), `ownerUserId`, optional `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
+| `package` | `slug`, `ownerUserId`, required `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
 | `function` | `packageId`, `exportName`, `path`, `slug` (may include `/` namespaces), contract JSON, `search_text`. Unique `(packageId, slug)` |
 | `package_version` | Immutable: semver, source hash, bundle hash, artifact key, contracts, git sha, runtime version, createdBy |
 | `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
@@ -225,7 +225,7 @@ Local Docker is stock Postgres 16. Production is Neon Postgres. Workers use `dri
 ```mermaid
 erDiagram
   user ||--o{ package : owns
-  organization ||--o{ package : optional
+  organization ||--o{ package : scopes
   package ||--o{ package_version : versions
   package ||--o{ function : functions
   package_version ||--o{ execution : runs
@@ -269,7 +269,11 @@ ownerUserId = me
 or (organizationId in memberships and visibility = organization)
 ```
 
-`private` is owner-only even when `organizationId` is set. Deploy API and owner UI set `visibility` + optional `organizationId`; CLI: `--visibility`, `--organization`.
+`private` is owner-only (org members do not inherit access). Every package requires an organization workspace; publish defaults to the caller’s sole org or `--scope <org-slug>`. MCP ids and catalog handles use the **organization slug**, not the owner’s user handle. Deploy API and owner UI set `visibility`; CLI: `--visibility`, `--scope`.
+
+**Org migration (deploy):** SQL `0004` / `0005` backfill legacy user-scoped packages onto workspace orgs. If an owner’s handle slug is already taken by another workspace, migration creates `{handle}-workspace` instead of joining the foreign org. `0005` aborts when any package row still lacks `organization_id` (no silent deletes).
+
+Billing: Better Auth Stripe plugin with `customerType: organization` (optional when Stripe secrets are unset). Entitlements (Free vs Pro package and execution caps) are enforced in `@functhis/publish` from Postgres subscription rows and `org_usage_period` counters—not from Stripe on the MCP hot path.
 
 Quotas fail closed from day one: CPU, concurrency, request/response size.
 
@@ -311,4 +315,4 @@ CLI:    login → functhis.now/device
 
 ## Defer
 
-Billing, marketplace, library browse UX, org billing, invite email, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, one MCP tool per function, `run.` hostname, public `@` function pages / HTTP try-it, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.
+Billing, marketplace, library browse UX, invite email, Infisical, credential broker, custom domains, OpenAPI, workflows, Python, one MCP tool per function, `run.` hostname, public `@` function pages / HTTP try-it, Workers for Platforms, per-package Durable Objects, managed execution-output storage, Cloudflare Artifacts, source remix / import, proxying the MCP Registry.

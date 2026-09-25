@@ -41,18 +41,17 @@ describe('canAccessPackage', () => {
     ).toBe(false);
   });
 
-  test('allows org-scoped private packages for org members', () => {
+  test('denies org workspace private packages for non-owner members', () => {
     expect(
       canAccessPackage(
         {
           organizationId: 'org-1',
           ownerUserId: 'owner-1',
-          scopeKind: 'organization',
           visibility: 'private',
         },
         { organizationIds: ['org-1'], userId: 'member-1' }
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test('allows private packages for the owner', () => {

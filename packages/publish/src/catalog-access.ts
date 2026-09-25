@@ -9,7 +9,6 @@ export type { PackageVisibility } from './package-visibility';
 export interface PackageAccessRow {
   organizationId: string | null;
   ownerUserId: string;
-  scopeKind?: 'organization' | 'user';
   visibility: PackageVisibility;
 }
 
@@ -33,15 +32,6 @@ export const canAccessPackage = (
   }
 
   if (packageRow.ownerUserId === context.userId) {
-    return true;
-  }
-
-  const isOrgScoped = packageRow.scopeKind === 'organization';
-  const isOrgMember =
-    packageRow.organizationId !== null &&
-    context.organizationIds.includes(packageRow.organizationId);
-
-  if (isOrgScoped && isOrgMember) {
     return true;
   }
 

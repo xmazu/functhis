@@ -72,12 +72,27 @@ const ensureCliClientSeeded = (): Promise<void> => {
 
 const resolveAuthConfig = (): Promise<AuthConfig> => {
   authConfigPromise ??= (async () => {
-    const [betterAuthSecret, githubClientId, githubClientSecret] =
-      await Promise.all([
-        resolveNamedSecret('BETTER_AUTH_SECRET', env.BETTER_AUTH_SECRET),
-        resolveNamedSecret('GITHUB_CLIENT_ID', env.GITHUB_CLIENT_ID),
-        resolveNamedSecret('GITHUB_CLIENT_SECRET', env.GITHUB_CLIENT_SECRET),
-      ]);
+    const [
+      betterAuthSecret,
+      githubClientId,
+      githubClientSecret,
+      stripeSecretKey,
+      stripeWebhookSecret,
+      stripeProPriceId,
+    ] = await Promise.all([
+      resolveNamedSecret('BETTER_AUTH_SECRET', env.BETTER_AUTH_SECRET),
+      resolveNamedSecret('GITHUB_CLIENT_ID', env.GITHUB_CLIENT_ID),
+      resolveNamedSecret('GITHUB_CLIENT_SECRET', env.GITHUB_CLIENT_SECRET),
+      env.STRIPE_SECRET_KEY
+        ? resolveNamedSecret('STRIPE_SECRET_KEY', env.STRIPE_SECRET_KEY)
+        : Promise.resolve(),
+      env.STRIPE_WEBHOOK_SECRET
+        ? resolveNamedSecret('STRIPE_WEBHOOK_SECRET', env.STRIPE_WEBHOOK_SECRET)
+        : Promise.resolve(),
+      env.STRIPE_PRO_PRICE_ID
+        ? resolveNamedSecret('STRIPE_PRO_PRICE_ID', env.STRIPE_PRO_PRICE_ID)
+        : Promise.resolve(),
+    ]);
 
     return {
       BETTER_AUTH_SECRET: betterAuthSecret,
@@ -85,6 +100,11 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       GITHUB_CLIENT_ID: githubClientId,
       GITHUB_CLIENT_SECRET: githubClientSecret,
       MCP_RESOURCE: env.MCP_RESOURCE,
+      ...(stripeProPriceId ? { STRIPE_PRO_PRICE_ID: stripeProPriceId } : {}),
+      ...(stripeSecretKey ? { STRIPE_SECRET_KEY: stripeSecretKey } : {}),
+      ...(stripeWebhookSecret
+        ? { STRIPE_WEBHOOK_SECRET: stripeWebhookSecret }
+        : {}),
       TRUSTED_ORIGINS: parseTrustedOrigins(env.TRUSTED_ORIGINS),
       syncMembershipHot: async (userId) => {
         const db = await getDb();

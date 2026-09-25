@@ -81,6 +81,21 @@
           "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "GITHUB_CLIENT_SECRET",
         },
+        {
+          "binding": "STRIPE_SECRET_KEY",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "STRIPE_SECRET_KEY",
+        },
+        {
+          "binding": "STRIPE_WEBHOOK_SECRET",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "STRIPE_WEBHOOK_SECRET",
+        },
+        {
+          "binding": "STRIPE_PRO_PRICE_ID",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "STRIPE_PRO_PRICE_ID",
+        },
       ],
       "vars": {
         "NODE_ENV": "production",

@@ -78,6 +78,14 @@
       "types": "./src/jwks-hot.ts",
       "default": "./src/jwks-hot.ts"
     },
+    "./org-entitlements": {
+      "types": "./src/org-entitlements.ts",
+      "default": "./src/org-entitlements.ts"
+    },
+    "./org-usage": {
+      "types": "./src/org-usage.ts",
+      "default": "./src/org-usage.ts"
+    },
     "./quotas": {
       "types": "./src/quotas.ts",
       "default": "./src/quotas.ts"

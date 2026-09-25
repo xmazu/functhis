@@ -1,10 +1,13 @@
 import type { Database } from '@functhis/db';
-import { member, organization, user } from '@functhis/db/schema/auth';
 import { pkg } from '@functhis/db/schema/catalog';
 import { and, eq } from 'drizzle-orm';
 
 import type { PackageVisibility } from './catalog-access';
 import { getPackageBySlugs } from './catalog-read';
+import {
+  listMemberOrganizations,
+  resolveOrganizationIdForMember,
+} from './org-membership-read';
 
 export interface PublishSharingInput {
   organizationSlug?: string;
@@ -13,8 +16,7 @@ export interface PublishSharingInput {
 }
 
 export interface ResolvedPublishSharing {
-  organizationId: string | null;
-  scopeKind: 'organization' | 'user';
+  organizationId: string;
   visibility: PackageVisibility;
 }
 
@@ -23,45 +25,16 @@ export type ResolvePublishSharingResult =
   | { ok: false; error: string };
 
 export interface ExistingPackageSharing {
-  organizationId: string | null;
-  scopeKind: 'organization' | 'user';
+  organizationId: string;
   visibility: PackageVisibility;
 }
+
+export const WORKSPACE_SETUP_URL = 'https://functhis.now/d/setup/workspace';
 
 export const hasPublishSharingInput = (input: PublishSharingInput): boolean =>
   input.visibility !== undefined ||
   input.organizationSlug !== undefined ||
   input.scope !== undefined;
-
-export const resolveOrganizationIdForMember = async (
-  database: Database,
-  userId: string,
-  organizationSlug: string
-): Promise<string | null> => {
-  const [row] = await database
-    .select({ id: organization.id })
-    .from(organization)
-    .innerJoin(member, eq(member.organizationId, organization.id))
-    .where(
-      and(eq(organization.slug, organizationSlug), eq(member.userId, userId))
-    )
-    .limit(1);
-
-  return row?.id ?? null;
-};
-
-export const resolveOrganizationSlugById = async (
-  database: Database,
-  organizationId: string
-): Promise<string | null> => {
-  const [row] = await database
-    .select({ slug: organization.slug })
-    .from(organization)
-    .where(eq(organization.id, organizationId))
-    .limit(1);
-
-  return row?.slug ?? null;
-};
 
 export const resolveScopeHandle = (
   input: PublishSharingInput
@@ -75,41 +48,40 @@ export const resolvePublishSharing = async (
   const visibility = input.visibility ?? 'private';
   const scopeHandle = resolveScopeHandle(input);
 
-  if (visibility === 'organization' && !scopeHandle) {
-    return {
-      error: 'scope is required when visibility is organization',
-      ok: false,
-    };
+  let organizationId: string | null = null;
+
+  if (scopeHandle) {
+    organizationId = await resolveOrganizationIdForMember(
+      database,
+      userId,
+      scopeHandle
+    );
+    if (!organizationId) {
+      return {
+        error: 'Scope not found or you are not a member',
+        ok: false,
+      };
+    }
+  } else {
+    const organizations = await listMemberOrganizations(database, userId);
+    if (organizations.length === 0) {
+      return {
+        error: `Create a workspace at ${WORKSPACE_SETUP_URL} before publishing`,
+        ok: false,
+      };
+    }
+    if (organizations.length > 1) {
+      return {
+        error: 'Multiple organizations: pass --scope <org-slug>',
+        ok: false,
+      };
+    }
+    organizationId = organizations[0]?.id ?? null;
   }
 
-  if (!scopeHandle) {
-    return {
-      ok: true,
-      value: { organizationId: null, scopeKind: 'user', visibility },
-    };
-  }
-
-  const [owner] = await database
-    .select({ handle: user.handle })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
-
-  if (owner?.handle === scopeHandle) {
-    return {
-      ok: true,
-      value: { organizationId: null, scopeKind: 'user', visibility },
-    };
-  }
-
-  const organizationId = await resolveOrganizationIdForMember(
-    database,
-    userId,
-    scopeHandle
-  );
   if (!organizationId) {
     return {
-      error: 'Scope not found or you are not a member',
+      error: `Create a workspace at ${WORKSPACE_SETUP_URL} before publishing`,
       ok: false,
     };
   }
@@ -118,8 +90,7 @@ export const resolvePublishSharing = async (
     ok: true,
     value: {
       organizationId,
-      scopeKind: 'organization',
-      visibility: visibility === 'organization' ? 'private' : visibility,
+      visibility,
     },
   };
 };
@@ -136,7 +107,6 @@ export const resolvePublishSharingForPublishStart = (
       ok: true,
       value: {
         organizationId: existing.organizationId,
-        scopeKind: existing.scopeKind,
         visibility: existing.visibility,
       },
     });
@@ -151,7 +121,6 @@ export const resolvePublishSharingForPublishStart = (
       ok: true,
       value: {
         organizationId: existing.organizationId,
-        scopeKind: existing.scopeKind,
         visibility: input.visibility ?? existing.visibility,
       },
     });
@@ -168,6 +137,35 @@ export const resolvePublishSharingForPublishStart = (
   return resolvePublishSharing(database, userId, effectiveInput);
 };
 
+/** Single sharing resolution for publish/start (avoids duplicate preview + final calls). */
+export const resolvePublishStartSharing = (
+  database: Database,
+  userId: string,
+  input: PublishSharingInput,
+  ownedPackage: ExistingPackageSharing | null,
+  orgPackageInTargetOrg: ExistingPackageSharing | null
+): Promise<ResolvePublishSharingResult> => {
+  if (ownedPackage) {
+    return resolvePublishSharingForPublishStart(
+      database,
+      userId,
+      input,
+      ownedPackage
+    );
+  }
+
+  if (orgPackageInTargetOrg) {
+    return resolvePublishSharingForPublishStart(
+      database,
+      userId,
+      input,
+      orgPackageInTargetOrg
+    );
+  }
+
+  return resolvePublishSharingForPublishStart(database, userId, input, null);
+};
+
 export const updatePackageSharing = async (
   database: Database,
   userId: string,
@@ -180,15 +178,21 @@ export const updatePackageSharing = async (
     return { error: 'Package not found', ok: false };
   }
 
-  const sharing = await resolvePublishSharing(database, userId, input);
+  const sharing = await resolvePublishSharing(database, userId, {
+    ...input,
+    scope: input.scope ?? handle,
+  });
   if (!sharing.ok) {
     return { error: sharing.error, ok: false };
+  }
+
+  if (sharing.value.organizationId !== catalog.organizationId) {
+    return { error: 'Cannot change package organization', ok: false };
   }
 
   await database
     .update(pkg)
     .set({
-      organizationId: sharing.value.organizationId,
       visibility: sharing.value.visibility,
     })
     .where(and(eq(pkg.id, catalog.id), eq(pkg.ownerUserId, userId)));

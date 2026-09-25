@@ -56,12 +56,14 @@ describe('readGitMetadata', () => {
   });
 
   test('records the commit hash and dirty flag', async () => {
-    const root = await mkdtemp(
-      path.join(import.meta.dirname, '.tmp-git-repo-')
-    );
+    const root = await mkdtemp(path.join(tmpdir(), 'functhis-git-repo-'));
     roots.push(root);
     await mkdir(path.join(root, '_empty-git-template'));
     git(root, ['init', `--template=${path.join(root, '_empty-git-template')}`]);
+    await rm(path.join(root, '_empty-git-template'), {
+      force: true,
+      recursive: true,
+    });
     await writeFile(path.join(root, 'README.md'), 'hi\n', 'utf-8');
     git(root, ['add', 'README.md']);
     git(root, ['commit', '-m', 'init']);

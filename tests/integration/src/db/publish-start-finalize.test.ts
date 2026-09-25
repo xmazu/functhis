@@ -141,7 +141,7 @@ describe('deploy start and finalize', () => {
       .where(eq(pkg.id, startBody.packageId))
       .limit(1);
     expect(packageRow?.currentVersionId).toBe(finalizeBody.versionId);
-    expect(packageRow?.scopeKind).toBe('user');
+    expect(packageRow?.organizationId).toBeDefined();
 
     const versions = await db
       .select()
@@ -161,7 +161,7 @@ describe('deploy start and finalize', () => {
     expect(functions.map((fn) => fn.slug)).toEqual(['hello']);
 
     const catalog = await getPackageBySlugs(db, handle, slug);
-    expect(catalog?.scopeKind).toBe('user');
+    expect(catalog?.organizationId).toBeDefined();
     expect(catalog?.currentVersion.semver).toBe('1.0.0');
     expect(catalog?.currentVersion.publishedAt).toBeInstanceOf(Date);
     expect(catalog?.functions.map((fn) => fn.functionSlug)).toEqual(['hello']);
@@ -315,16 +315,14 @@ describe('deploy start and finalize', () => {
       .from(pkg)
       .where(eq(pkg.id, packageId))
       .limit(1);
-    expect(packageRow?.scopeKind).toBe('organization');
     expect(packageRow?.organizationId).toBe(org.organizationId);
     expect(packageRow?.visibility).toBe('library');
 
     const catalog = await getPackageBySlugs(db, org.slug, slug);
     expect(catalog?.handle).toBe(org.slug);
-    expect(catalog?.scopeKind).toBe('organization');
   });
 
-  test('rejects changing package scope after create', async () => {
+  test('rejects changing package organization after create', async () => {
     const db = await integrationDb();
     const ctx = createIntegrationPublishContext(db);
     const suffix = crypto.randomUUID().slice(0, 8);
@@ -332,19 +330,20 @@ describe('deploy start and finalize', () => {
       db,
       suffix
     );
-    const org = await seedIntegrationOrganization(db, {
-      slug: `int-db-org-${suffix}`,
-      userIds: [userId],
-    });
     const slug = `pkg-${suffix}`;
     const first = await startPackage(ctx, accessToken, {
       filesManifest: [{ bytes: 1, path: 'hello.ts' }],
       slug,
     });
     expect(first.status).toBe(200);
+
+    const otherOrg = await seedIntegrationOrganization(db, {
+      slug: `int-db-org-${suffix}`,
+      userIds: [userId],
+    });
     const second = await startPackage(ctx, accessToken, {
       filesManifest: [{ bytes: 1, path: 'hello.ts' }],
-      scope: org.slug,
+      scope: otherOrg.slug,
       slug,
     });
     expect(second.status).toBe(400);

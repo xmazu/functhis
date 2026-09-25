@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
-    "@better-auth/oauth-provider": "1.7.3",
+    "@better-auth/oauth-provider": "1.7.6",
+    "@better-auth/stripe": "1.7.6",
     "@functhis/api": "workspace:*",
     "@functhis/auth": "workspace:*",
     "@functhis/db": "workspace:*",

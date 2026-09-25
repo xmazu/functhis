@@ -6,9 +6,58 @@ import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
 import { invitationIdFromInviteResponse } from '#/routes/d/-lib/organization-invite';
+import { getOrgBillingSummary } from '#/routes/d/-server/org-billing';
 
 const inviteAcceptUrl = (invitationId: string): string =>
-  `${globalThis.location.origin}/accept-invitation/${invitationId}`;
+  `${globalThis.location.origin}/d/accept-invitation/${invitationId}`;
+
+type BillingSummary = Awaited<ReturnType<typeof getOrgBillingSummary>>;
+
+const BillingActions = ({
+  billing,
+  billingBusy,
+  onManageBilling,
+  onUpgrade,
+}: {
+  billing: NonNullable<BillingSummary>;
+  billingBusy: boolean;
+  onManageBilling: () => void;
+  onUpgrade: () => void;
+}) => {
+  if (!billing.billingEnabled) {
+    return (
+      <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
+        Stripe billing is not configured in this environment.
+      </p>
+    );
+  }
+
+  if (!billing.canManageBilling) {
+    return (
+      <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
+        Only workspace owners and admins can change billing.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {billing.plan === 'free' ? (
+        <Button disabled={billingBusy} onClick={onUpgrade} size="sm">
+          Upgrade to Pro
+        </Button>
+      ) : null}
+      <Button
+        disabled={billingBusy}
+        onClick={onManageBilling}
+        size="sm"
+        variant="outline"
+      >
+        Manage billing
+      </Button>
+    </div>
+  );
+};
 
 const OrganizationDetailPage = () => {
   const { slug } = Route.useParams();
@@ -17,6 +66,8 @@ const OrganizationDetailPage = () => {
   const [members, setMembers] = useState<
     { email: string; id: string; role: string; userId: string }[]
   >([]);
+  const [billing, setBilling] = useState<BillingSummary>(null);
+  const [billingBusy, setBillingBusy] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +77,17 @@ const OrganizationDetailPage = () => {
       return;
     }
     const load = async (): Promise<void> => {
-      const { data } = await authClient.organization.listMembers({
-        query: {
-          organizationId: organization.id,
-        },
-      });
-      if (data) {
+      const [{ data: memberData }, summary] = await Promise.all([
+        authClient.organization.listMembers({
+          query: {
+            organizationId: organization.id,
+          },
+        }),
+        getOrgBillingSummary({ data: { organizationId: organization.id } }),
+      ]);
+      if (memberData) {
         setMembers(
-          data.members.map((memberRow) => ({
+          memberData.members.map((memberRow) => ({
             email: memberRow.user.email,
             id: memberRow.id,
             role: memberRow.role,
@@ -41,9 +95,52 @@ const OrganizationDetailPage = () => {
           }))
         );
       }
+      setBilling(summary);
     };
     void load();
   }, [organization?.id]);
+
+  const handleUpgrade = async (): Promise<void> => {
+    if (!organization?.id) {
+      return;
+    }
+    setBillingBusy(true);
+    const returnUrl = globalThis.location.href;
+    const { error: upgradeError } = await authClient.subscription.upgrade({
+      cancelUrl: returnUrl,
+      customerType: 'organization',
+      disableRedirect: false,
+      plan: 'pro',
+      referenceId: organization.id,
+      successUrl: returnUrl,
+    });
+    if (upgradeError) {
+      setError(upgradeError.message ?? 'Unable to start checkout');
+      setBillingBusy(false);
+    }
+  };
+
+  const handleManageBilling = async (): Promise<void> => {
+    if (!organization?.id) {
+      return;
+    }
+    setBillingBusy(true);
+    const { data, error: portalError } =
+      await authClient.subscription.billingPortal({
+        customerType: 'organization',
+        referenceId: organization.id,
+        returnUrl: globalThis.location.href,
+      });
+    if (portalError) {
+      setError(portalError.message ?? 'Unable to open billing portal');
+      setBillingBusy(false);
+      return;
+    }
+    if (data?.url) {
+      globalThis.location.assign(data.url);
+    }
+    setBillingBusy(false);
+  };
 
   const handleInvite = async (): Promise<void> => {
     if (!organization?.id) {
@@ -95,6 +192,31 @@ const OrganizationDetailPage = () => {
         </p>
       </header>
       <div className="flex flex-col gap-4 p-4">
+        {billing ? (
+          <section className="flex max-w-md flex-col gap-2 border p-3">
+            <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+              Billing
+            </h2>
+            <p className="text-[length:var(--app-font-size-ui,12px)]">
+              Plan: {billing.plan === 'pro' ? 'Pro' : 'Free'}
+            </p>
+            <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
+              {billing.packageCount} / {billing.limits.maxPackages} packages ·{' '}
+              {billing.executionCount} / {billing.limits.maxExecutionsPerMonth}{' '}
+              executions this month
+            </p>
+            <BillingActions
+              billing={billing}
+              billingBusy={billingBusy}
+              onManageBilling={() => {
+                void handleManageBilling();
+              }}
+              onUpgrade={() => {
+                void handleUpgrade();
+              }}
+            />
+          </section>
+        ) : null}
         <section className="flex max-w-md flex-col gap-2 border p-3">
           <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
             Invite member

@@ -1,12 +1,12 @@
 import type { Database } from '@functhis/db';
-import { organization, user } from '@functhis/db/schema/auth';
+import { organization } from '@functhis/db/schema/auth';
 import {
   execution,
   pkg,
   pkgFunction,
   packageVersion,
 } from '@functhis/db/schema/catalog';
-import { and, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 import {
@@ -39,10 +39,9 @@ export interface CatalogPackageRow {
   functions: CatalogFunctionRow[];
   handle: string;
   id: string;
-  organizationId: string | null;
+  organizationId: string;
   ownerUserId: string;
   packageSlug: string;
-  scopeKind: 'organization' | 'user';
   visibility: PackageVisibility;
 }
 
@@ -65,10 +64,9 @@ export interface PackageListRow {
   functionCount: number;
   handle: string;
   id: string;
-  organizationId: string | null;
+  organizationId: string;
   ownerUserId: string;
   packageSlug: string;
-  scopeKind: 'organization' | 'user';
   visibility: PackageVisibility;
 }
 
@@ -76,7 +74,7 @@ export type AccessiblePackageListRow = PackageListRow & {
   shared: boolean;
 };
 
-const packageHandleExpr = sql<string>`case when ${pkg.scopeKind} = 'organization' then ${organization.slug} else ${user.handle} end`;
+const packageHandleExpr = sql<string>`${organization.slug}`;
 
 const listPackagesGrouped = async (
   database: Database,
@@ -90,23 +88,19 @@ const listPackagesGrouped = async (
       organizationId: pkg.organizationId,
       ownerUserId: pkg.ownerUserId,
       packageSlug: pkg.slug,
-      scopeKind: pkg.scopeKind,
       visibility: pkg.visibility,
     })
     .from(pkg)
-    .innerJoin(user, eq(pkg.ownerUserId, user.id))
-    .leftJoin(organization, eq(pkg.organizationId, organization.id))
+    .innerJoin(organization, eq(pkg.organizationId, organization.id))
     .leftJoin(pkgFunction, eq(pkgFunction.packageId, pkg.id))
     .where(where)
     .groupBy(
       pkg.id,
-      user.handle,
       organization.slug,
       pkg.slug,
       pkg.visibility,
       pkg.organizationId,
-      pkg.ownerUserId,
-      pkg.scopeKind
+      pkg.ownerUserId
     )
     .orderBy(pkg.slug);
 
@@ -118,71 +112,30 @@ export const getPackageBySlugs = async (
   handle: string,
   packageSlug: string
 ): Promise<CatalogPackageRow | null> => {
-  const [owner] = await database
-    .select({ handle: user.handle, id: user.id })
-    .from(user)
-    .where(eq(user.handle, handle))
+  const [org] = await database
+    .select({ id: organization.id, slug: organization.slug })
+    .from(organization)
+    .where(eq(organization.slug, handle))
     .limit(1);
 
-  const userScoped = owner
-    ? await database
-        .select({
-          currentVersionId: pkg.currentVersionId,
-          id: pkg.id,
-          organizationId: pkg.organizationId,
-          ownerUserId: pkg.ownerUserId,
-          scopeKind: pkg.scopeKind,
-          slug: pkg.slug,
-          visibility: pkg.visibility,
-        })
-        .from(pkg)
-        .where(
-          and(
-            eq(pkg.ownerUserId, owner.id),
-            eq(pkg.slug, packageSlug),
-            eq(pkg.scopeKind, 'user')
-          )
-        )
-        .limit(1)
-    : [];
-
-  let [packageRow] = userScoped;
-  let publicHandle = owner?.handle;
-
-  if (!packageRow) {
-    const [org] = await database
-      .select({ id: organization.id, slug: organization.slug })
-      .from(organization)
-      .where(eq(organization.slug, handle))
-      .limit(1);
-
-    if (!org) {
-      return null;
-    }
-
-    const [orgPackage] = await database
-      .select({
-        currentVersionId: pkg.currentVersionId,
-        id: pkg.id,
-        organizationId: pkg.organizationId,
-        ownerUserId: pkg.ownerUserId,
-        scopeKind: pkg.scopeKind,
-        slug: pkg.slug,
-        visibility: pkg.visibility,
-      })
-      .from(pkg)
-      .where(
-        and(
-          eq(pkg.organizationId, org.id),
-          eq(pkg.slug, packageSlug),
-          eq(pkg.scopeKind, 'organization')
-        )
-      )
-      .limit(1);
-
-    packageRow = orgPackage;
-    publicHandle = org.slug;
+  if (!org) {
+    return null;
   }
+
+  const [packageRow] = await database
+    .select({
+      currentVersionId: pkg.currentVersionId,
+      id: pkg.id,
+      organizationId: pkg.organizationId,
+      ownerUserId: pkg.ownerUserId,
+      slug: pkg.slug,
+      visibility: pkg.visibility,
+    })
+    .from(pkg)
+    .where(and(eq(pkg.organizationId, org.id), eq(pkg.slug, packageSlug)))
+    .limit(1);
+
+  const publicHandle = org.slug;
 
   if (!packageRow?.id || !packageRow.currentVersionId || !publicHandle) {
     return null;
@@ -234,7 +187,6 @@ export const getPackageBySlugs = async (
     organizationId: packageRow.organizationId,
     ownerUserId: packageRow.ownerUserId,
     packageSlug: packageRow.slug,
-    scopeKind: packageRow.scopeKind,
     visibility: packageRow.visibility,
   };
 };
@@ -252,10 +204,7 @@ export const listOrgSharedPackages = (
     and(
       isNotNull(pkg.currentVersionId),
       inArray(pkg.organizationId, [...organizationIds]),
-      or(
-        and(eq(pkg.scopeKind, 'user'), eq(pkg.visibility, 'organization')),
-        eq(pkg.scopeKind, 'organization')
-      )
+      eq(pkg.visibility, 'organization')
     )
   );
 };

@@ -20,8 +20,8 @@ import {
   orgIndexHotKey,
 } from './hot-keys';
 import type { HotKvBinding } from './http-context';
+import { resolveOrganizationSlugById } from './org-membership-read';
 import type { PackageVisibility } from './package-visibility';
-import { resolveOrganizationSlugById } from './publish-sharing';
 
 export interface HotFunctionDoc {
   bundleHash: string;
@@ -137,7 +137,7 @@ export const syncPackageToHot = async (
   }
 
   let { handle } = owner;
-  if (packageRow.scopeKind === 'organization' && packageRow.organizationId) {
+  if (packageRow.organizationId) {
     const orgHandle = await resolveOrganizationSlugById(
       database,
       packageRow.organizationId

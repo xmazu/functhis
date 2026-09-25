@@ -125,7 +125,9 @@ The hosted product at `functhis.now` should own managed execution, stable URLs, 
 
 ## Business model
 
-The free plan should make the first successful deployment easy while containing abuse through small package, execution, CPU, and retention limits. Paid individual plans can increase private packages, executions, history, and limits. Managed storage for execution outputs (PDFs, archives, and similar files) belongs to a later version. Team plans can later add shared ownership, access policies, audit retention, service identities, and consolidated billing.
+The free plan should make the first successful deployment easy while containing abuse through small package, execution, CPU, and retention limits. Paid Pro plans increase private packages, executions, history, and limits per workspace organization. Managed storage for execution outputs (PDFs, archives, and similar files) belongs to a later version. Team plans can later add shared ownership, access policies, audit retention, service identities, and consolidated billing across multiple workspaces.
+
+Pricing is tied to the organization workspace: subscriptions, included limits, and usage counters are per org. A user handle remains identity only; packages always publish under `@org-slug/package`.
 
 Pricing should be tied primarily to packages, executions, compute, retention, and collaboration-not to the number of logical function definitions alone. A package may contain many cheap functions, while one heavily used function can create most of the infrastructure cost.
 

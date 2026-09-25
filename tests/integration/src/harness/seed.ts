@@ -8,6 +8,7 @@ import {
 } from '@functhis/db/schema/auth';
 import { PUBLISH_API_RESOURCE } from '@functhis/publish';
 import { CLI_CLIENT_ID } from '@functhis/publish/oauth';
+import { eq } from 'drizzle-orm';
 
 export interface IntegrationPublishAuth {
   accessToken: string;
@@ -38,6 +39,29 @@ export const seedIntegrationPublishAuth = async (
   if (!insertedUser) {
     throw new Error('Failed to seed integration user');
   }
+
+  await db.insert(organization).values({
+    createdAt: now,
+    name: `Integration ${suffix}`,
+    slug: handle,
+  });
+
+  const [insertedOrg] = await db
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.slug, handle))
+    .limit(1);
+
+  if (!insertedOrg) {
+    throw new Error('Failed to seed integration organization');
+  }
+
+  await db.insert(member).values({
+    createdAt: now,
+    organizationId: insertedOrg.id,
+    role: 'owner',
+    userId: insertedUser.id,
+  });
 
   await db.insert(oauthAccessToken).values({
     clientId: CLI_CLIENT_ID,
