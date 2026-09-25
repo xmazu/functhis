@@ -12,6 +12,26 @@ npm install -g functhis
 
 Requires Node 20+.
 
+`npx functhis` and global install run the CLI only. For editor types when you import `functhis:runtime`, add the package as a dev dependency in your function project:
+
+```bash
+npm install -D functhis
+```
+
+Add a file your `tsconfig.json` already includes (for example `src/functhis.d.ts`):
+
+```ts
+/// <reference types="functhis" />
+```
+
+Then optional runtime imports type-check:
+
+```ts
+import { context, secret } from 'functhis:runtime';
+```
+
+At publish time the CLI externalizes that import; the host injects the real module. The reference file is types only.
+
 ## Commands
 
 ```bash

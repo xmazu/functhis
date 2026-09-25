@@ -19,6 +19,16 @@ if (!result.success) {
   process.exit(1);
 }
 
+const copyTypes = spawnSync(
+  process.execPath,
+  [path.join(packageRoot, 'scripts/copy-author-types.ts')],
+  { cwd: packageRoot, stdio: 'inherit' }
+);
+
+if (copyTypes.status !== 0) {
+  process.exit(copyTypes.status ?? 1);
+}
+
 const assert = spawnSync(
   process.execPath,
   [path.join(packageRoot, 'scripts/assert-publish-bundle.ts')],

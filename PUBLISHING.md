@@ -8,7 +8,7 @@ Maintainer reference for releasing the `functhis` npm CLI. Contributors should u
 
 | Package | Registry | What ships |
 | --- | --- | --- |
-| `functhis` | npmjs (`registry.npmjs.org`, public) | Node ESM CLI binary (`dist/cli.js` only) |
+| `functhis` | npmjs (`registry.npmjs.org`, public) | CLI binary (`dist/cli.js`) and author typings (`dist/index.d.ts` for `functhis:runtime`) |
 
 `@functhis/publish` and other workspace packages stay private; publish protocol code used by the CLI is bundled into `dist/cli.js`.
 

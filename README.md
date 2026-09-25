@@ -107,6 +107,8 @@ bun run dev
 
 Install from npm (`npx functhis`, `bunx functhis`, or `npm i -g functhis`), or from the monorepo after `bun run --filter functhis build`:
 
+For TypeScript when you use `import from 'functhis:runtime'`, add `functhis` as a dev dependency and `/// <reference types="functhis" />` in a `.d.ts` file your tsconfig includes. See [packages/cli/README.md](packages/cli/README.md).
+
 ```bash
 functhis login
 functhis publish
