@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
-import '#/modules/d/load-owner-surface';
-import { authClient } from '#/modules/auth/lib/auth-client';
+import '#/routes/d/-load-surface';
+import { authClient } from '#/lib/auth/auth-client';
 
 export const AuthCanvas = ({ children }: { children: ReactNode }) => {
   const { data: session } = authClient.useSession();

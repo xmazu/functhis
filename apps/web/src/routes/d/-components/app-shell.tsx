@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 
-import '#/modules/d/load-owner-surface';
-import { AppSidebar } from '#/modules/d/components/app-sidebar';
+import { AppSidebar } from '#/routes/d/-components/app-sidebar';
 
 export const AppShell = ({ children }: { children: ReactNode }) => (
   <div className="bg-background flex h-svh min-h-0 flex-col md:flex-row">

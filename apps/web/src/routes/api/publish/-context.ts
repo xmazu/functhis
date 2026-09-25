@@ -1,8 +1,8 @@
 import { validatePublishBearerToken } from '@functhis/auth';
 import type { PublishHandlerContext } from '@functhis/publish/http';
 
-import { env } from '../../env.server';
-import { getDb } from '../../services';
+import { env } from '#/env.server';
+import { getDb } from '#/services';
 
 export const createPublishHandlerContext =
   async (): Promise<PublishHandlerContext> => {

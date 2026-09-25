@@ -1,4 +1,5 @@
-import { buildCatalogLoginUrl } from '../catalog/access';
+import { buildCatalogLoginUrl } from '#/routes/-public-url/-catalog/access';
+
 import { wantsJsonCatalogResponse } from './accept';
 import { catalogSignInHtmlResponse } from './catalog-pages';
 

@@ -2,8 +2,8 @@ import { IconCheck, IconCopy } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
-import { Button } from '#/modules/d/components/ui/button';
-import { cn } from '#/modules/d/lib/utils';
+import { Button } from '#/routes/d/-components/ui/button';
+import { cn } from '#/routes/d/-lib/utils';
 
 const COPY_RESET_MS = 1500;
 

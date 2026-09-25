@@ -1,7 +1,7 @@
 import { Loader2Icon } from 'lucide-react';
 import type React from 'react';
 
-import { cn } from '#/modules/d/lib/utils';
+import { cn } from '#/routes/d/-lib/utils';
 
 export const Spinner = ({
   className,

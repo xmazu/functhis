@@ -6,10 +6,11 @@ import {
 } from '@functhis/publish';
 import { z } from 'zod';
 
-import { env } from '../../env.server';
-import { createAuth, getDb } from '../../services';
-import { resolveCatalogAccess } from '../catalog/access';
-import { executeViaMcp } from '../execute-via-mcp';
+import { env } from '#/env.server';
+import { resolveCatalogAccess } from '#/routes/-public-url/-catalog/access';
+import { executeViaMcp } from '#/routes/-public-url/execute-via-mcp';
+import { createAuth, getDb } from '#/services';
+
 import { wantsJsonCatalogResponse } from './accept';
 import {
   renderFunctionCatalogHtml,

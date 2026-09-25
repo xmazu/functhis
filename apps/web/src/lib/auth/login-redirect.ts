@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 
-import { safeCallbackURL } from '#/modules/auth/lib/safe-callback-url';
+import { safeCallbackURL } from '#/lib/auth/safe-callback-url';
 
 /** Relative path + query for login callbacks (router `location.search` is parsed, not a string). */
 export const callbackURLFromLocation = (location: {

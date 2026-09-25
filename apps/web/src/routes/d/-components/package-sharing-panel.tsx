@@ -5,11 +5,11 @@ import type { ReactElement } from 'react';
 import {
   SectionHeading,
   packageDetailUiClass,
-} from '#/modules/d/components/package-detail-primitives';
-import { Button } from '#/modules/d/components/ui/button';
-import { Input } from '#/modules/d/components/ui/input';
-import { Label } from '#/modules/d/components/ui/label';
-import { updatePackageSharingForSession } from '#/modules/d/server/packages';
+} from '#/routes/d/-components/package-detail-primitives';
+import { Button } from '#/routes/d/-components/ui/button';
+import { Input } from '#/routes/d/-components/ui/input';
+import { Label } from '#/routes/d/-components/ui/label';
+import { updatePackageSharingForSession } from '#/routes/d/-server/packages';
 
 const VISIBILITY_OPTIONS = ['private', 'organization'] as const;
 const VISIBILITY_LABEL: Record<(typeof VISIBILITY_OPTIONS)[number], string> = {

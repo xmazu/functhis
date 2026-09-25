@@ -1,4 +1,4 @@
-import { Skeleton } from '#/modules/d/components/ui/skeleton';
+import { Skeleton } from '#/routes/d/-components/ui/skeleton';
 
 const Loader = () => (
   <div className="flex h-full items-center justify-center p-8">

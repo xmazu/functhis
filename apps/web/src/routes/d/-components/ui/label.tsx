@@ -4,7 +4,7 @@ import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import type React from 'react';
 
-import { cn } from '#/modules/d/lib/utils';
+import { cn } from '#/routes/d/-lib/utils';
 
 export const Label = ({
   className,

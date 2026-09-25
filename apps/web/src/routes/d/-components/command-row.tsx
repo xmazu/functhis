@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 
-import { CopyButton } from '#/modules/d/components/copy-button';
+import { CopyButton } from '#/routes/d/-components/copy-button';
 
 export const CommandRow = ({
   command,

@@ -1,7 +1,7 @@
 import { internalMcpExecuteUrl } from '@functhis/publish';
 import { z } from 'zod';
 
-import { env } from '../env.server';
+import { env } from '#/env.server';
 
 const internalExecuteBodySchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
