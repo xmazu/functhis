@@ -43,19 +43,55 @@ Releases are **manual** via GitHub Actions - not on every push to `main`.
    - `npm publish --access public --provenance` for `functhis`
    - create a GitHub Release with git-cliff release notes
 
-If publish fails **after** the version commit was pushed, re-run with **skip_bump** to retry the same version. The publish step skips if that version is already on npm.
+If publish fails **after** the version commit was pushed, re-run with **skip_bump** to retry the same version. The publish step skips if that version is already on npm. The GitHub Release step updates an existing release if the tag is already published.
+
+If npm has a version that never landed in git (for example a run that published then failed before commit), sync `packages/cli/package.json` and `CHANGELOG.md` to that version on `main`, commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push, then run **Release** with **skip_bump** to publish whatever is still missing.
+
+When git-cliff reports no unreleased commits, the workflow still increments semver for the chosen bump so you do not republish an existing version.
 
 Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
-### GitHub secret
+### GitHub Actions setup
 
-Add repository secret **`NPM_TOKEN`** with publish access to the unscoped `functhis` package on npm.
+1. [Create an npm access token](https://www.npmjs.com/settings/~tokens) (classic **Automation** or granular **Publish** for the `functhis` package).
+2. In this GitHub repo: **Settings → Secrets and variables → Actions → New repository secret** → name **`NPM_TOKEN`**, paste the token.
+3. On npm, link the package to this repo if you use [provenance](https://docs.npmjs.com/generating-provenance-statements) (`npm publish --provenance` in the workflow).
+4. **Actions → Release → Run workflow** on `main` (or `gh workflow run release.yml -f bump=patch`).
+
+`main` branch protection must allow `github-actions[bot]` to push release commits and tags (or use a bypass for that actor).
 
 ### Verify before release
 
 ```bash
 bun run --filter functhis build
 bun run check && bun run check-types
-bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/web/src/lib/auth
+bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/console/src/lib
 bun run --filter functhis pack-smoke
 ```
+
+### Local publish (first version from your machine)
+
+Use this when the package is not on npm yet, or you are intentionally publishing outside the Release workflow. The name **`functhis`** is currently unused on the public registry; you need an npm account with permission to create it.
+
+1. Log in once: `npm login` (or set `NPM_TOKEN` in the environment for a granular/automation token).
+2. From the repo root, run the verify block above.
+3. Prepare the publish manifest (strips bundled workspace deps, resolves `catalog:`), publish, then restore `package.json`:
+
+```bash
+cd /path/to/functhis
+bun packages/cli/scripts/prepare-npm-manifest.ts
+npm publish --access public ./packages/cli
+git checkout -- packages/cli/package.json
+```
+
+`prepack` runs `build` automatically. Omit `--provenance` locally unless you have npm trusted publishing set up for your user; GitHub Actions can attach provenance on later releases.
+
+4. Optional but recommended: tag the release in git so the Actions workflow stays aligned:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+gh release create v0.1.0 --title v0.1.0 --notes-file CHANGELOG.md
+```
+
+If you publish locally first, later **Release** runs should use **skip_bump** until you bump `packages/cli/package.json` on `main`, or let the workflow bump from the `v0.1.0` tag.

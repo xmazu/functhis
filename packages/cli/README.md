@@ -29,6 +29,10 @@ Override with `--url` or `FUNCTHIS_URL` (local: `http://localhost:3001`).
 
 After `functhis login`, tokens are stored in `~/.config/functhis/config.json`.
 
+## Publishing (maintainers)
+
+Releases are cut from GitHub Actions on `openenvx/functhis` — see [PUBLISHING.md](https://github.com/openenvx/functhis/blob/main/PUBLISHING.md) in the monorepo root.
+
 ## Monorepo development
 
 From the [functhis](https://github.com/openenvx/functhis) repository:

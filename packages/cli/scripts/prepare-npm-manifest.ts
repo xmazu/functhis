@@ -17,17 +17,28 @@ export const prepareNpmManifest = async (): Promise<{
     dependencies?: Record<string, string>;
   };
 
+  const bundledWorkspaceDeps = new Set([
+    '@functhis/publish',
+    '@functhis/runtime',
+  ]);
+
   if (pkg.dependencies) {
-    delete pkg.dependencies['@functhis/publish'];
+    const next: Record<string, string> = {};
     for (const [name, version] of Object.entries(pkg.dependencies)) {
+      if (bundledWorkspaceDeps.has(name)) {
+        continue;
+      }
       if (version === 'catalog:') {
         const resolved = catalog[name];
         if (!resolved) {
           throw new Error(`Missing catalog entry for dependency "${name}"`);
         }
-        pkg.dependencies[name] = resolved;
+        next[name] = resolved;
+        continue;
       }
+      next[name] = version;
     }
+    pkg.dependencies = next;
   }
 
   await writeFile(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);

@@ -1,3 +1,4 @@
+# Manual npm release for the `functhis` CLI — see PUBLISHING.md (NPM_TOKEN + maintainer steps).
 name: Release
 
 on:
@@ -177,5 +178,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
           bunx git-cliff --latest --strip header > release-notes.md
-          gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub release $TAG already exists; updating notes"
+            gh release edit "$TAG" --title "$TAG" --notes-file release-notes.md
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md
+          fi

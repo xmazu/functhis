@@ -126,6 +126,8 @@ bun run example:hello:deploy
 
 `functhis publish` builds a self-contained artifact locally, stores it on R2 (canonical) and KV (hot path), records an immutable semver, and prints live `@scope/package/function` URLs and MCP ids (packages default to **private** unless you set `--visibility`).
 
+**Maintainers — ship the npm CLI:** manual workflow [Release](.github/workflows/release.yml) (`workflow_dispatch` on `main`). Add repository secret **`NPM_TOKEN`** (npm publish access for `functhis`). Steps, retries, and provenance: [PUBLISHING.md](PUBLISHING.md).
+
 Web only:
 
 ```bash
