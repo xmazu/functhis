@@ -1,6 +1,6 @@
 {
   "name": "functhis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Publish TypeScript functions to Functhis",
   "license": "MIT",
   "repository": {
