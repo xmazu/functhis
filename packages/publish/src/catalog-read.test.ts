@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import {
-  canViewCatalogPage,
-  canViewCatalogWithoutAuth,
-  canViewPackage,
-} from './catalog-read';
+import { canViewPackage } from './catalog-read';
 
 const noViewer = { organizationIds: [] as string[], userId: null };
 
@@ -46,55 +42,5 @@ describe('canViewPackage', () => {
         { organizationIds: [], userId: 'owner-1' }
       )
     ).toBe(true);
-  });
-});
-
-describe('canViewCatalogPage', () => {
-  test('requires auth for private pages without a viewer', () => {
-    expect(
-      canViewCatalogPage(
-        {
-          organizationId: null,
-          ownerUserId: 'owner-1',
-          visibility: 'private',
-        },
-        noViewer
-      )
-    ).toBe(false);
-  });
-
-  test('allows private pages for the owner', () => {
-    expect(
-      canViewCatalogPage(
-        {
-          organizationId: null,
-          ownerUserId: 'owner-1',
-          visibility: 'private',
-        },
-        { organizationIds: [], userId: 'owner-1' }
-      )
-    ).toBe(true);
-  });
-});
-
-describe('canViewCatalogWithoutAuth', () => {
-  test('denies library visibility without a session', () => {
-    expect(
-      canViewCatalogWithoutAuth({
-        organizationId: null,
-        ownerUserId: 'owner-1',
-        visibility: 'library',
-      })
-    ).toBe(false);
-  });
-
-  test('denies private packages without a session', () => {
-    expect(
-      canViewCatalogWithoutAuth({
-        organizationId: null,
-        ownerUserId: 'owner-1',
-        visibility: 'private',
-      })
-    ).toBe(false);
   });
 });

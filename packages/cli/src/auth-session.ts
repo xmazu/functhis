@@ -1,6 +1,6 @@
 import { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
 
-import { loadConfig, resolveConsoleUrl, saveConfig } from './config';
+import { loadConfig, resolveUrl, saveConfig } from './config';
 import type { CliConfig } from './config';
 
 const TOKEN_REFRESH_SKEW_MS = 60_000;
@@ -23,8 +23,8 @@ const refreshAccessToken = async (config: CliConfig): Promise<CliConfig> => {
     throw new Error('Access token expired. Run: functhis login');
   }
 
-  const consoleUrl = resolveConsoleUrl(config);
-  const tokenResponse = await fetch(`${consoleUrl}/oauth2/token`, {
+  const url = resolveUrl(config);
+  const tokenResponse = await fetch(`${url}/oauth2/token`, {
     body: new URLSearchParams({
       client_id: CLI_CLIENT_ID,
       grant_type: 'refresh_token',

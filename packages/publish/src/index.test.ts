@@ -1,23 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 
-import {
-  CLI_CLIENT_ID,
-  internalMcpExecuteUrl,
-  publicFunctionPath,
-  publicPackagePath,
-} from './index';
+import { CLI_CLIENT_ID, formatFunctionId } from './index';
 
 describe('package exports', () => {
-  test('exposes oauth, public paths, and internal execute helpers', () => {
+  test('exposes oauth and function id helpers', () => {
     expect(CLI_CLIENT_ID).toBe('functhis-cli');
-    expect(publicPackagePath({ handle: 'a', packageSlug: 'b' })).toBe('/@a/b');
     expect(
-      publicFunctionPath({
+      formatFunctionId({
         functionSlug: 'c',
         handle: 'a',
         packageSlug: 'b',
       })
-    ).toBe('/@a/b/c');
-    expect(internalMcpExecuteUrl).toContain('/internal/execute');
+    ).toBe('@a/b/c');
   });
 });

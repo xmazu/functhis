@@ -1,3 +1,6 @@
+// Web session app. Imports Better Auth's TanStack Start cookie plugin.
+// Wrangler cannot bundle that plugin, so workers use a subpath export
+// (`@functhis/auth/publish-token`, `@functhis/auth/seed-cli-client`).
 import { cimd } from '@better-auth/cimd';
 import { mcp } from '@better-auth/mcp';
 import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
@@ -14,28 +17,6 @@ import { fetchClientMetadataResource } from './cimd-fetch';
 import {
   allocateUniqueHandle,
   normalizeHandleCandidate,
-  userHandleExists,
-} from './handle';
-
-export {
-  PUBLISH_API_RESOURCE,
-  parseBearerToken,
-  validatePublishBearerToken,
-  type PublishAuthResult,
-  type PublishAuthOptions,
-} from './publish-token';
-export {
-  resolveCallerUserId,
-  resolveSessionUserId,
-  type CallerAuthResult,
-} from './caller-auth';
-export { validateMcpBearerToken } from './publish-token';
-export { ensureCliOAuthClient } from './seed-cli-client';
-export {
-  allocateUniqueHandle,
-  isValidHandle,
-  normalizeHandleCandidate,
-  scopeHandleExists,
   userHandleExists,
 } from './handle';
 

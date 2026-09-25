@@ -61,18 +61,6 @@ export const canViewPackage = (
   context: PackageAccessContext
 ): boolean => canAccessPackage(packageRow, context);
 
-/** GET pages: requires a signed-in viewer with package ACL. */
-export const canViewCatalogPage = (
-  packageRow: PackageAccessRow,
-  context: PackageAccessContext
-): boolean => canAccessPackage(packageRow, context);
-
-/** @deprecated Anonymous catalog access is not supported. */
-export const canViewCatalogWithoutAuth = (
-  packageRow: PackageAccessRow
-): boolean =>
-  canViewCatalogPage(packageRow, { organizationIds: [], userId: null });
-
 export interface PackageListRow {
   functionCount: number;
   handle: string;

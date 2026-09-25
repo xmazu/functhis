@@ -7,10 +7,10 @@ locals {
     "^postgres(?:ql)?://([^:]+):([^@]+)@([^:/]+)(?::(\\d+))?/([^?]+)",
     var.neon_direct_url
   )
-  neon_user     = urldecode(local.neon_url_match[0])
-  neon_password = urldecode(local.neon_url_match[1])
+  neon_user     = local.neon_url_match[0]
+  neon_password = local.neon_url_match[1]
   neon_host     = local.neon_url_match[2]
-  neon_port     = local.neon_url_match[3] != "" ? tonumber(local.neon_url_match[3]) : 5432
+  neon_port     = tonumber(coalesce(local.neon_url_match[3], "5432"))
   neon_database = local.neon_url_match[4]
 
   neon_sslmode = can(regex("[?&]sslmode=([^&]+)", var.neon_direct_url)) ? regex("[?&]sslmode=([^&]+)", var.neon_direct_url)[0] : var.neon_sslmode
@@ -24,25 +24,18 @@ locals {
     user     = local.neon_user
   }
 
-  hostnames = var.env == "production" ? {
+  hostnames = {
     web = "functhis.now"
-    mcp   = "mcp.functhis.now"
-    } : {
-    web = "preview.functhis.now"
-    mcp   = "mcp.preview.functhis.now"
+    mcp = "mcp.functhis.now"
   }
 
-  worker_names = var.env == "production" ? {
+  worker_names = {
     web = "functhis-web"
-    mcp   = "functhis-mcp"
-    } : {
-    web = "functhis-web-preview"
-    mcp   = "functhis-mcp-preview"
+    mcp = "functhis-mcp"
   }
 
-  analytics_execution_dataset = var.env == "production" ? "functhis_executions" : "functhis_executions_preview"
-
-  artifacts_namespace = var.env == "production" ? "functhis-production" : "functhis-preview"
+  analytics_execution_dataset = "functhis_executions"
+  artifacts_namespace         = "functhis-production"
 
   custom_domains = {
     web = {

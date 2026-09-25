@@ -43,14 +43,14 @@ Do **not** pass `--project-root examples/monorepo` (workspace root); discovery w
 
 ## Publish to local stack
 
-1. Repo root: `bun run dev` (web 3001, console 3002, MCP 3003).
-2. Log in against local console:
+1. Repo root: `bun run dev` (web 3001, MCP 3003).
+2. Log in against the local site:
 
    ```bash
-   functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+   functhis login --url http://localhost:3001
    ```
 
-   Or: `bun run --filter functhis dev -- login --console-url http://localhost:3002 --web-url http://localhost:3001`
+   Or: `bun packages/cli/src/cli.ts login --url http://localhost:3001`
 
 3. Publish:
 

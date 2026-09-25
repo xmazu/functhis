@@ -15,9 +15,9 @@ import { parsePublishVisibility } from './publish-sharing';
 const usage = `functhis - publish TypeScript functions
 
 Usage:
-  functhis login [--console-url URL] [--web-url URL]
-  functhis publish [--slug NAME] [--scope HANDLE] [--major|--minor|--patch] [--visibility private|library] [--web-url URL] [--project-root PATH]
-  functhis rollback VERSION [--slug NAME] [--scope HANDLE] [--web-url URL] [--project-root PATH]
+  functhis login [--url URL]
+  functhis publish [--slug NAME] [--scope HANDLE] [--major|--minor|--patch] [--visibility private|library] [--url URL] [--project-root PATH]
+  functhis rollback VERSION [--slug NAME] [--scope HANDLE] [--url URL] [--project-root PATH]
   functhis run|dev [--slug FUNCTION] [--input JSON] [--secret NAME=value] [--project-root PATH]
 `;
 
@@ -41,6 +41,16 @@ const parseBump = (rest: string[]): VersionBump | undefined => {
   return undefined;
 };
 
+const parseAppUrl = (rest: string[]): string | undefined => {
+  if (
+    parseFlag(rest, '--web-url') !== undefined ||
+    parseFlag(rest, '--console-url') !== undefined
+  ) {
+    throw new Error('Use --url. --web-url and --console-url were removed.');
+  }
+  return parseFlag(rest, '--url');
+};
+
 const runLocal = async (rest: string[]): Promise<void> => {
   const inputRaw = parseFlag(rest, '--input');
   const parsedInput = parseJsonInput(inputRaw);
@@ -61,8 +71,8 @@ const publishOptions = (rest: string[]) => ({
   projectRoot: parseFlag(rest, '--project-root'),
   scope: parseFlag(rest, '--scope'),
   slug: parseFlag(rest, '--slug'),
+  url: parseAppUrl(rest),
   visibility: parsePublishVisibility(parseFlag(rest, '--visibility')),
-  webUrl: parseFlag(rest, '--web-url'),
 });
 
 const main = async (): Promise<void> => {
@@ -72,8 +82,7 @@ const main = async (): Promise<void> => {
   switch (command) {
     case 'login': {
       await runLogin({
-        consoleUrl: parseFlag(rest, '--console-url'),
-        webUrl: parseFlag(rest, '--web-url'),
+        url: parseAppUrl(rest),
       });
       return;
     }
@@ -91,7 +100,7 @@ const main = async (): Promise<void> => {
         scope: parseFlag(rest, '--scope') ?? parseFlag(rest, '--organization'),
         semver,
         slug: parseFlag(rest, '--slug'),
-        webUrl: parseFlag(rest, '--web-url'),
+        url: parseAppUrl(rest),
       });
       return;
     }

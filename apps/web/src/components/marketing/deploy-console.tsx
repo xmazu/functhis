@@ -13,7 +13,6 @@ const DISCOVERED = [
 
 const HANDLE = 'xmazu';
 const PACKAGE_SLUG = 'openenvx-tools';
-const WEB_ORIGIN = 'https://functhis.now';
 const PROJECT_DIR = '~/projects/openenvx-tools';
 const COMMAND = 'npx functhis publish';
 
@@ -24,9 +23,7 @@ const AFTER_COMMAND_MS = 250;
 const TRAILING_MS = 400;
 const DEFAULT_LINE_DELAY_MS = 100;
 
-const packageUrl = `${WEB_ORIGIN}/@${HANDLE}/${PACKAGE_SLUG}`;
 const [, primaryFunction] = DISCOVERED;
-const functionUrl = `${WEB_ORIGIN}/@${HANDLE}/${PACKAGE_SLUG}/${primaryFunction.slug}`;
 const mcpId = `@${HANDLE}/${PACKAGE_SLUG}/${primaryFunction.slug}`;
 
 interface OutputLine {
@@ -68,33 +65,11 @@ const OUTPUT_LINES: OutputLine[] = [
   {
     className: 'text-zinc-500',
     delay: 140,
-    key: 'package-url',
-    render: () => (
-      <>
-        {'  '}
-        {packageUrl}
-      </>
-    ),
-  },
-  {
-    className: 'text-zinc-500',
-    delay: 120,
-    key: 'function-url',
-    render: () => (
-      <>
-        {'  '}
-        {functionUrl}
-      </>
-    ),
-  },
-  {
-    className: 'text-zinc-500',
-    delay: 120,
     key: 'mcp',
     render: () => (
       <>
-        {'  MCP: '}
-        <span className="text-[#a1a1aa]">{mcpId}</span>
+        {'  '}
+        {mcpId}
       </>
     ),
   },

@@ -5,15 +5,11 @@
   "scripts": {
     "check-types": "echo 'no types'",
     "db:migrate:local": "bun run --filter @functhis/db db:migrate:deploy",
-    "deploy:mcp:preview": "wrangler deploy --env preview -c ../../apps/mcp/wrangler.jsonc",
     "deploy:mcp:production": "wrangler deploy --env production -c ../../apps/mcp/wrangler.jsonc",
-    "deploy:web:preview": "bun run --filter web deploy:preview",
     "deploy:web:production": "bun run --filter web deploy:production",
-    "deploy:preview": "bun run deploy:mcp:preview && bun run deploy:web:preview",
     "deploy:production": "bun run deploy:mcp:production && bun run deploy:web:production",
     "dev:workers": "wrangler dev -c ../../apps/mcp/wrangler.jsonc -c ../../apps/web/wrangler.jsonc",
-    "tf:preview": "terraform apply -var-file=preview.tfvars",
-    "tf:production": "terraform apply -var-file=production.tfvars",
+    "tf:production": "terraform init -reconfigure -backend-config=path=production.tfstate && terraform apply -var-file=production.tfvars",
     "tf:validate": "terraform validate"
   },
   "devDependencies": {

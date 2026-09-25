@@ -4,8 +4,7 @@ import {
   CLI_CLIENT_ID,
   PUBLISH_API_RESOURCE,
   loadConfig,
-  resolveConsoleUrl,
-  resolveWebUrl,
+  resolveUrl,
   saveConfig,
 } from './config';
 import type { CliConfig } from './config';
@@ -28,15 +27,11 @@ interface TokenResponse {
   refresh_token?: string;
 }
 
-export const runLogin = async (options?: {
-  consoleUrl?: string;
-  webUrl?: string;
-}): Promise<void> => {
+export const runLogin = async (options?: { url?: string }): Promise<void> => {
   const existing = await loadConfig();
-  const consoleUrl = resolveConsoleUrl(existing, options?.consoleUrl);
-  const webUrl = resolveWebUrl(existing, options?.webUrl);
+  const url = resolveUrl(existing, options?.url);
 
-  const deviceResponse = await fetch(`${consoleUrl}/api/auth/device/code`, {
+  const deviceResponse = await fetch(`${url}/api/auth/device/code`, {
     body: new URLSearchParams({
       client_id: CLI_CLIENT_ID,
       resource: PUBLISH_API_RESOURCE,
@@ -52,7 +47,7 @@ export const runLogin = async (options?: {
   const device = (await deviceResponse.json()) as DeviceCodeResponse;
   const verifyUrl =
     device.verification_uri_complete ??
-    `${consoleUrl}/device?user_code=${encodeURIComponent(device.user_code)}`;
+    `${url}/device?user_code=${encodeURIComponent(device.user_code)}`;
 
   console.log(`Open ${verifyUrl} and approve code ${device.user_code}`);
   openUrl(verifyUrl);
@@ -66,7 +61,7 @@ export const runLogin = async (options?: {
     }
 
     await sleepMs(intervalMs);
-    const tokenResponse = await fetch(`${consoleUrl}/oauth2/token`, {
+    const tokenResponse = await fetch(`${url}/oauth2/token`, {
       body: new URLSearchParams({
         client_id: CLI_CLIENT_ID,
         device_code: device.device_code,
@@ -104,9 +99,8 @@ export const runLogin = async (options?: {
   const token = await pollForToken();
   const config: CliConfig = {
     accessToken: token.access_token,
-    consoleUrl,
     refreshToken: token.refresh_token,
-    webUrl,
+    url,
     ...(token.expires_in
       ? {
           expiresAt: new Date(

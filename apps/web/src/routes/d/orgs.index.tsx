@@ -1,15 +1,16 @@
 import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
+import { listOrganizationsForSession } from '#/routes/d/-server/organizations';
 
 const OrganizationsPage = () => {
-  const { data: organizations } = authClient.useListOrganizations();
-  const { data: activeOrganization } = authClient.useActiveOrganization();
+  const router = useRouter();
+  const { activeOrganizationId, organizations } = Route.useLoaderData();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ const OrganizationsPage = () => {
       }
       setName('');
       setSlug('');
-      await authClient.organization.list();
+      await router.invalidate();
     } catch {
       setError('Failed to create organization');
     }
@@ -91,13 +92,13 @@ const OrganizationsPage = () => {
           <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
             Your organizations
           </h2>
-          {(organizations ?? []).length === 0 ? (
+          {organizations.length === 0 ? (
             <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
               No organizations yet.
             </p>
           ) : (
             <ul className="flex flex-col gap-1">
-              {(organizations ?? []).map((org) => (
+              {organizations.map((org) => (
                 <li
                   className="flex items-center gap-2 text-[length:var(--app-font-size-ui,12px)]"
                   key={org.id}
@@ -112,14 +113,15 @@ const OrganizationsPage = () => {
                   <span className="text-muted-foreground font-mono">
                     {org.slug}
                   </span>
-                  {activeOrganization?.id === org.id ? (
+                  {activeOrganizationId === org.id ? (
                     <span className="text-muted-foreground">· active</span>
                   ) : (
                     <Button
-                      onClick={() => {
-                        void authClient.organization.setActive({
+                      onClick={async () => {
+                        await authClient.organization.setActive({
                           organizationId: org.id,
                         });
+                        await router.invalidate();
                       }}
                       size="sm"
                       variant="ghost"
@@ -139,4 +141,5 @@ const OrganizationsPage = () => {
 
 export const Route = createFileRoute('/d/orgs/')({
   component: OrganizationsPage,
+  loader: () => listOrganizationsForSession(),
 });

@@ -1,5 +1,4 @@
 import './ensure-zod-init';
-import { handleInternalExecute } from './internal-execute';
 import { handleProtectedMcpPost } from './mcp-route';
 import { oauthProtectedResourceMetadata } from './prm';
 
@@ -33,19 +32,6 @@ export default {
       }
 
       return handleProtectedMcpPost(request, env);
-    }
-
-    if (url.pathname === '/internal/execute') {
-      if (request.method !== 'POST') {
-        return Promise.resolve(
-          new Response('Method Not Allowed', {
-            headers: { Allow: 'POST' },
-            status: 405,
-          })
-        );
-      }
-
-      return handleInternalExecute(request, env);
     }
 
     return Promise.resolve(new Response('Not Found', { status: 404 }));

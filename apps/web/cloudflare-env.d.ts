@@ -7,8 +7,6 @@ interface CloudflareEnv {
   GITHUB_CLIENT_SECRET: string;
   HOT: KVNamespace;
   HYPERDRIVE: Hyperdrive;
-  INTERNAL_EXECUTE_TOKEN: string;
-  MCP: Fetcher;
   MCP_RESOURCE: string;
   NODE_ENV: string;
   TRUSTED_ORIGINS: string;

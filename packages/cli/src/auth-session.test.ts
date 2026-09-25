@@ -23,9 +23,8 @@ describe('ensureValidAccessToken', () => {
   test('returns config unchanged when expiry is in the future', async () => {
     const config: CliConfig = {
       accessToken: 'token',
-      consoleUrl: 'https://functhis.now',
       expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-      webUrl: 'https://functhis.now',
+      url: 'https://functhis.now',
     };
     await expect(ensureValidAccessToken(config)).resolves.toBe(config);
   });
@@ -33,8 +32,7 @@ describe('ensureValidAccessToken', () => {
   test('returns config when expiresAt is omitted', async () => {
     const config: CliConfig = {
       accessToken: 'token',
-      consoleUrl: 'https://functhis.now',
-      webUrl: 'https://functhis.now',
+      url: 'https://functhis.now',
     };
     await expect(ensureValidAccessToken(config)).resolves.toBe(config);
   });
@@ -42,9 +40,8 @@ describe('ensureValidAccessToken', () => {
   test('requires a refresh token when the access token is expired', async () => {
     const config: CliConfig = {
       accessToken: 'stale-token',
-      consoleUrl: 'http://localhost:3001',
       expiresAt: new Date(Date.now() - 60_000).toISOString(),
-      webUrl: 'http://localhost:3001',
+      url: 'http://localhost:3001',
     };
     await expect(ensureValidAccessToken(config)).rejects.toThrow(
       /functhis login/u
@@ -60,10 +57,9 @@ describe('ensureValidAccessToken', () => {
 
     const config: CliConfig = {
       accessToken: 'stale-token',
-      consoleUrl: 'http://localhost:3001',
       expiresAt: new Date(Date.now() - 60_000).toISOString(),
       refreshToken: 'refresh-me',
-      webUrl: 'http://localhost:3001',
+      url: 'http://localhost:3001',
     };
 
     try {
@@ -94,10 +90,9 @@ describe('ensureValidAccessToken', () => {
 
     const config: CliConfig = {
       accessToken: 'stale-token',
-      consoleUrl: 'http://localhost:3001',
       expiresAt: new Date(Date.now() - 60_000).toISOString(),
       refreshToken: 'refresh-me',
-      webUrl: 'http://localhost:3001',
+      url: 'http://localhost:3001',
     };
 
     try {

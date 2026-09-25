@@ -4,10 +4,10 @@ Minimal package for local CLI smoke tests. One handler (`hello.ts` at the projec
 
 ## Prerequisites
 
-Repo root: `bun run dev`. For deploy, log in against local console:
+Repo root: `bun run dev`. For deploy, log in against the local site:
 
 ```bash
-functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+functhis login --url http://localhost:3001
 ```
 
 See [README.md](../../README.md).
@@ -19,11 +19,11 @@ bun run example:hello:dev
 bun run example:hello:deploy
 ```
 
-Or from this directory (pass `--project-root` when using `bun run --filter functhis` from the monorepo root):
+Or invoke the CLI from repo root:
 
 ```bash
-bun run --filter functhis dev -- run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
-bun run --filter functhis dev -- deploy --slug hello-world --project-root examples/hello-world --console-url http://localhost:3002 --web-url http://localhost:3001
+bun packages/cli/src/cli.ts run --slug hello --input '{"name":"Ada"}' --project-root examples/hello-world
+bun packages/cli/src/cli.ts publish --slug hello-world --project-root examples/hello-world --url http://localhost:3001
 ```
 
 ## Local run (no Cloudflare)
@@ -46,12 +46,12 @@ Deploy hashes the source tree, uploads the compiled bundle to KV, and records a 
 bun run example:hello:deploy
 ```
 
-The CLI prints package and function URLs on `https://functhis.now` (or your `--web-url`).
+The CLI prints MCP ids (`@handle/package/function`).
 
 ## Execute (hosted)
 
 After deploy:
 
 - **HTTP:** open the printed URL or `POST` `/@owner/hello-world/hello` on web
-- **MCP (local):** `bun run dev` includes `functhis-mcp` on `http://localhost:3003/mcp`. Connect MCP Inspector, complete OAuth against console (`http://localhost:3002`), then `search` (try query `greet` or `hello`) and `execute` with the returned `@handle/hello-world/hello` id
+- **MCP (local):** `bun run dev` includes `functhis-mcp` on `http://localhost:3003/mcp`. Connect MCP Inspector, complete OAuth against the site (`http://localhost:3001`), then `search` (try query `greet` or `hello`) and `execute` with the returned `@handle/hello-world/hello` id
 - **MCP (production):** `https://mcp.functhis.now/mcp`

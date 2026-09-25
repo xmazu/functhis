@@ -17,7 +17,7 @@ import {
 import type { Token } from '#/components/marketing/agent-run-data';
 
 const HEADING_ID = 'loop-heading';
-const WITH_URL = 'functhis.now/@acme/billing/send-reminder';
+const WITH_ID = '@acme/billing/send-reminder';
 
 const RUN_METHODS = [
   {
@@ -27,9 +27,9 @@ const RUN_METHODS = [
     title: 'From an agent',
   },
   {
-    detail: 'Call your function’s URL',
+    detail: 'Call a public function URL',
     icon: Globe,
-    soon: false,
+    soon: true,
     title: 'Over HTTP',
   },
   {
@@ -212,7 +212,7 @@ const WithPanel = () => (
         <span>functhis publish</span>
       </div>
       <div className="flex flex-col gap-1 border-t border-zinc-800 px-4 py-3 font-mono text-[12px] leading-6">
-        <p className="break-all text-zinc-300">{WITH_URL}</p>
+        <p className="break-all text-zinc-300">{WITH_ID}</p>
       </div>
       <div className="border-t border-zinc-800 bg-zinc-950/40 px-4 py-5 sm:px-5">
         <h4 className="text-sm font-medium text-zinc-200">

@@ -1,5 +1,5 @@
 {
-  "id": "48a84d79-301b-41a5-8453-9ebb822a7e42",
+  "id": "dcaeda74-3a74-414b-a56e-daa0d2f65358",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2074,6 +2074,12 @@
       "name": "package_version",
       "schema": "",
       "columns": {
+        "artifact_key": {
+          "name": "artifact_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "bundle_hash": {
           "name": "bundle_hash",
           "type": "text",
@@ -2099,6 +2105,19 @@
           "primaryKey": false,
           "notNull": true
         },
+        "git_dirty": {
+          "name": "git_dirty",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "git_sha": {
+          "name": "git_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "id": {
           "name": "id",
           "type": "text",
@@ -2108,6 +2127,18 @@
         },
         "package_id": {
           "name": "package_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "runtime_version": {
+          "name": "runtime_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "semver": {
+          "name": "semver",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -2131,6 +2162,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "package_version_package_id_semver_uidx": {
+          "name": "package_version_package_id_semver_uidx",
+          "columns": [
+            {
+              "expression": "package_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "semver",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2198,6 +2250,14 @@
           "primaryKey": false,
           "notNull": true
         },
+        "scope_kind": {
+          "name": "scope_kind",
+          "type": "package_scope_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
         "slug": {
           "name": "slug",
           "type": "text",
@@ -2221,8 +2281,8 @@
         }
       },
       "indexes": {
-        "package_owner_user_id_slug_uidx": {
-          "name": "package_owner_user_id_slug_uidx",
+        "package_user_scope_slug_uidx": {
+          "name": "package_user_scope_slug_uidx",
           "columns": [
             {
               "expression": "owner_user_id",
@@ -2238,6 +2298,29 @@
             }
           ],
           "isUnique": true,
+          "where": "\"package\".\"scope_kind\" = 'user'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "package_org_scope_slug_uidx": {
+          "name": "package_org_scope_slug_uidx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"package\".\"scope_kind\" = 'organization'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2341,6 +2424,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "search_text": {
+          "name": "search_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "slug": {
           "name": "slug",
           "type": "text",
@@ -2412,6 +2501,11 @@
     }
   },
   "enums": {
+    "public.package_scope_kind": {
+      "name": "package_scope_kind",
+      "schema": "public",
+      "values": ["user", "organization"]
+    },
     "public.package_visibility": {
       "name": "package_visibility",
       "schema": "public",

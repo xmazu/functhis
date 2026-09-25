@@ -1,4 +1,4 @@
-import { validatePublishBearerToken } from '@functhis/auth';
+import { validatePublishBearerToken } from '@functhis/auth/publish-token';
 import type { PublishHandlerContext } from '@functhis/publish/http';
 
 import { env } from '#/env.server';

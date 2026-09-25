@@ -1,4 +1,5 @@
-export { publicFunctionPath, publicPackagePath } from './public-paths';
+// Vite and Bun may import this barrel. Wrangler workers import the subpath
+// for the module they need (`@functhis/publish/quotas`, and so on).
 export {
   bundleKvKey,
   hashSourceTree,
@@ -101,7 +102,6 @@ export {
 } from './search-lexical';
 export {
   CLI_CLIENT_ID,
-  CONSOLE_ORIGIN_PRODUCTION,
   PUBLISH_API_RESOURCE,
   MCP_RESOURCE_PRODUCTION,
 } from './oauth';
@@ -119,10 +119,6 @@ export {
   versionBumpSchema,
   workerLoaderBundleSchema,
 } from './schemas';
-export {
-  INTERNAL_MCP_EXECUTE_HOST,
-  internalMcpExecuteUrl,
-} from './internal-mcp-execute';
 export type {
   PublishFinalizeBody,
   PublishFinalizeResponse,
@@ -154,8 +150,6 @@ export {
   type PackageAccessRow,
 } from './catalog-access';
 export {
-  canViewCatalogPage,
-  canViewCatalogWithoutAuth,
   canViewPackage,
   getFunctionBySlugs,
   getPackageBySlugs,

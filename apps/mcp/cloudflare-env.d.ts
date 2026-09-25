@@ -6,7 +6,6 @@ interface CloudflareEnv {
   CONSOLE_URL: string;
   HOT: KVNamespace;
   HYPERDRIVE: Hyperdrive;
-  INTERNAL_EXECUTE_TOKEN: string;
   LOADER: WorkerLoader;
   MCP_RESOURCE: string;
 }

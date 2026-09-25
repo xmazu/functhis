@@ -65,7 +65,6 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       isOwner,
       mcpResource: env.MCP_RESOURCE,
       organizationSlug,
-      webOrigin: env.BETTER_AUTH_URL,
     });
   });
 

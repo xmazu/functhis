@@ -85,16 +85,6 @@ const PackageDetailPage = (): ReactElement => {
                 {VISIBILITY_LABEL[detail.visibility]}
               </span>
             </li>
-            <li>
-              <a
-                className="font-mono underline-offset-2 hover:underline"
-                href={detail.packageUrl}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Public URL
-              </a>
-            </li>
           </ul>
           <dl className="mt-4 grid grid-cols-2 gap-3 border-y py-4 sm:grid-cols-3 sm:gap-4">
             <MetaItem label="Functions">{detail.functions.length}</MetaItem>
@@ -114,21 +104,16 @@ const PackageDetailPage = (): ReactElement => {
             className={`${ui} border-border overflow-hidden rounded-lg border`}
           >
             <div className="space-y-1 overflow-x-auto px-3 py-3">
-              <CommandRow
-                command={`curl '${detail.packageUrl}'`}
-                label="Copy inspect command"
-              />
               {firstFunction ? (
-                <>
-                  <p className="text-muted-foreground pt-1 font-mono select-none">
-                    # Call
-                  </p>
-                  <CommandRow
-                    command={firstFunction.httpSnippet}
-                    label="Copy call command"
-                  />
-                </>
-              ) : null}
+                <CommandRow
+                  command={firstFunction.id}
+                  label="Copy function id"
+                />
+              ) : (
+                <p className={`${ui} text-muted-foreground`}>
+                  Publish a function to get an MCP id.
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -160,13 +145,7 @@ const PackageDetailPage = (): ReactElement => {
                         {fn.description}
                       </p>
                     ) : null}
-                    <div className={`${ui} mt-2`}>
-                      <CommandRow
-                        command={fn.httpSnippet}
-                        label={`Copy ${fn.slug} call command`}
-                      />
-                    </div>
-                    <div className="mt-1 flex items-start gap-2">
+                    <div className="mt-2 flex items-start gap-2">
                       <pre
                         className={`${ui} text-muted-foreground min-w-0 flex-1 overflow-x-auto font-mono`}
                       >

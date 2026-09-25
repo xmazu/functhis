@@ -13,10 +13,6 @@ export type PublishAuthResult =
 export interface PublishAuthOptions {
   /** OAuth issuer origin, e.g. `https://functhis.now`. */
   consoleUrl: string;
-  /** When the issuer runs in-process (same Worker), avoid cross-fetch for cookies. */
-  resolveSessionUserId?: (request: Request) => Promise<string | null>;
-  /** MCP resource URL for agent JWTs on execute paths. */
-  mcpResource?: string;
 }
 
 const unauthorized = (): PublishAuthResult => ({
@@ -136,26 +132,6 @@ const validatePublishJwtAccessToken = (
     audience: PUBLISH_API_RESOURCE,
     clientId: CLI_CLIENT_ID,
   });
-
-export const validateMcpBearerToken = async (
-  request: Request,
-  options: PublishAuthOptions & { mcpResource: string }
-): Promise<PublishAuthResult> => {
-  const token = parseBearerToken(request);
-  if (!token) {
-    return unauthorized();
-  }
-
-  const jwtResult = await validateJwtAccessToken(token, {
-    ...options,
-    audience: options.mcpResource,
-  });
-  if (jwtResult) {
-    return jwtResult;
-  }
-
-  return unauthorized();
-};
 
 export const validatePublishBearerToken = async (
   database: Database,

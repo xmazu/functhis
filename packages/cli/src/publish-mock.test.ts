@@ -64,8 +64,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
         path.join(tmpdir(), 'functhis-publish-proj-')
@@ -139,8 +138,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
         path.join(tmpdir(), 'functhis-publish-scope-')
@@ -203,8 +201,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
         path.join(tmpdir(), 'functhis-publish-bad-')
@@ -247,8 +244,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       await expect(
         runPublish({
@@ -272,8 +268,7 @@ describe('runPublish (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
         path.join(tmpdir(), 'functhis-scope-proj-')
@@ -342,8 +337,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       const projectRoot = await mkdtemp(
         path.join(tmpdir(), 'functhis-rollback-proj-')
@@ -380,8 +374,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       await expect(
         runRollback({
@@ -411,8 +404,7 @@ describe('runRollback (mocked API)', () => {
     try {
       await saveConfig({
         accessToken: 'test-token',
-        consoleUrl: 'http://localhost:3001',
-        webUrl: 'http://localhost:3001',
+        url: 'http://localhost:3001',
       });
       await expect(
         runRollback({

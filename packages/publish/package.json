@@ -6,10 +6,6 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./public-paths": {
-      "types": "./src/public-paths.ts",
-      "default": "./src/public-paths.ts"
-    },
     "./oauth": {
       "types": "./src/oauth.ts",
       "default": "./src/oauth.ts"
@@ -57,6 +53,42 @@
     "./http": {
       "types": "./src/http-handlers.ts",
       "default": "./src/http-handlers.ts"
+    },
+    "./bundle-load-error": {
+      "types": "./src/bundle-load-error.ts",
+      "default": "./src/bundle-load-error.ts"
+    },
+    "./catalog-access": {
+      "types": "./src/catalog-access.ts",
+      "default": "./src/catalog-access.ts"
+    },
+    "./hot-catalog": {
+      "types": "./src/hot-catalog.ts",
+      "default": "./src/hot-catalog.ts"
+    },
+    "./hot-kv-binding": {
+      "types": "./src/hot-kv-binding.ts",
+      "default": "./src/hot-kv-binding.ts"
+    },
+    "./http-context": {
+      "types": "./src/http-context.ts",
+      "default": "./src/http-context.ts"
+    },
+    "./jwks-hot": {
+      "types": "./src/jwks-hot.ts",
+      "default": "./src/jwks-hot.ts"
+    },
+    "./quotas": {
+      "types": "./src/quotas.ts",
+      "default": "./src/quotas.ts"
+    },
+    "./search-lexical": {
+      "types": "./src/search-lexical.ts",
+      "default": "./src/search-lexical.ts"
+    },
+    "./worker-execute": {
+      "types": "./src/worker-execute.ts",
+      "default": "./src/worker-execute.ts"
     }
   },
   "scripts": {

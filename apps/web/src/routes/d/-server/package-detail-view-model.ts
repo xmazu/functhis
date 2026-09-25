@@ -1,8 +1,4 @@
-import {
-  formatFunctionId,
-  publicFunctionPath,
-  publicPackagePath,
-} from '@functhis/publish';
+import { formatFunctionId } from '@functhis/publish';
 import type { CatalogPackageRow, ExecutionSummaryRow } from '@functhis/publish';
 
 const readContractDescription = (contract: unknown): string | null => {
@@ -22,11 +18,9 @@ const readContractDescription = (contract: unknown): string | null => {
 
 export interface PackageDetailFunctionView {
   description: string | null;
-  httpSnippet: string;
   id: string;
   mcpSnippet: string;
   slug: string;
-  url: string;
 }
 
 export interface PackageDetailViewModel {
@@ -37,7 +31,6 @@ export interface PackageDetailViewModel {
   organizationId: string | null;
   organizationSlug: string | null;
   packageSlug: string;
-  packageUrl: string;
   publishedAt: Date;
   semver: string;
   visibility: CatalogPackageRow['visibility'];
@@ -49,10 +42,8 @@ export const buildPackageDetailViewModel = (input: {
   isOwner: boolean;
   mcpResource: string;
   organizationSlug: string | null;
-  webOrigin: string;
 }): PackageDetailViewModel => {
   const { catalog } = input;
-  const webOrigin = input.webOrigin.replace(/\/$/u, '');
   const mcpResource = input.mcpResource.replace(/\/$/u, '');
 
   const functions = catalog.functions
@@ -62,14 +53,11 @@ export const buildPackageDetailViewModel = (input: {
         handle: fn.handle,
         packageSlug: fn.packageSlug,
       });
-      const url = `${webOrigin}${publicFunctionPath(fn)}`;
       return {
         description: readContractDescription(fn.contract),
-        httpSnippet: `curl -X POST '${url}' -H 'Content-Type: application/json' -d '{"arguments":{}}'`,
         id,
         mcpSnippet: `POST ${mcpResource}/mcp\nTool: execute\nArguments: { "id": "${id}", "arguments": {} }`,
         slug: fn.functionSlug,
-        url,
       };
     })
     .toSorted((left, right) => left.slug.localeCompare(right.slug));
@@ -82,7 +70,6 @@ export const buildPackageDetailViewModel = (input: {
     organizationId: catalog.organizationId,
     organizationSlug: input.organizationSlug,
     packageSlug: catalog.packageSlug,
-    packageUrl: `${webOrigin}${publicPackagePath(catalog)}`,
     publishedAt: catalog.currentVersion.publishedAt,
     semver: catalog.currentVersion.semver,
     visibility: catalog.visibility,

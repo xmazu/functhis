@@ -18,7 +18,7 @@ import { createRuntimeModuleSource } from '@functhis/runtime';
 import { loadAuthenticatedConfig } from './auth-session';
 import { buildWorkerBundle } from './build-bundle';
 import { hashSourceTree } from './bundle';
-import { resolveWebUrl } from './config';
+import { resolveUrl } from './config';
 import type { CliConfig } from './config';
 import { discoverProject, filesManifest } from './discover';
 import { readGitMetadata } from './git-metadata';
@@ -102,8 +102,8 @@ export interface PublishOptions {
   projectRoot?: string;
   scope?: string;
   slug?: string;
+  url?: string;
   visibility?: 'library' | 'organization' | 'private';
-  webUrl?: string;
 }
 
 const throwUnlessOk = async (
@@ -150,7 +150,7 @@ export const runPublish = async (options?: PublishOptions): Promise<void> => {
   const config = await loadAuthenticatedConfig();
   const { identity, packageRoot, scope, slug } =
     await resolvePublishIdentity(options);
-  const webUrl = resolveWebUrl(config, options?.webUrl);
+  const url = resolveUrl(config, options?.url);
   const { files, functions, functionRoot } = await discoverProject(
     packageRoot,
     identity
@@ -195,7 +195,7 @@ export const runPublish = async (options?: PublishOptions): Promise<void> => {
 
   const startResponse = await authorizedFetch(
     config,
-    `${webUrl}/api/publish/start`,
+    `${url}/api/publish/start`,
     {
       body: JSON.stringify(startBody),
       headers: { 'content-type': 'application/json' },
@@ -207,7 +207,7 @@ export const runPublish = async (options?: PublishOptions): Promise<void> => {
 
   const finalizeResponse = await authorizedFetch(
     config,
-    `${webUrl}/api/publish/finalize`,
+    `${url}/api/publish/finalize`,
     {
       body: JSON.stringify({
         artifact,
@@ -249,7 +249,7 @@ export const runPublish = async (options?: PublishOptions): Promise<void> => {
     });
   }
 
-  for (const line of formatPublishResult(webUrl, parsed.data)) {
+  for (const line of formatPublishResult(parsed.data)) {
     console.log(line);
   }
 };
@@ -259,7 +259,7 @@ export const runRollback = async (options: {
   scope?: string;
   semver: string;
   slug?: string;
-  webUrl?: string;
+  url?: string;
 }): Promise<void> => {
   const config = await loadAuthenticatedConfig();
   const startDir = options.projectRoot
@@ -269,11 +269,11 @@ export const runRollback = async (options: {
   const packageRoot = identity?.packageRoot ?? startDir;
   const slug = resolvePackageSlug(packageRoot, options.slug, identity);
   const scope = options.scope ?? identity?.functhis.scope;
-  const webUrl = resolveWebUrl(config, options.webUrl);
+  const url = resolveUrl(config, options.url);
 
   const response = await authorizedFetch(
     config,
-    `${webUrl}/api/publish/rollback`,
+    `${url}/api/publish/rollback`,
     {
       body: JSON.stringify({
         scope,

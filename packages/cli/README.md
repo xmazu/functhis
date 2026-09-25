@@ -23,12 +23,9 @@ functhis run --slug my-function --input '{"name":"Ada"}'
 
 `run` and `dev` are aliases for local execution against your package (`src/`, `functions/`, or `"functhis.root"`).
 
-Production defaults:
+Production default: `https://functhis.now` (OAuth + publish API; device flow at `/device`).
 
-- Console (OAuth): `https://functhis.now` (same origin as the site; device flow at `/device`)
-- Web / publish API: `https://functhis.now`
-
-Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL`.
+Override with `--url` or `FUNCTHIS_URL` (local: `http://localhost:3001`).
 
 After `functhis login`, tokens are stored in `~/.config/functhis/config.json`.
 
@@ -37,6 +34,6 @@ After `functhis login`, tokens are stored in `~/.config/functhis/config.json`.
 From the [functhis](https://github.com/openenvx/functhis) repository:
 
 ```bash
-bun run --filter functhis dev -- login
+bun packages/cli/src/cli.ts login
 bun run --filter functhis build
 ```

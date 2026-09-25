@@ -183,6 +183,7 @@ Remove dead code; do not grow public surfaces “just in case.”
 - Run **`bun run knip`** (also part of **`bun run check`**) before finishing a change. Fix or delete what it reports: unused files, unused exports, unused dependencies.
 - **Barrel files** (`index.ts` that re-export symbols) must not be the _only_ reason something exists. If a symbol is exported from a package entry or barrel but **never imported** outside that barrel chain, delete the symbol (and trim the barrel), not “leave it for the API.”
 - Prefer **direct imports** to the defining module over re-exporting through barrels when only one app needs the code (see also **Avoid barrel files** under Performance above).
+- Wrangler bundles the module you import, including its top-level imports. It cannot resolve TanStack Start's virtual modules (`#tanstack-router-entry`, `#tanstack-start-entry`, `tanstack-start-manifest:v`). `@functhis/auth` is the web session app and imports that plugin. Workers import a subpath (`@functhis/auth/publish-token`, `@functhis/auth/seed-cli-client`). When a package defines a subpath, a Wrangler worker imports that subpath so the bundle stays limited to that module.
 
 ---
 

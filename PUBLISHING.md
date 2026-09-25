@@ -56,6 +56,6 @@ Add repository secret **`NPM_TOKEN`** with publish access to the unscoped `funct
 ```bash
 bun run --filter functhis build
 bun run check && bun run check-types
-bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/console/src/lib
+bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/web/src/lib/auth
 bun run --filter functhis pack-smoke
 ```

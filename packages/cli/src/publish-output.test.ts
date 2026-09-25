@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test';
 import { formatPublishResult } from './publish-output';
 
 describe('formatPublishResult', () => {
-  test('includes package URL, function URLs, and MCP ids', () => {
-    const lines = formatPublishResult('https://functhis.now', {
+  test('includes MCP ids', () => {
+    const lines = formatPublishResult({
       artifactKey: 'artifacts/sha256/ab/abc',
       bundleHash: 'abc123456789',
       bundleKvKey: 'deadbeef',
@@ -18,14 +18,6 @@ describe('formatPublishResult', () => {
     });
 
     expect(lines[0]).toBe('Published @xmazu/hello-world@1.0.0');
-    expect(lines.some((line) => line.includes('/@xmazu/hello-world'))).toBe(
-      true
-    );
-    expect(
-      lines.some((line) => line.includes('/@xmazu/hello-world/hello'))
-    ).toBe(true);
-    expect(
-      lines.some((line) => line.includes('MCP: @xmazu/hello-world/hello'))
-    ).toBe(true);
+    expect(lines).toContain('  @xmazu/hello-world/hello');
   });
 });

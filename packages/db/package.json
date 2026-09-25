@@ -6,9 +6,21 @@
       "types": "./dist/src/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./*": {
-      "types": "./dist/src/*.d.ts",
-      "default": "./src/*.ts"
+    "./schema/auth": {
+      "types": "./dist/src/schema/auth.d.ts",
+      "default": "./src/schema/auth.ts"
+    },
+    "./schema/catalog": {
+      "types": "./dist/src/schema/catalog.d.ts",
+      "default": "./src/schema/catalog.ts"
+    },
+    "./node-postgres": {
+      "types": "./dist/src/node-postgres.d.ts",
+      "default": "./src/node-postgres.ts"
+    },
+    "./integration-migrate": {
+      "types": "./dist/src/integration-migrate.d.ts",
+      "default": "./src/integration-migrate.ts"
     }
   },
   "scripts": {

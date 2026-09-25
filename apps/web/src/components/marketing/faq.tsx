@@ -5,7 +5,7 @@ import { useState } from 'react';
 const FAQS = [
   {
     answer:
-      'Functhis is a registry and managed runtime for TypeScript functions. You publish ordinary typed functions; Functhis gives them stable URLs, generated contracts, access rules, versions, and one MCP connection for discovery and execution.',
+      'Functhis is a registry and managed runtime for TypeScript functions. You publish ordinary typed functions; Functhis gives them stable MCP ids, generated contracts, access rules, versions, and one MCP connection for discovery and execution.',
     question: 'What is Functhis?',
   },
   {
@@ -15,7 +15,7 @@ const FAQS = [
   },
   {
     answer:
-      'You keep the code in your project. The CLI discovers each default-exported function, reads its TypeScript signature and JSDoc, bundles the project, and publishes an immutable version. It then prints live pages and callable URLs for the functions it found.',
+      'You keep the code in your project. The CLI discovers each default-exported function, reads its TypeScript signature and JSDoc, bundles the project, and publishes an immutable version. It then prints MCP ids for the functions it found.',
     question: 'What happens when I run functhis publish?',
   },
   {
@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     answer:
-      'npm distributes source code that every consumer must install, configure, and run. Functhis distributes a running capability. Applications can call it over HTTP, and agents can find and execute it through MCP.',
+      'npm distributes source code that every consumer must install, configure, and run. Functhis distributes a running capability. Agents find and execute it through MCP.',
     question: 'How is this different from publishing an npm package?',
   },
   {
@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     answer:
-      'Packages can be private or shared with an organization. Only you and org members can open package pages in the browser. MCP execution uses the same access rules with a bearer token.',
+      'Packages can be private or shared with an organization. Only you and org members can search and execute them through MCP with a bearer token.',
     question: 'Can packages be private or shared with a team?',
   },
   {

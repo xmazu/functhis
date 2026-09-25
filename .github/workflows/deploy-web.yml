@@ -2,25 +2,16 @@ name: Deploy web
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Cloudflare Wrangler environment
-        required: true
-        default: preview
-        type: choice
-        options:
-          - preview
-          - production
 
 concurrency:
-  group: deploy-web-${{ inputs.environment }}
+  group: deploy-web-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy functhis-web (${{ inputs.environment }})
+    name: Deploy functhis-web (production)
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: production
     env:
       HUSKY: '0'
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -48,9 +39,4 @@ jobs:
 
       - name: Deploy web Worker
         working-directory: apps/web
-        run: |
-          if [ "${{ inputs.environment }}" = "production" ]; then
-            bun run deploy:production
-          else
-            bun run deploy:preview
-          fi
+        run: bun run deploy:production

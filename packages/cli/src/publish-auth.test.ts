@@ -24,7 +24,7 @@ describe('runPublish', () => {
             '../../../examples/hello-world'
           ),
           slug: 'hello-world',
-          webUrl: 'http://localhost:3001',
+          url: 'http://localhost:3001',
         })
       ).rejects.toThrow(/Not logged in/u);
     } finally {

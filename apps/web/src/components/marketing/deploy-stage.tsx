@@ -10,7 +10,7 @@ export const DeployStage = () => (
       <code className="font-mono text-[0.95em] text-zinc-300">
         npx functhis publish
       </code>{' '}
-      from the project. Functhis versions the functions and prints live URLs.
+      from the project. Functhis versions the functions and prints MCP ids.
       Inspect them in console. Agents call search and execute.
     </p>
     <div className="mt-10">

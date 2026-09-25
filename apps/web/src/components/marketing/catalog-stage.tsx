@@ -106,7 +106,7 @@ const CatalogWindow = () => (
       headerStyle="full"
       size="xl"
       theme="dark"
-      url="functhis.now/@acme/billing/send-reminder"
+      url="@acme/billing/send-reminder"
     >
       <div className="grid h-full min-h-[30rem] grid-cols-[14.5rem_1fr] divide-x divide-zinc-800">
         <div className="flex flex-col gap-px overflow-hidden px-2 py-3 font-mono text-[11px] text-zinc-500">

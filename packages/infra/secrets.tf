@@ -1,6 +1,11 @@
 resource "cloudflare_secrets_store" "functhis" {
   account_id = var.account_id
   name       = "functhis-${var.env}"
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
 }
 
 resource "cloudflare_secrets_store_secret" "better_auth_secret" {

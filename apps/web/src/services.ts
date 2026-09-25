@@ -1,8 +1,6 @@
-import {
-  createAuth as createConfiguredAuth,
-  ensureCliOAuthClient,
-} from '@functhis/auth';
+import { createAuth as createConfiguredAuth } from '@functhis/auth';
 import type { AuthConfig } from '@functhis/auth';
+import { ensureCliOAuthClient } from '@functhis/auth/seed-cli-client';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
 import {
@@ -42,6 +40,20 @@ let cliClientSeeded = false;
 let cliSeedPromise: Promise<void> | null = null;
 let authConfigPromise: Promise<AuthConfig> | null = null;
 
+const warmJwksHot = async (): Promise<void> => {
+  const hot = asHotKvBinding(env.HOT);
+  try {
+    const jwksResponse = await fetch(
+      new URL('/api/auth/jwks', env.BETTER_AUTH_URL)
+    );
+    if (jwksResponse.ok) {
+      await writeJwksHot(hot, await jwksResponse.json());
+    }
+  } catch {
+    // JWKS snapshot is best-effort; MCP can still fetch on miss
+  }
+};
+
 const ensureCliClientSeeded = (): Promise<void> => {
   if (cliClientSeeded) {
     return Promise.resolve();
@@ -50,18 +62,9 @@ const ensureCliClientSeeded = (): Promise<void> => {
   cliSeedPromise ??= (async () => {
     const db = await getDb();
     await ensureCliOAuthClient(db, env.MCP_RESOURCE);
-    const hot = asHotKvBinding(env.HOT);
-    try {
-      const jwksResponse = await fetch(
-        new URL('/api/auth/jwks', env.BETTER_AUTH_URL)
-      );
-      if (jwksResponse.ok) {
-        await writeJwksHot(hot, await jwksResponse.json());
-      }
-    } catch {
-      // JWKS snapshot is best-effort; MCP can still fetch on miss
-    }
     cliClientSeeded = true;
+    // Must not await: jwks hits this worker and createAuth waits on seeding.
+    void warmJwksHot();
   })();
 
   return cliSeedPromise;

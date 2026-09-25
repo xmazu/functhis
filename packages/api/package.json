@@ -6,9 +6,13 @@
       "types": "./dist/src/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./*": {
-      "types": "./dist/src/*.d.ts",
-      "default": "./src/*.ts"
+    "./context": {
+      "types": "./dist/src/context.d.ts",
+      "default": "./src/context.ts"
+    },
+    "./routers/index": {
+      "types": "./dist/src/routers/index.d.ts",
+      "default": "./src/routers/index.ts"
     }
   },
   "scripts": {

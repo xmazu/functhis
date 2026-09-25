@@ -1,10 +1,10 @@
 ---
-description: Functhis console native design system. Apply when editing apps/console UI, CSS, routes, or components.
+description: Functhis owner UI native design system. Apply when editing `/d`, login, consent, or device routes.
 globs: apps/web/src/routes/d/**,apps/web/src/routes/login.tsx,apps/web/src/routes/consent.tsx,apps/web/src/routes/device.tsx,apps/web/src/lib/auth/auth-canvas.tsx
 alwaysApply: false
 ---
 
-# Console UI
+# Owner UI
 
 Read [apps/web/src/routes/d/DESIGN.md](../../apps/web/src/routes/d/DESIGN.md) before changing owner UI visuals. That file is the source of truth.
 

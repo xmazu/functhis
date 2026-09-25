@@ -1,15 +1,16 @@
 import { createDb } from '@functhis/db';
 import type { Database } from '@functhis/db';
+import { formatFunctionId } from '@functhis/publish/function-id';
 import {
-  asHotKvBinding,
   buildAccessContextFromHot,
   filterDocsByAccess,
-  formatFunctionId,
   loadHotFunctionDocsByIds,
   loadSearchFunctionIds,
-  scoreFunctionDocument,
-} from '@functhis/publish';
-import type { HotKvBinding, SearchDomain } from '@functhis/publish';
+} from '@functhis/publish/hot-catalog';
+import type { SearchDomain } from '@functhis/publish/hot-catalog';
+import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import type { HotKvBinding } from '@functhis/publish/http-context';
+import { scoreFunctionDocument } from '@functhis/publish/search-lexical';
 
 import { resolveOpenRouterApiKey } from './openrouter-api-key';
 import { createJevSearchRerankScorer } from './search-jev-rerank';
@@ -22,7 +23,7 @@ import {
 import { applyAiRerankToSorted } from './search-rerank';
 import type { SearchRerankScorer } from './search-rerank';
 
-export type { SearchDomain } from '@functhis/publish';
+export type { SearchDomain } from '@functhis/publish/hot-catalog';
 
 export interface SearchHit {
   contract: unknown;

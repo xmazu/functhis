@@ -5,11 +5,11 @@ variable "account_id" {
 
 variable "env" {
   type        = string
-  description = "Deployment environment: preview or production"
+  description = "Deployment environment"
 
   validation {
-    condition     = contains(["preview", "production"], var.env)
-    error_message = "env must be preview or production"
+    condition     = var.env == "production"
+    error_message = "env must be production"
   }
 }
 

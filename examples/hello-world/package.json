@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "functhis": {
-    "name": "hello-world"
+    "name": "hello-world",
+    "scope": "mac"
   }
 }

@@ -1,8 +1,6 @@
-import { parseBearerToken } from '@functhis/auth';
-import {
-  asHotKvBinding,
-  verifyAccessTokenWithHotJwks,
-} from '@functhis/publish';
+import { parseBearerToken } from '@functhis/auth/publish-token';
+import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { verifyAccessTokenWithHotJwks } from '@functhis/publish/jwks-hot';
 import type { JWTPayload } from 'jose';
 
 export const authIssuerFromConsoleUrl = (consoleUrl: string): string =>

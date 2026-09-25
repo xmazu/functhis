@@ -6,9 +6,13 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./*": {
-      "types": "./src/*.ts",
-      "default": "./src/*.ts"
+    "./publish-token": {
+      "types": "./src/publish-token.ts",
+      "default": "./src/publish-token.ts"
+    },
+    "./seed-cli-client": {
+      "types": "./src/seed-cli-client.ts",
+      "default": "./src/seed-cli-client.ts"
     }
   },
   "scripts": {

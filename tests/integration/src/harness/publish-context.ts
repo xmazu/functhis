@@ -1,4 +1,4 @@
-import { validatePublishBearerToken } from '@functhis/auth';
+import { validatePublishBearerToken } from '@functhis/auth/publish-token';
 import type { Database } from '@functhis/db';
 import type { PublishHandlerContext } from '@functhis/publish/http';
 

@@ -1,7 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "functhis-web",
-  "compatibility_date": "2025-09-15",
+  "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./src/worker-entry.ts",
   "observability": {
@@ -37,90 +37,26 @@
     "BETTER_AUTH_URL": "http://localhost:3001",
     "MCP_RESOURCE": "http://localhost:3003",
     "TRUSTED_ORIGINS": "http://localhost:3001,http://localhost:3003,https://functhis.now,https://mcp.functhis.now",
-    "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
   },
-  "services": [
-    {
-      "binding": "MCP",
-      "service": "functhis-mcp",
-    },
-  ],
   "env": {
-    "preview": {
-      "name": "functhis-web-preview",
-      "compatibility_date": "2025-09-15",
-      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": "00000000-0000-0000-0000-000000000010",
-        },
-      ],
-      "kv_namespaces": [
-        {
-          "binding": "BUNDLES",
-          "id": "00000000-0000-0000-0000-000000000010",
-        },
-        {
-          "binding": "HOT",
-          "id": "00000000-0000-0000-0000-000000000012",
-        },
-      ],
-      "r2_buckets": [
-        {
-          "binding": "ARTIFACTS",
-          "bucket_name": "functhis-artifacts-preview",
-        },
-      ],
-      "secrets_store_secrets": [
-        {
-          "binding": "BETTER_AUTH_SECRET",
-          "store_id": "00000000-0000-0000-0000-000000000020",
-          "secret_name": "BETTER_AUTH_SECRET",
-        },
-        {
-          "binding": "GITHUB_CLIENT_ID",
-          "store_id": "00000000-0000-0000-0000-000000000020",
-          "secret_name": "GITHUB_CLIENT_ID",
-        },
-        {
-          "binding": "GITHUB_CLIENT_SECRET",
-          "store_id": "00000000-0000-0000-0000-000000000020",
-          "secret_name": "GITHUB_CLIENT_SECRET",
-        },
-      ],
-      "vars": {
-        "NODE_ENV": "production",
-        "BETTER_AUTH_URL": "https://preview.functhis.now",
-        "MCP_RESOURCE": "https://mcp.preview.functhis.now",
-        "TRUSTED_ORIGINS": "https://preview.functhis.now,https://mcp.preview.functhis.now",
-        "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
-      },
-      "services": [
-        {
-          "binding": "MCP",
-          "service": "functhis-mcp-preview",
-        },
-      ],
-    },
     "production": {
       "name": "functhis-web",
-      "compatibility_date": "2025-09-15",
+      "compatibility_date": "2026-09-25",
       "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "00000000-0000-0000-0000-000000000011",
+          "id": "f7e6cd5d351c461698d107c6c4232f2c",
         },
       ],
       "kv_namespaces": [
         {
           "binding": "BUNDLES",
-          "id": "00000000-0000-0000-0000-000000000011",
+          "id": "583070bd016648c49f336a40288c7c9c",
         },
         {
           "binding": "HOT",
-          "id": "00000000-0000-0000-0000-000000000013",
+          "id": "11d66c1cea1a496fa6e282607ee4a797",
         },
       ],
       "r2_buckets": [
@@ -132,17 +68,17 @@
       "secrets_store_secrets": [
         {
           "binding": "BETTER_AUTH_SECRET",
-          "store_id": "00000000-0000-0000-0000-000000000021",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "BETTER_AUTH_SECRET",
         },
         {
           "binding": "GITHUB_CLIENT_ID",
-          "store_id": "00000000-0000-0000-0000-000000000021",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "GITHUB_CLIENT_ID",
         },
         {
           "binding": "GITHUB_CLIENT_SECRET",
-          "store_id": "00000000-0000-0000-0000-000000000021",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "GITHUB_CLIENT_SECRET",
         },
       ],
@@ -151,14 +87,7 @@
         "BETTER_AUTH_URL": "https://functhis.now",
         "MCP_RESOURCE": "https://mcp.functhis.now",
         "TRUSTED_ORIGINS": "https://functhis.now,https://mcp.functhis.now",
-        "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
       },
-      "services": [
-        {
-          "binding": "MCP",
-          "service": "functhis-mcp",
-        },
-      ],
     },
   },
 }

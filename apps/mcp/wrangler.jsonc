@@ -2,12 +2,11 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "functhis-mcp",
   "main": "src/index.ts",
-  "compatibility_date": "2025-09-15",
+  "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "vars": {
     "CONSOLE_URL": "http://localhost:3001",
-    "INTERNAL_EXECUTE_TOKEN": "dev-internal-execute",
     "MCP_RESOURCE": "http://localhost:3003",
   },
   "observability": {
@@ -48,45 +47,6 @@
     },
   ],
   "env": {
-    "preview": {
-      "name": "functhis-mcp-preview",
-      "workers_dev": false,
-      "ai": {
-        "binding": "AI",
-      },
-      "vars": {
-        "CONSOLE_URL": "https://preview.functhis.now",
-        "INTERNAL_EXECUTE_TOKEN": "preview-internal-execute",
-        "MCP_RESOURCE": "https://mcp.preview.functhis.now",
-      },
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": "00000000-0000-0000-0000-000000000010",
-        },
-      ],
-      "kv_namespaces": [
-        {
-          "binding": "BUNDLES",
-          "id": "00000000-0000-0000-0000-000000000010",
-        },
-        {
-          "binding": "HOT",
-          "id": "00000000-0000-0000-0000-000000000012",
-        },
-      ],
-      "worker_loaders": [
-        {
-          "binding": "LOADER",
-        },
-      ],
-      "analytics_engine_datasets": [
-        {
-          "binding": "ANALYTICS",
-          "dataset": "functhis_executions_preview",
-        },
-      ],
-    },
     "production": {
       "name": "functhis-mcp",
       "workers_dev": false,
@@ -95,23 +55,22 @@
       },
       "vars": {
         "CONSOLE_URL": "https://functhis.now",
-        "INTERNAL_EXECUTE_TOKEN": "production-internal-execute",
         "MCP_RESOURCE": "https://mcp.functhis.now",
       },
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "00000000-0000-0000-0000-000000000011",
+          "id": "f6ae8acd7b2d4fd482a28814268bc294",
         },
       ],
       "kv_namespaces": [
         {
           "binding": "BUNDLES",
-          "id": "00000000-0000-0000-0000-000000000011",
+          "id": "583070bd016648c49f336a40288c7c9c",
         },
         {
           "binding": "HOT",
-          "id": "00000000-0000-0000-0000-000000000013",
+          "id": "11d66c1cea1a496fa6e282607ee4a797",
         },
       ],
       "worker_loaders": [

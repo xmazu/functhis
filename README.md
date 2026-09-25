@@ -24,7 +24,7 @@ Contributors: see [CONTRIBUTING.md](CONTRIBUTING.md) for tests, examples, and pu
 
 - [Bun](https://bun.sh) (see root `packageManager`)
 - [Docker](https://www.docker.com/) for local Postgres (recommended), or Neon unpooled URL if you prefer remote DB
-- GitHub OAuth app for console login (see below)
+- GitHub OAuth app for login (see below)
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) logged in (`wrangler login`) only when creating Hyperdrive for **deployed** Workers
 
 ### 1. Install
@@ -90,7 +90,7 @@ bun run db:generate
 bun run db:migrate:local
 ```
 
-**Squashed migrations:** If a database already applied older Drizzle migrations (`0000_silly_red_wolf` … `0002_funny_wolverine`), reset that branch or recreate the database before applying the current single `0000_crazy_johnny_storm` migration. Greenfield local Docker is unaffected.
+**Squashed migrations:** If a database already applied older Drizzle migrations (`0000_silly_red_wolf` … `0002_funny_wolverine`, or `0000_crazy_johnny_storm`), reset that branch or recreate the database before applying the current single `0000_large_harrier` migration. Greenfield local Docker is unaffected.
 
 ### 6. Start dev servers
 
@@ -113,24 +113,23 @@ functhis publish
 functhis run --slug my-function --input '{"name":"Ada"}'
 ```
 
-Monorepo dev without building: `bun run --filter functhis dev -- login`
+Monorepo without building: `bun packages/cli/src/cli.ts login`
 
-Production defaults: `https://functhis.now` for login and publish. Override with `--console-url` / `--web-url`, or `FUNCTHIS_CONSOLE_URL` / `FUNCTHIS_WEB_URL` (both default to the apex).
+Production defaults: `https://functhis.now` for login and publish. Override with `--url` or `FUNCTHIS_URL`.
 
 Local deploy against `bun run dev`:
 
 ```bash
-functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+functhis login --url http://localhost:3001
 bun run example:hello:deploy
 ```
 
 `functhis publish` builds a self-contained artifact locally, stores it on R2 (canonical) and KV (hot path), records an immutable semver, and prints live `@scope/package/function` URLs and MCP ids (packages default to **private** unless you set `--visibility`).
 
-Run a single app:
+Web only:
 
 ```bash
-bun run dev:web       # port 3001
-bun run dev:web   # port 3001 only (web + auth)
+bun run dev:web   # port 3001 (site, OAuth, /d, publish API)
 ```
 
 Optional: both Workers in one Wrangler dev session (exercises Hyperdrive bindings when configured):
@@ -146,12 +145,12 @@ bun run --filter @functhis/infra dev:workers
 
 ## Production database (Neon + Hyperdrive)
 
-Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyperdrive (auth: cache disabled on console; catalog: cache enabled on web).
+Local Docker is enough for day-to-day dev. Deployed Workers use Neon through Hyperdrive (auth: cache disabled on web; catalog: cache enabled on mcp).
 
 1. Set `DATABASE_URL` in `packages/db/.env` to your Neon **direct** (unpooled) URL when running migrations against remote.
-2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, `kv_bundles_namespace_id`, `kv_hot_namespace_id`, and `secrets_store_id` from `terraform output` into `apps/console/wrangler.jsonc`, `apps/web/wrangler.jsonc`, and `apps/mcp/wrangler.jsonc` before deploy.
+2. Provision Cloudflare resources with Terraform in `packages/infra` (see **Deployment** below). Paste `hyperdrive_auth_id`, `hyperdrive_catalog_id`, `kv_bundles_namespace_id`, `kv_hot_namespace_id`, and `secrets_store_id` from `terraform output` into `apps/web/wrangler.jsonc` and `apps/mcp/wrangler.jsonc` before deploy.
 
-Auth queries must not use a cached Hyperdrive config on the console Worker.
+Auth queries must not use a cached Hyperdrive config on the web Worker.
 
 ## Database (reference)
 
@@ -187,12 +186,11 @@ Each app owns its environment schema in `.env.schema`. Varlock generates `src/en
 | Package | `.env` path | Purpose |
 | --- | --- | --- |
 | `packages/db` | `packages/db/.env` | `DATABASE_URL` - migrations + local dev DB |
-| `apps/console` | `apps/console/.env` | Better Auth + GitHub OAuth |
-| `apps/web` | `apps/web/.env` | `CONSOLE_URL` (optional locally) |
+| `apps/web` | `apps/web/.env` | Better Auth + GitHub OAuth |
 
 Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` - no manual `CLOUDFLARE_HYPERDRIVE_*` export.
 
-CIMD metadata fetch runs only on the **console** Worker. `apps/console/wrangler.jsonc` sets `global_fetch_strictly_public` so `fetch()` blocks private targets after DNS; `packages/auth` also validates HTTPS URLs before fetch. Regenerate Worker types after Wrangler changes: `bun run cf-typegen` (also runs on `bun install`).
+CIMD metadata fetch runs on the **web** Worker. `apps/web/wrangler.jsonc` sets `global_fetch_strictly_public` so `fetch()` blocks private targets after DNS; `packages/auth` also validates HTTPS URLs before fetch. Regenerate Worker types after Wrangler changes: `bun run cf-typegen` (also runs on `bun install`).
 
 See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
 
@@ -200,45 +198,41 @@ See [Varlock's monorepo guide](https://varlock.dev/guides/monorepos/).
 
 Terraform in [`packages/infra`](packages/infra) owns account-level Cloudflare resources. Wrangler deploys first-party Worker code. See [architecture.md](architecture.md).
 
-**Prerequisites:** [Terraform](https://www.terraform.io/) CLI, `CLOUDFLARE_API_TOKEN`, R2 API keys for remote state, Neon **direct** URL, GitHub OAuth app (production callback `https://console.functhis.now/api/auth/callback/github`).
+**Prerequisites:** [Terraform](https://www.terraform.io/) CLI, `CLOUDFLARE_API_TOKEN`, Neon **direct** URL, GitHub OAuth app (production callback `https://functhis.now/api/auth/callback/github`).
 
-**One-time:** create the state bucket (not managed by Terraform):
-
-```bash
-wrangler r2 bucket create functhis-tf-state
-```
-
-**Per environment** (preview or production):
+**Production:**
 
 ```bash
 cd packages/infra
-cp preview.tfvars.example preview.tfvars   # or production.tfvars.example
+cp production.tfvars.example production.tfvars
 
-terraform init -reconfigure \
-  -backend-config="key=preview/terraform.tfstate" \
-  -backend-config="access_key=$R2_ACCESS_KEY_ID" \
-  -backend-config="secret_key=$R2_SECRET_ACCESS_KEY" \
-  -backend-config="endpoints={s3=\"https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com\"}"
-
-bun run --filter @functhis/infra tf:preview
+bun run tf:production
 ```
 
-After apply: paste Hyperdrive, KV, and Secrets Store IDs into Wrangler `preview` / `production` env blocks, then deploy Workers in order - **`functhis-mcp` first** (MCP host must serve traffic before Terraform routes `mcp.*`), then web, then console. Only after MCP is live, set `enable_domains = true` in tfvars and apply again for custom domains.
+Terraform keeps local state in `packages/infra/production.tfstate`. It is ignored by Git; back it up securely because it contains infrastructure details and database connection data.
 
-**Web only** (marketing + deploy API; TanStack Start via `@cloudflare/vite-plugin`):
+After apply: paste Hyperdrive, KV, and Secrets Store IDs into the Wrangler `production` env blocks, then deploy Workers in order - **`functhis-mcp` first** (MCP host must serve traffic before Terraform routes `mcp.*`), then web. Only after MCP is live, set `enable_domains = true` in tfvars and apply again for custom domains.
+
+**Web only** (site, OAuth, `/d`, deploy API; TanStack Start via `@cloudflare/vite-plugin`):
 
 ```bash
 wrangler login   # once per machine
-bun run deploy:web:preview      # or deploy:web:production
+bun run deploy:web:production
+```
+
+**Both Workers** (MCP first, then web):
+
+```bash
+bun run deploy:production
 ```
 
 Those scripts set `CLOUDFLARE_ENV` during `vite build` so the generated Worker config matches the target environment, then run `wrangler deploy` from `apps/web`. Do not deploy web with `wrangler deploy -c apps/web/wrangler.jsonc` from another directory without building first - Wrangler will try to rebundle `worker-entry.ts` and fail.
 
-**GitHub Actions:** workflow [Deploy web](.github/workflows/deploy-web.yml) (`workflow_dispatch`). Add repository secrets `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit) and `CLOUDFLARE_ACCOUNT_ID`. Create GitHub environments `preview` and `production` if you want approval gates.
+**GitHub Actions:** workflow [Deploy web](.github/workflows/deploy-web.yml) (`workflow_dispatch`). Add repository secrets `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit) and `CLOUDFLARE_ACCOUNT_ID`.
 
-- Workers: `functhis-web` + `functhis-console` + `functhis-mcp` (MCP + Dynamic Workers LOADER, phase 6)
-- Auth issuer: `https://console.functhis.now` (preview: `https://console.preview.functhis.now`)
-- Dev: `bun run dev` (web 3001 + console 3002 + MCP 3003)
+- Workers: `functhis-web` + `functhis-mcp` (MCP + Dynamic Workers LOADER)
+- Auth issuer: `https://functhis.now`
+- Dev: `bun run dev` (web 3001 + MCP 3003)
 - Migrations: `bun run db:migrate:local` (Neon direct URL; never through Hyperdrive)
 
 Do not create customer packages or dispatch namespaces in Terraform. Package deploys go through the deploy API: source hash, KV bundle, Postgres version row.
@@ -247,10 +241,10 @@ Do not create customer packages or dispatch namespaces in Terraform. Package dep
 
 Use the repo example package [`examples/hello-world`](examples/hello-world) (see [examples/README.md](examples/README.md)).
 
-1. Start stack: `bun run dev` (web + console + MCP on port 3003).
-2. Log in: `bun run --filter functhis dev -- login` (device flow against console; tokens in `~/.config/functhis/config.json`).
+1. Start stack: `bun run dev` (web 3001 + MCP 3003).
+2. Log in: `bun packages/cli/src/cli.ts login --url http://localhost:3001` (device flow against the site; tokens in `~/.config/functhis/config.json`).
 3. `bun run example:hello:dev` then `bun run example:hello:deploy` (see [`examples/hello-world`](examples/hello-world)).
-4. Hosted execute: MCP `search` / `execute` at `http://localhost:3003/mcp` (OAuth via console); public `POST` (phase 5).
+4. Hosted execute: MCP `search` / `execute` at `http://localhost:3003/mcp` (OAuth via http://localhost:3001).
 5. Deploy again for v2; rollback by updating `package.currentVersionId` in Postgres to the prior version id (no rebuild if that version’s KV key still exists).
 
 ## Git Hooks and Formatting
@@ -266,9 +260,8 @@ functhis/
 │   ├── hello-world/ # Minimal publish smoke test
 │   └── monorepo/    # Turborepo + functions package
 ├── apps/
-│   ├── web/         # Marketing + deploy API (functhis.now)
-│   ├── console/     # OAuth issuer + dashboard (console.functhis.now)
-│   └── mcp/         # mcp.functhis.now - MCP + Dynamic Workers (phase 6)
+│   ├── web/         # Site, OAuth issuer, /d owner UI, deploy API (functhis.now)
+│   └── mcp/         # mcp.functhis.now - MCP + Dynamic Workers
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # Shared oRPC / business logic (multi-app only)
@@ -279,15 +272,14 @@ functhis/
 
 ## Available Scripts
 
-- `bun run dev`: Start web (3001), console (3002), and MCP (3003) in parallel
+- `bun run dev`: Start web (3001) and MCP (3003) in parallel
 - `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:console`: Start only the console application
+- `bun run dev:web`: Start only the web application (port 3001)
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run dev:types`: Watch API declarations when running an app individually
 - `bun run db:generate`: Generate Drizzle migrations from schema
 - `bun run db:migrate:local`: Apply Drizzle migrations to Neon
 - `bun run example:hello:dev`: Run [`examples/hello-world`](examples/hello-world) locally (no Cloudflare)
-- `bun run example:hello:deploy`: Deploy hello-world via CLI (passes localhost URLs; log in with `functhis login --console-url http://localhost:3002 --web-url http://localhost:3001` first)
+- `bun run example:hello:deploy`: Deploy hello-world via CLI (passes localhost URL; log in with `functhis login --url http://localhost:3001` first)
 - `bun run example:monorepo:dev` / `example:monorepo:deploy`: Turborepo example (`packages/demo-functions`)
 - `bun run check`: Run Oxlint and Oxfmt

@@ -9,7 +9,7 @@
 | Package unit | `bun run test` | Auth, deploy helpers, CLI discover, MCP handler edges. Mock external boundaries. |
 | Fast DB | `bun run test:integration` | Real Postgres, in-process production handlers/functions, stub Cloudflare KV and other I/O. |
 | Worker / HTTP smoke | later | Wrangler `createTestHarness`, Hyperdrive, real KV bindings. |
-| Browser e2e | later | Playwright against console/web. Not implemented. |
+| Browser e2e | later | Playwright against the site. Not implemented. |
 
 Pick the lowest layer that proves the behavior. Do not push full deploy persistence into unit tests with mocked `fetch` when a single DB chunk is enough.
 
@@ -30,7 +30,7 @@ Each test under `tests/integration/src/db/` should finish in about one second on
 
 - Wrangler test harness and live Workers dev
 - `bun run dev` or HTTP to localhost app ports as the primary assertion path
-- GitHub OAuth, device login, or real JWKS fetch to console
+- GitHub OAuth, device login, or real JWKS fetch to the site
 - MCP `LOADER` execution or public `@handle/pkg/fn` POST execute
 - `waitFor`, sleeps, or polling for async coordinator behavior
 - Writing to the local `functhis` dev database (use `integration` only)

@@ -6,7 +6,7 @@ How to run the platform locally, run tests, and try the example packages (includ
 
 - [Bun](https://bun.sh) (see root `packageManager`)
 - [Docker](https://www.docker.com/) for local Postgres (recommended)
-- GitHub OAuth app for console login ([README.md](./README.md#4-github-oauth-app))
+- GitHub OAuth app for login ([README.md](./README.md#4-github-oauth-app))
 - Optional: [Wrangler](https://developers.cloudflare.com/workers/wrangler/) logged in for deployed Workers / Terraform
 
 ## One-time setup
@@ -15,7 +15,7 @@ How to run the platform locally, run tests, and try the example packages (includ
 bun install
 docker compose up -d
 cp packages/db/.env.example packages/db/.env   # if missing
-# apps/console/.env — BETTER_AUTH_* + GitHub OAuth (see README)
+# apps/web/.env — BETTER_AUTH_* + GitHub OAuth (see README)
 bun run db:migrate:local
 ```
 
@@ -25,20 +25,18 @@ bun run db:migrate:local
 bun run dev
 ```
 
-| Service                       | URL                   |
-| ----------------------------- | --------------------- |
-| Web (marketing + publish API) | http://localhost:3001 |
-| Console (OAuth, login)        | http://localhost:3002 |
-| MCP (`search` / `execute`)    | http://localhost:3003 |
+| Service                              | URL                   |
+| ------------------------------------ | --------------------- |
+| Web (site, OAuth, `/d`, publish API) | http://localhost:3001 |
+| MCP (`search` / `execute`)           | http://localhost:3003 |
 
-Single app:
+Web only:
 
 ```bash
 bun run dev:web
-bun run dev:console
 ```
 
-Sign in at http://localhost:3002/login to exercise OAuth flows.
+Sign in at http://localhost:3001/login to exercise OAuth flows.
 
 ## Test everything
 
@@ -59,17 +57,11 @@ Integration details: [docs/integration-tests.md](docs/integration-tests.md) and 
 
 ## CLI during development
 
-Use the workspace CLI without a global install:
+Without a global install, run the workspace CLI:
 
 ```bash
-bun run --filter functhis dev -- login --console-url http://localhost:3002 --web-url http://localhost:3001
-bun run --filter functhis dev -- publish --help
-```
-
-Or invoke the entrypoint directly:
-
-```bash
-bun packages/cli/src/cli.ts login --console-url http://localhost:3002 --web-url http://localhost:3001
+bun packages/cli/src/cli.ts login --url http://localhost:3001
+bun packages/cli/src/cli.ts publish --help
 ```
 
 Tokens are stored in `~/.config/functhis/config.json`.
@@ -87,7 +79,7 @@ Examples live under [`examples/`](examples/). They are **not** part of the root 
 
 ```bash
 bun run dev   # in another terminal
-functhis login --console-url http://localhost:3002 --web-url http://localhost:3001
+functhis login --url http://localhost:3001
 bun run example:hello:dev
 bun run example:hello:deploy
 ```
@@ -111,8 +103,8 @@ Use `--project-root examples/monorepo/packages/demo-functions` (not the Turborep
 
 ### After publish (local)
 
-- CLI prints function URLs on `http://localhost:3001`.
-- MCP: connect to `http://localhost:3003/mcp`, OAuth via console, then `search` / `execute`.
+- CLI prints MCP ids (`@handle/package/function`).
+- MCP: connect to `http://localhost:3003/mcp`, OAuth via http://localhost:3001, then `search` / `execute`.
 - Run a handler locally anytime: `functhis run --slug … --project-root …` (no deploy).
 
 More author rules: [examples/README.md](examples/README.md).
