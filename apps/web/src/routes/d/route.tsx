@@ -4,8 +4,9 @@ import { resolveSession } from '#/functions/resolve-session';
 import {
   callbackURLFromLocation,
   redirectToLogin,
-} from '#/modules/auth/lib/login-redirect';
-import { AppShell } from '#/modules/d/components/app-shell';
+} from '#/lib/auth/login-redirect';
+import { AppShell } from '#/routes/d/-components/app-shell';
+import '#/routes/d/-load-surface';
 
 const DLayout = () => (
   <div className="dark flex min-h-svh flex-col" data-surface="dashboard">

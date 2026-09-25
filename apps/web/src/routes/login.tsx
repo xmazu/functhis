@@ -1,17 +1,17 @@
 import { createFileRoute, redirect, useSearch } from '@tanstack/react-router';
 
 import { resolveSession } from '#/functions/resolve-session';
-import { AuthCanvas } from '#/modules/auth/auth-canvas';
-import { authClient } from '#/modules/auth/lib/auth-client';
-import { safeCallbackURL } from '#/modules/auth/lib/safe-callback-url';
-import { Button } from '#/modules/d/components/ui/button';
+import { AuthCanvas } from '#/lib/auth/auth-canvas';
+import { authClient } from '#/lib/auth/auth-client';
+import { safeCallbackURL } from '#/lib/auth/safe-callback-url';
+import { Button } from '#/routes/d/-components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '#/modules/d/components/ui/card';
+} from '#/routes/d/-components/ui/card';
 
 const LoginPage = () => {
   const { callbackURL } = useSearch({ from: '/login' });

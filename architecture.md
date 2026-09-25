@@ -73,7 +73,7 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 ## Owner UI
 
-Signed-in owner app at `apps/web` under `/d` (pkgs, orgs). Visual system: [apps/web/src/modules/d/DESIGN.md](apps/web/src/modules/d/DESIGN.md).
+Signed-in owner app at `apps/web` under `/d` (pkgs, orgs). Visual system: [apps/web/src/routes/d/DESIGN.md](apps/web/src/routes/d/DESIGN.md).
 
 Alpha: GitHub login, MCP consent, device approval, signed-in home, package list at `/d/pkgs`, package detail at `/d/pkgs/:handle/:slug`, organizations at `/d/orgs`, sharing controls on owned packages.
 

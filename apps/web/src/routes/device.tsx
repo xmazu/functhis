@@ -3,26 +3,23 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { resolveSession } from '#/functions/resolve-session';
-import { AuthCanvas } from '#/modules/auth/auth-canvas';
-import {
-  lookupDeviceCode,
-  postDeviceAction,
-} from '#/modules/auth/lib/device-api';
-import type { DeviceVerification } from '#/modules/auth/lib/device-api';
+import { AuthCanvas } from '#/lib/auth/auth-canvas';
+import { lookupDeviceCode, postDeviceAction } from '#/lib/auth/device-api';
+import type { DeviceVerification } from '#/lib/auth/device-api';
 import {
   callbackURLFromLocation,
   redirectToLogin,
-} from '#/modules/auth/lib/login-redirect';
-import { Button } from '#/modules/d/components/ui/button';
+} from '#/lib/auth/login-redirect';
+import { Button } from '#/routes/d/-components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '#/modules/d/components/ui/card';
-import { Input } from '#/modules/d/components/ui/input';
-import { Label } from '#/modules/d/components/ui/label';
+} from '#/routes/d/-components/ui/card';
+import { Input } from '#/routes/d/-components/ui/input';
+import { Label } from '#/routes/d/-components/ui/label';
 
 const normalizeUserCode = (code: string): string => code.trim();
 

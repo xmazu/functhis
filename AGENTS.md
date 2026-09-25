@@ -157,7 +157,7 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 
 ## Design documents
 
-`apps/web/Design.md` (marketing) and `apps/web/src/modules/d/DESIGN.md` (owner UI at `/d`) are visual language only: color, type, spacing, motion, surfaces, and general UX principles.
+`apps/web/Design.md` (marketing) and `apps/web/src/routes/d/DESIGN.md` (owner UI at `/d`) are visual language only: color, type, spacing, motion, surfaces, and general UX principles.
 
 Never add product features, page sections, component inventories, implementation recipes, or copy decks to those files. Product behavior belongs in `vision.md` and `architecture.md`; UI structure belongs in code. When the look changes, update tokens and principles - not a catalog of widgets.
 
@@ -165,7 +165,7 @@ Do not restyle the owner UI from the marketing design file, or marketing from th
 
 ## Monorepo placement
 
-Put code in [`packages/`](packages) **only when it is shared** - imported from **more than one** app or package (e.g. web + MCP, or `packages/auth` + `apps/web`). If a module has a **single** consumer, keep it under that app (e.g. `apps/web/src/server/…`) until a second consumer exists, then extract.
+Put code in [`packages/`](packages) **only when it is shared** - imported from **more than one** app or package (e.g. web + MCP, or `packages/auth` + `apps/web`). If a module has a **single** consumer, keep it under that app (e.g. colocated under `apps/web/src/routes/…`) until a second consumer exists, then extract.
 
 | Location | Use for |
 | --- | --- |

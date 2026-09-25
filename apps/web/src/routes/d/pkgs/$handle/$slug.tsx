@@ -1,21 +1,21 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import type { ReactElement } from 'react';
 
-import { authClient } from '#/modules/auth/lib/auth-client';
-import { CommandRow } from '#/modules/d/components/command-row';
-import { CopyButton } from '#/modules/d/components/copy-button';
+import { authClient } from '#/lib/auth/auth-client';
+import { CommandRow } from '#/routes/d/-components/command-row';
+import { CopyButton } from '#/routes/d/-components/copy-button';
 import {
   MetaItem,
   SectionHeading,
   packageDetailUiClass,
-} from '#/modules/d/components/package-detail-primitives';
-import { PackageSharingPanel } from '#/modules/d/components/package-sharing-panel';
+} from '#/routes/d/-components/package-detail-primitives';
+import { PackageSharingPanel } from '#/routes/d/-components/package-sharing-panel';
 import {
   formatPackageDate,
   formatPackageDateTime,
   toPackageIso,
-} from '#/modules/d/lib/package-dates';
-import { getPackageDetailForSession } from '#/modules/d/server/packages';
+} from '#/routes/d/-lib/package-dates';
+import { getPackageDetailForSession } from '#/routes/d/-server/packages';
 
 const ui = packageDetailUiClass;
 

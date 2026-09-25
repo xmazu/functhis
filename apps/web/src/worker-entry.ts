@@ -4,8 +4,8 @@ import { createEvlogTanstackWorkerEntry } from '@functhis/config/evlog-worker-en
 import {
   handlePublicFunctionRequest,
   handlePublicPackageRequest,
-} from './server/public-url/handlers';
-import { matchPublicPath } from './server/public-url/routing';
+} from '#/routes/-public-url/handlers';
+import { matchPublicPath } from '#/routes/-public-url/routing';
 
 const tanstack = createEvlogTanstackWorkerEntry('functhis-web');
 

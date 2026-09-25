@@ -6,7 +6,7 @@
 
 This file is the visual language for `apps/web` only. It records how the surface looks and feels: color, type, space, motion, and elevation. It is not a product spec, a feature list, or a component catalog.
 
-Do not add screens, sections, widgets, or capabilities here. Those belong in code and in product docs (`vision.md`, `architecture.md`). Owner UI visuals live in [`src/modules/d/DESIGN.md`](src/modules/d/DESIGN.md).
+Do not add screens, sections, widgets, or capabilities here. Those belong in code and in product docs (`vision.md`, `architecture.md`). Owner UI visuals live in [`src/routes/d/DESIGN.md`](src/routes/d/DESIGN.md).
 
 The page should feel like a quiet instrument panel that happens to be a marketing site: one reading column, one primary action, hairlines instead of shadows, and product proof shown as a terminal or a browser chrome - never as a gallery of equal cards.
 

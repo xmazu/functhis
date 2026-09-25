@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-import { listPackagesForSession } from '#/modules/d/server/packages';
+import { listPackagesForSession } from '#/routes/d/-server/packages';
 
 const PackagesPage = () => {
   const packages = Route.useLoaderData();
