@@ -73,7 +73,7 @@ Alpha: GitHub login, MCP consent, device approval, signed-in home, package list 
 
 ## MCP
 
-`https://mcp.functhis.now/mcp`. Two tools.
+`https://mcp.functhis.now/mcp`. Two tools. `POST /mcp` serves modern `2026-07-28` and 2025-era Streamable HTTP `initialize` (including `2025-06-18`) via SDK `legacy: 'stateless'`.
 
 **`search`** - `query`, optional `domain`: `mine` | `org` | `library` (default `mine`). Lexical ranking over function ids, slugs, handles, and `search_text` loaded from HOT KV (Kody-style token coverage). Exact `@handle/pkg/fn` matches win first. When the shortlist is ambiguous (more than eight hits and no clear lexical winner), stage 2 reranks the top 20 with OpenRouter **`typesafe/jev-1.13`** via Vercel **AI SDK 7** `experimental_evaluate` and `@openrouter/ai-sdk-provider` (`OPENROUTER_API_KEY`), and falls back to lexical order on missing key, low mean confidence, or Score errors. No pgvector or query embeddings on the hot path.
 

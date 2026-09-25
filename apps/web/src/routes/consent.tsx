@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '#/components/ui/button';
@@ -14,75 +14,118 @@ import { resolveSession } from '#/functions/resolve-session';
 import { AuthCanvas } from '#/lib/auth/auth-canvas';
 import { authClient } from '#/lib/auth/auth-client';
 import {
+  CONSENT_CLOSE_DELAY_SECONDS,
+  consentCloseCountdownCopy,
+  consentRedirectUrl,
+  decideConsentRedirect,
+  deliverLoopbackOAuthRedirect,
+  suppressClientRedirect,
+} from '#/lib/auth/consent-redirect';
+import {
+  consentOAuthQueryFromLocation,
+  consentRequest,
+} from '#/lib/auth/consent-request';
+import {
   callbackURLFromLocation,
   redirectToLogin,
 } from '#/lib/auth/login-redirect';
 
-const buildOauthQuery = ({
-  client_id,
-  oauth_query,
-  scope,
-}: {
-  client_id: string;
-  oauth_query?: string;
-  scope: string;
-}) => {
-  if (oauth_query) {
-    return oauth_query;
-  }
-  const params = new URLSearchParams();
-  if (client_id) {
-    params.set('client_id', client_id);
-  }
-  if (scope) {
-    params.set('scope', scope);
-  }
-  const query = params.toString();
-  return query.length > 0 ? query : undefined;
+const ConsentCompleteCard = ({ accepted }: { accepted: boolean }) => {
+  const [secondsLeft, setSecondsLeft] = useState(CONSENT_CLOSE_DELAY_SECONDS);
+
+  useEffect(() => {
+    if (secondsLeft > 0) {
+      const timeoutId = window.setTimeout(() => {
+        setSecondsLeft(secondsLeft - 1);
+      }, 1000);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+    window.close();
+  }, [secondsLeft]);
+
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader className="p-4">
+        <CardTitle className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+          You can close this page
+        </CardTitle>
+        <CardDescription className="text-[length:var(--app-font-size-ui,12px)]">
+          {accepted ? 'Authorization is complete.' : 'Access was denied.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 px-4 pb-4">
+        <p
+          aria-live="polite"
+          className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]"
+        >
+          {consentCloseCountdownCopy(secondsLeft)}
+        </p>
+        <Button
+          className="w-full"
+          onClick={() => {
+            window.close();
+          }}
+        >
+          Close
+        </Button>
+      </CardContent>
+    </Card>
+  );
 };
 
 const ConsentPage = () => {
-  const navigate = useNavigate();
-  const { client_id, oauth_query, scope } = Route.useSearch();
+  const { client_id, scope } = Route.useSearch();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const resolvedOauthQuery = buildOauthQuery({
-    client_id,
-    oauth_query,
-    scope,
-  });
+  const [outcome, setOutcome] = useState<'allowed' | 'denied' | null>(null);
 
-  const handleAllow = async () => {
+  const finishConsent = async (accepted: boolean) => {
     setIsSubmitting(true);
+    const failureMessage = accepted
+      ? 'Could not complete consent'
+      : 'Could not deny consent';
     try {
-      await authClient.oauth2.consent({
-        accept: true,
-        oauth_query: resolvedOauthQuery,
-        scope,
+      const oauthQuery = consentOAuthQueryFromLocation();
+      const { data, error } = await authClient.oauth2.consent({
+        ...consentRequest(
+          accepted
+            ? { accept: true, oauthQuery, scope }
+            : { accept: false, oauthQuery }
+        ),
+        fetchOptions: {
+          onSuccess: (context) => {
+            suppressClientRedirect(context.data);
+          },
+        },
       });
-      navigate({ to: '/' });
+      if (error) {
+        toast.error(error.message ?? failureMessage);
+        setIsSubmitting(false);
+        return;
+      }
+      const decision = decideConsentRedirect(consentRedirectUrl(data));
+      if (decision.kind === 'stay' && decision.deliverUrl) {
+        deliverLoopbackOAuthRedirect(decision.deliverUrl);
+      }
+      if (decision.kind === 'leave') {
+        window.location.assign(decision.url);
+        return;
+      }
+      setOutcome(accepted ? 'allowed' : 'denied');
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Could not complete consent'
-      );
+      toast.error(error instanceof Error ? error.message : failureMessage);
     }
     setIsSubmitting(false);
   };
 
-  const handleDeny = async () => {
-    setIsSubmitting(true);
-    try {
-      await authClient.oauth2.consent({
-        accept: false,
-        oauth_query: resolvedOauthQuery,
-      });
-      navigate({ to: '/' });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Could not deny consent'
-      );
-    }
-    setIsSubmitting(false);
-  };
+  if (outcome) {
+    return (
+      <AuthCanvas>
+        <ConsentCompleteCard accepted={outcome === 'allowed'} />
+      </AuthCanvas>
+    );
+  }
 
   return (
     <AuthCanvas>
@@ -114,7 +157,9 @@ const ConsentPage = () => {
             <Button
               className="flex-1"
               disabled={isSubmitting}
-              onClick={handleAllow}
+              onClick={() => {
+                void finishConsent(true);
+              }}
             >
               Allow
             </Button>
@@ -122,7 +167,9 @@ const ConsentPage = () => {
               className="flex-1"
               disabled={isSubmitting}
               variant="destructive-outline"
-              onClick={handleDeny}
+              onClick={() => {
+                void finishConsent(false);
+              }}
             >
               Deny
             </Button>
@@ -144,8 +191,6 @@ export const Route = createFileRoute('/consent')({
   },
   validateSearch: (search: Record<string, unknown>) => ({
     client_id: typeof search.client_id === 'string' ? search.client_id : '',
-    oauth_query:
-      typeof search.oauth_query === 'string' ? search.oauth_query : undefined,
     scope: typeof search.scope === 'string' ? search.scope : '',
   }),
 });

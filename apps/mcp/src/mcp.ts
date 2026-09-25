@@ -102,5 +102,5 @@ export const createFuncthisMcpHandler = (
 
       return server;
     },
-    { legacy: 'reject' }
+    { legacy: 'stateless' }
   );
