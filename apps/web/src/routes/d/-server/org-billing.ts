@@ -3,15 +3,14 @@ import {
   isStripePluginConfigured,
 } from '@functhis/auth/stripe-plugin';
 import { createDb } from '@functhis/db';
-import { member } from '@functhis/db/schema/auth';
 import {
   countOrgPackages,
+  isMemberOfOrganization,
   limitsForPlan,
   readOrgExecutionCount,
   resolveOrgPlan,
 } from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
-import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { env } from '#/env.server';
@@ -28,18 +27,13 @@ export const getOrgBillingSummary = createServerFn({ method: 'GET' })
 
     const database = await createDb(env);
 
-    const [membership] = await database
-      .select({ organizationId: member.organizationId })
-      .from(member)
-      .where(
-        and(
-          eq(member.userId, userId),
-          eq(member.organizationId, data.organizationId)
-        )
-      )
-      .limit(1);
+    const isMember = await isMemberOfOrganization(
+      database,
+      userId,
+      data.organizationId
+    );
 
-    if (!membership) {
+    if (!isMember) {
       return null;
     }
 

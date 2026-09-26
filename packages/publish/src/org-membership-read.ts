@@ -17,6 +17,22 @@ export const listMemberOrganizations = (
     .innerJoin(organization, eq(member.organizationId, organization.id))
     .where(eq(member.userId, userId));
 
+export const isMemberOfOrganization = async (
+  database: Database,
+  userId: string,
+  organizationId: string
+): Promise<boolean> => {
+  const [row] = await database
+    .select({ organizationId: member.organizationId })
+    .from(member)
+    .where(
+      and(eq(member.userId, userId), eq(member.organizationId, organizationId))
+    )
+    .limit(1);
+
+  return row !== undefined;
+};
+
 export const resolveOrganizationIdForMember = async (
   database: Database,
   userId: string,

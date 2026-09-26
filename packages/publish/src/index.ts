@@ -142,6 +142,7 @@ export {
   type ResolvedPublishSharing,
 } from './publish-sharing';
 export {
+  isMemberOfOrganization,
   listMemberOrganizations,
   resolveOrganizationIdForMember,
   resolveOrganizationSlugById,
