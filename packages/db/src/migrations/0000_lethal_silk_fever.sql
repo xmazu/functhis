@@ -1,4 +1,3 @@
-CREATE TYPE "public"."package_scope_kind" AS ENUM('user', 'organization');--> statement-breakpoint
 CREATE TYPE "public"."package_visibility" AS ENUM('private', 'organization', 'library');--> statement-breakpoint
 CREATE TABLE "account" (
 	"access_token" text,
@@ -192,6 +191,7 @@ CREATE TABLE "organization" (
 	"metadata" text,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
+	"stripe_customer_id" text,
 	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
@@ -216,6 +216,26 @@ CREATE TABLE "session" (
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
+CREATE TABLE "subscription" (
+	"billing_interval" text,
+	"cancel_at" timestamp,
+	"cancel_at_period_end" boolean DEFAULT false,
+	"canceled_at" timestamp,
+	"ended_at" timestamp,
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"period_end" timestamp,
+	"period_start" timestamp,
+	"plan" text NOT NULL,
+	"reference_id" text NOT NULL,
+	"seats" integer,
+	"status" text DEFAULT 'incomplete' NOT NULL,
+	"stripe_customer_id" text,
+	"stripe_schedule_id" text,
+	"stripe_subscription_id" text,
+	"trial_end" timestamp,
+	"trial_start" timestamp
+);
+--> statement-breakpoint
 CREATE TABLE "user" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"email" text NOT NULL,
@@ -224,6 +244,7 @@ CREATE TABLE "user" (
 	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"image" text,
 	"name" text NOT NULL,
+	"stripe_customer_id" text,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "user_email_unique" UNIQUE("email"),
 	CONSTRAINT "user_handle_unique" UNIQUE("handle")
@@ -250,6 +271,12 @@ CREATE TABLE "execution" (
 	"status" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "org_usage_period" (
+	"execution_count" integer DEFAULT 0 NOT NULL,
+	"organization_id" text NOT NULL,
+	"period_key" text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "package_version" (
 	"artifact_key" text NOT NULL,
 	"bundle_hash" text NOT NULL,
@@ -269,9 +296,8 @@ CREATE TABLE "package" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"current_version_id" text,
 	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"organization_id" text,
+	"organization_id" text NOT NULL,
 	"owner_user_id" text NOT NULL,
-	"scope_kind" "package_scope_kind" DEFAULT 'user' NOT NULL,
 	"slug" text NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"visibility" "package_visibility" DEFAULT 'private' NOT NULL
@@ -310,9 +336,10 @@ ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("
 ALTER TABLE "execution" ADD CONSTRAINT "execution_caller_user_id_user_id_fk" FOREIGN KEY ("caller_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "execution" ADD CONSTRAINT "execution_function_id_function_id_fk" FOREIGN KEY ("function_id") REFERENCES "public"."function"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "execution" ADD CONSTRAINT "execution_package_version_id_package_version_id_fk" FOREIGN KEY ("package_version_id") REFERENCES "public"."package_version"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "org_usage_period" ADD CONSTRAINT "org_usage_period_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "package_version" ADD CONSTRAINT "package_version_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "package_version" ADD CONSTRAINT "package_version_package_id_package_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."package"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "package" ADD CONSTRAINT "package_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "package" ADD CONSTRAINT "package_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "package" ADD CONSTRAINT "package_owner_user_id_user_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "function" ADD CONSTRAINT "function_package_id_package_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."package"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
@@ -338,14 +365,15 @@ CREATE INDEX "oauthRefreshToken_sessionId_idx" ON "oauth_refresh_token" USING bt
 CREATE INDEX "oauthRefreshToken_userId_idx" ON "oauth_refresh_token" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "oauthRefreshToken_authorizationCodeId_idx" ON "oauth_refresh_token" USING btree ("authorization_code_id");--> statement-breakpoint
 CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "subscription_reference_id_idx" ON "subscription" USING btree ("reference_id");--> statement-breakpoint
 CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
 CREATE INDEX "execution_package_version_id_idx" ON "execution" USING btree ("package_version_id");--> statement-breakpoint
 CREATE INDEX "execution_created_at_idx" ON "execution" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "execution_caller_user_id_idx" ON "execution" USING btree ("caller_user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "org_usage_period_org_period_uidx" ON "org_usage_period" USING btree ("organization_id","period_key");--> statement-breakpoint
 CREATE INDEX "package_version_package_id_idx" ON "package_version" USING btree ("package_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "package_version_package_id_semver_uidx" ON "package_version" USING btree ("package_id","semver");--> statement-breakpoint
-CREATE UNIQUE INDEX "package_user_scope_slug_uidx" ON "package" USING btree ("owner_user_id","slug") WHERE "package"."scope_kind" = 'user';--> statement-breakpoint
-CREATE UNIQUE INDEX "package_org_scope_slug_uidx" ON "package" USING btree ("organization_id","slug") WHERE "package"."scope_kind" = 'organization';--> statement-breakpoint
+CREATE UNIQUE INDEX "package_org_slug_uidx" ON "package" USING btree ("organization_id","slug");--> statement-breakpoint
 CREATE INDEX "package_owner_user_id_idx" ON "package" USING btree ("owner_user_id");--> statement-breakpoint
 CREATE INDEX "package_organization_id_idx" ON "package" USING btree ("organization_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "function_package_id_slug_uidx" ON "function" USING btree ("package_id","slug");--> statement-breakpoint

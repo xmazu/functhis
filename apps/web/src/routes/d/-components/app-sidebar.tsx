@@ -1,10 +1,4 @@
-import {
-  IconBuilding,
-  IconDeviceDesktop,
-  IconHome,
-  IconMenu2,
-  IconPackage,
-} from '@tabler/icons-react';
+import { IconHome, IconMenu2, IconPackage } from '@tabler/icons-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -23,8 +17,6 @@ import { cn } from '#/lib/utils';
 const NAV_ITEMS = [
   { icon: IconHome, label: 'Home', to: '/d' },
   { icon: IconPackage, label: 'Pkgs', to: '/d/pkgs' },
-  { icon: IconBuilding, label: 'Orgs', to: '/d/orgs' },
-  { icon: IconDeviceDesktop, label: 'Authorize device', to: '/device' },
 ] as const;
 
 const navRowClassName =

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1790339959559,
-      "tag": "0000_large_harrier",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1790359200000,
-      "tag": "0004_org_billing",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1790359440000,
-      "tag": "0005_drop_package_scope_kind",
+      "when": 1790415787543,
+      "tag": "0000_lethal_silk_fever",
       "breakpoints": true
     }
   ]
