@@ -10,7 +10,6 @@ import {
   stableBundlePayload,
   utf8ByteLength,
 } from './bundle';
-import { listMembershipOrganizationIds } from './catalog-access';
 import {
   BUNDLE_KV_PREFIX,
   MAX_ARTIFACT_BYTES,
@@ -38,6 +37,8 @@ import {
   publishStartBodySchema,
 } from './schemas';
 import type { WorkerLoaderBundle } from './schemas';
+import { canPublishPackage } from './secret-access';
+import { parseSecretNamesFromManifestJson } from './secret-names';
 import { bumpSemver, highestSemver } from './semver';
 
 export type { PublishHandlerContext } from './http-context';
@@ -123,18 +124,6 @@ const findOwnedPackageBySlug = async (
     .where(and(eq(pkg.ownerUserId, ownerUserId), eq(pkg.slug, slug)))
     .limit(1);
   return row;
-};
-
-const canPublishPackage = async (
-  database: PublishHandlerContext['db'],
-  userId: string,
-  packageRow: typeof pkg.$inferSelect
-): Promise<boolean> => {
-  if (packageRow.ownerUserId === userId) {
-    return true;
-  }
-  const organizationIds = await listMembershipOrganizationIds(database, userId);
-  return organizationIds.includes(packageRow.organizationId);
 };
 
 type PublishStartBody = z.infer<typeof publishStartBodySchema>;
@@ -425,6 +414,9 @@ export const handlePublishFinalize = async (
           gitSha: parsed.data.gitSha?.toLowerCase() ?? null,
           packageId: packageRow.id,
           runtimeVersion: WORKER_COMPATIBILITY_DATE,
+          secretNames: parseSecretNamesFromManifestJson(
+            parsed.data.artifact.manifestJson
+          ),
           semver: nextSemver,
           sourceHash: parsed.data.sourceHash.toLowerCase(),
         })

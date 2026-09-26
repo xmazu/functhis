@@ -151,6 +151,7 @@ describe('deploy start and finalize', () => {
     expect(versions[0]).toMatchObject({
       gitDirty: true,
       gitSha: 'abc1234',
+      secretNames: [],
       semver: '1.0.0',
     });
 
@@ -165,6 +166,31 @@ describe('deploy start and finalize', () => {
     expect(catalog?.currentVersion.semver).toBe('1.0.0');
     expect(catalog?.currentVersion.publishedAt).toBeInstanceOf(Date);
     expect(catalog?.functions.map((fn) => fn.functionSlug)).toEqual(['hello']);
+  });
+
+  test('persists manifest secret names on the package version', async () => {
+    const db = await integrationDb();
+    const ctx = createIntegrationPublishContext(db);
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const { accessToken } = await seedIntegrationPublishAuth(db, suffix);
+    const slug = `pkg-${suffix}`;
+    const startResponse = await startPackage(ctx, accessToken, {
+      filesManifest: [{ bytes: 1, path: 'hello.ts' }],
+      slug,
+    });
+    const { packageId } = (await startResponse.json()) as { packageId: string };
+    const finalizeResponse = await finalizePackage(ctx, accessToken, {
+      packageId,
+      secrets: ['API_KEY', 'bad-name', 'API_KEY'],
+      slug,
+    });
+    expect(finalizeResponse.status).toBe(200);
+
+    const versions = await db
+      .select({ secretNames: packageVersion.secretNames })
+      .from(packageVersion)
+      .where(eq(packageVersion.packageId, packageId));
+    expect(versions[0]?.secretNames).toEqual(['API_KEY']);
   });
 
   test('bumps semver and replaces function slugs on a later publish', async () => {

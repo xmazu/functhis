@@ -8,6 +8,7 @@ interface CloudflareEnv {
   STRIPE_PRO_PRICE_ID?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  FUNCTHIS_SECRETS_KEY?: string;
   HOT: KVNamespace;
   HYPERDRIVE: Hyperdrive;
   MCP_RESOURCE: string;

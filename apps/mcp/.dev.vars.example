@@ -1,0 +1,2 @@
+# Same 32-byte base64 value as apps/web/.env FUNCTHIS_SECRETS_KEY
+FUNCTHIS_SECRETS_KEY=

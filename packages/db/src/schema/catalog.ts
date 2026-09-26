@@ -72,6 +72,10 @@ export const packageVersion = pgTable(
       .notNull()
       .references(() => pkg.id, { onDelete: 'cascade' }),
     runtimeVersion: text('runtime_version').notNull(),
+    secretNames: text('secret_names')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     semver: text('semver').notNull(),
     sourceHash: text('source_hash').notNull(),
   },
@@ -162,6 +166,47 @@ export const execution = pgTable(
   ]
 );
 
+export const hostedSecret = pgTable(
+  'secret',
+  {
+    ciphertext: text('ciphertext').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    keyVersion: integer('key_version').default(1).notNull(),
+    name: text('name').notNull(),
+    nonce: text('nonce').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    packageId: text('package_id').references(() => pkg.id, {
+      onDelete: 'cascade',
+    }),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(
+        () =>
+          /* @__PURE__ */
+          new Date()
+      )
+      .notNull(),
+    updatedBy: text('updated_by')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+  },
+  (table) => [
+    uniqueIndex('secret_org_name_uidx')
+      .on(table.organizationId, table.name)
+      .where(sql`${table.packageId} is null`),
+    uniqueIndex('secret_package_name_uidx')
+      .on(table.packageId, table.name)
+      .where(sql`${table.packageId} is not null`),
+    index('secret_organization_id_idx').on(table.organizationId),
+    index('secret_package_id_idx').on(table.packageId),
+  ]
+);
+
 export const pkgRelations = relations(pkg, ({ one, many }) => ({
   currentVersion: one(packageVersion, {
     fields: [pkg.currentVersionId],
@@ -177,6 +222,7 @@ export const pkgRelations = relations(pkg, ({ one, many }) => ({
     fields: [pkg.ownerUserId],
     references: [user.id],
   }),
+  secrets: many(hostedSecret),
   versions: many(packageVersion),
 }));
 
@@ -200,6 +246,21 @@ export const pkgFunctionRelations = relations(pkgFunction, ({ one, many }) => ({
   package: one(pkg, {
     fields: [pkgFunction.packageId],
     references: [pkg.id],
+  }),
+}));
+
+export const hostedSecretRelations = relations(hostedSecret, ({ one }) => ({
+  organization: one(organization, {
+    fields: [hostedSecret.organizationId],
+    references: [organization.id],
+  }),
+  package: one(pkg, {
+    fields: [hostedSecret.packageId],
+    references: [pkg.id],
+  }),
+  updatedByUser: one(user, {
+    fields: [hostedSecret.updatedBy],
+    references: [user.id],
   }),
 }));
 

@@ -78,6 +78,13 @@
           "binding": "LOADER",
         },
       ],
+      "secrets_store_secrets": [
+        {
+          "binding": "FUNCTHIS_SECRETS_KEY",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "FUNCTHIS_SECRETS_KEY",
+        },
+      ],
       "analytics_engine_datasets": [
         {
           "binding": "ANALYTICS",

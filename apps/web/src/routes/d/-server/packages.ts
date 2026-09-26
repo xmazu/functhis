@@ -2,8 +2,11 @@ import {
   asHotKvBinding,
   buildPackageAccessContext,
   canAccessPackage,
+  canWritePackageSecrets,
   getPackageBySlugs,
   listAccessiblePackagesForUser,
+  listOrganizationSecrets,
+  listPackageSecrets,
   listRecentExecutions,
   resolveOrganizationSlugById,
   syncPackageToHot,
@@ -55,16 +58,33 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
     );
 
     const isOwner = catalog.ownerUserId === userId;
-    const executions = isOwner
-      ? await listRecentExecutions(database, userId, catalog.id)
-      : [];
+    const [executions, packageSecrets, orgSecrets, canWriteSecrets] =
+      await Promise.all([
+        isOwner
+          ? listRecentExecutions(database, userId, catalog.id)
+          : Promise.resolve([]),
+        listPackageSecrets(database, userId, catalog),
+        listOrganizationSecrets(database, userId, catalog.organizationId),
+        canWritePackageSecrets(database, userId, catalog),
+      ]);
+
+    const setNames = new Set([
+      ...(packageSecrets?.secrets.map((row) => row.name) ?? []),
+      ...(orgSecrets?.secrets.map((row) => row.name) ?? []),
+    ]);
+    const missingSecretNames = catalog.currentVersion.secretNames.filter(
+      (name) => !setNames.has(name)
+    );
 
     return buildPackageDetailViewModel({
+      canWriteSecrets,
       catalog,
       executions,
       isOwner,
       mcpResource: env.MCP_RESOURCE,
+      missingSecretNames,
       organizationSlug,
+      secrets: packageSecrets?.secrets ?? [],
     });
   });
 

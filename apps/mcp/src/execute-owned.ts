@@ -3,6 +3,10 @@ import { StoredBundleLoadError } from '@functhis/publish/bundle-load-error';
 import { canAccessPackage } from '@functhis/publish/catalog-access';
 import { parseFunctionId } from '@functhis/publish/function-id';
 import {
+  loadPackageVersionSecretNames,
+  resolveHostedRuntimeSecrets,
+} from '@functhis/publish/hosted-secrets';
+import {
   buildAccessContextFromHot,
   resolveHotFunctionDoc,
 } from '@functhis/publish/hot-catalog';
@@ -13,6 +17,7 @@ import {
   assertExecuteRequestSize,
   executeRequestByteLength,
 } from '@functhis/publish/quotas';
+import { HostedSecretError } from '@functhis/publish/secret-crypto';
 import { validateContractInput } from '@functhis/publish/validate-input';
 import type { ContractInputValidationIssue } from '@functhis/publish/validate-input';
 import {
@@ -144,12 +149,36 @@ export const executeOwnedFunction = async (
     throw error;
   }
 
+  let runtimeSecrets: Record<string, string> = {};
+  try {
+    const secretNames = await loadPackageVersionSecretNames(
+      database,
+      row.versionId
+    );
+    runtimeSecrets = await resolveHostedRuntimeSecrets(database, {
+      encryptionKey: env.FUNCTHIS_SECRETS_KEY,
+      organizationId: row.organizationId,
+      packageId: row.packageId,
+      secretNames,
+    });
+  } catch (error) {
+    if (error instanceof HostedSecretError) {
+      return {
+        error: 'Failed to load package secrets',
+        ok: false,
+        status: 500,
+      };
+    }
+    throw error;
+  }
+
   const run = await runDynamicWorker(env, {
     bundle,
     callerUserId,
     functionSlug: parsedId.functionSlug,
     requestBytes,
     runInput,
+    runtimeSecrets,
     versionId: row.versionId,
   });
 

@@ -54,11 +54,14 @@ DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
 
 ```bash
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+FUNCTHIS_SECRETS_KEY=$(openssl rand -base64 32)
 BETTER_AUTH_URL=http://localhost:3001
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 TRUSTED_ORIGINS=http://localhost:3001,http://localhost:3003
 ```
+
+Copy the same `FUNCTHIS_SECRETS_KEY` into `apps/mcp/.dev.vars` so hosted `secret()` injection works locally.
 
 After editing any `.env.schema`, regenerate types:
 

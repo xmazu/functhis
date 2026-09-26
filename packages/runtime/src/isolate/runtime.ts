@@ -45,7 +45,7 @@ export const secret = (name: string): string => {
   const value = store.secrets[name];
   if (value === undefined) {
     throw new Error(
-      `Secret "${name}" is not set. Local dev: functhis run --secret ${name}=... . Hosted package secrets are not wired yet.`
+      `Secret "${name}" is not set. Set it on the package or organization, or pass --secret ${name}=... for local dev.`
     );
   }
   return value;

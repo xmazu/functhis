@@ -94,6 +94,14 @@
       "types": "./src/search-lexical.ts",
       "default": "./src/search-lexical.ts"
     },
+    "./hosted-secrets": {
+      "types": "./src/hosted-secrets.ts",
+      "default": "./src/hosted-secrets.ts"
+    },
+    "./secret-crypto": {
+      "types": "./src/secret-crypto.ts",
+      "default": "./src/secret-crypto.ts"
+    },
     "./worker-execute": {
       "types": "./src/worker-execute.ts",
       "default": "./src/worker-execute.ts"

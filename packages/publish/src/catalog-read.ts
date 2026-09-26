@@ -34,6 +34,7 @@ export interface CatalogFunctionRow {
 export interface CatalogPackageRow {
   currentVersion: {
     publishedAt: Date;
+    secretNames: string[];
     semver: string;
   };
   functions: CatalogFunctionRow[];
@@ -144,6 +145,7 @@ export const getPackageBySlugs = async (
   const [versionRow] = await database
     .select({
       createdAt: packageVersion.createdAt,
+      secretNames: packageVersion.secretNames,
       semver: packageVersion.semver,
     })
     .from(packageVersion)
@@ -169,6 +171,7 @@ export const getPackageBySlugs = async (
     currentVersion: {
       // `package_version` has no separate published_at; version row creation time is the catalog publish instant.
       publishedAt: versionRow.createdAt,
+      secretNames: versionRow.secretNames,
       semver: versionRow.semver,
     },
     functions: functions.map((fn) => ({

@@ -15,6 +15,7 @@ import {
 import { AppShell } from '#/routes/d/-components/app-shell';
 import { isDashboardBootstrapPath } from '#/routes/d/-lib/dashboard-bootstrap-path';
 import '#/routes/d/-load-surface';
+import { listOrganizationsForSession } from '#/routes/d/-server/organizations';
 
 const DLayout = () => {
   const pathname = useRouterState({
@@ -39,6 +40,7 @@ const DLayout = () => {
 
 export const Route = createFileRoute('/d')({
   component: DLayout,
+  loader: () => listOrganizationsForSession(),
   beforeLoad: async ({ location }) => {
     const callbackURL = callbackURLFromLocation(location);
     const session = await resolveSession();

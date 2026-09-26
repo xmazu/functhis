@@ -31,3 +31,11 @@ resource "cloudflare_secrets_store_secret" "github_client_secret" {
   scopes     = ["workers"]
   value      = var.github_client_secret
 }
+
+resource "cloudflare_secrets_store_secret" "functhis_secrets_key" {
+  account_id = var.account_id
+  store_id   = cloudflare_secrets_store.functhis.id
+  name       = "FUNCTHIS_SECRETS_KEY"
+  scopes     = ["workers"]
+  value      = var.functhis_secrets_key
+}

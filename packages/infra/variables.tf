@@ -48,6 +48,12 @@ variable "github_client_secret" {
   description = "GitHub OAuth client secret"
 }
 
+variable "functhis_secrets_key" {
+  type        = string
+  sensitive   = true
+  description = "32-byte base64 key used to encrypt customer secrets in Postgres"
+}
+
 variable "enable_domains" {
   type        = bool
   default     = false

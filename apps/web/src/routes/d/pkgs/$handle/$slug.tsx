@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import type { ReactElement } from 'react';
 
 import { authClient } from '#/lib/auth/auth-client';
@@ -10,12 +10,17 @@ import {
   packageDetailUiClass,
 } from '#/routes/d/-components/package-detail-primitives';
 import { PackageSharingPanel } from '#/routes/d/-components/package-sharing-panel';
+import { SecretsPanel } from '#/routes/d/-components/secrets-panel';
 import {
   formatPackageDate,
   formatPackageDateTime,
   toPackageIso,
 } from '#/routes/d/-lib/package-dates';
 import { getPackageDetailForSession } from '#/routes/d/-server/packages';
+import {
+  deletePackageSecretForSession,
+  setPackageSecretForSession,
+} from '#/routes/d/-server/secrets';
 
 const ui = packageDetailUiClass;
 
@@ -28,6 +33,7 @@ const VISIBILITY_LABEL = {
 const PackageDetailPage = (): ReactElement => {
   const { handle, slug } = Route.useParams();
   const detail = Route.useLoaderData();
+  const router = useRouter();
   const { data: organizations } = authClient.useListOrganizations();
 
   if (!detail) {
@@ -116,6 +122,26 @@ const PackageDetailPage = (): ReactElement => {
               )}
             </div>
           </div>
+        </section>
+        <section className="mt-5" id="secrets">
+          <SecretsPanel
+            canWrite={detail.canWriteSecrets}
+            heading="Secrets"
+            missingNames={detail.missingSecretNames}
+            onDelete={async (name) => {
+              await deletePackageSecretForSession({
+                data: { handle, name, packageSlug: slug },
+              });
+              await router.invalidate();
+            }}
+            onSet={async (name, value) => {
+              await setPackageSecretForSession({
+                data: { handle, name, packageSlug: slug, value },
+              });
+              await router.invalidate();
+            }}
+            secrets={detail.secrets}
+          />
         </section>
         <div className="mt-6 flex flex-col-reverse gap-8 lg:flex-row">
           <section className="min-w-0 flex-1 scroll-mt-10" id="functions">

@@ -27,7 +27,8 @@ export const sampleWorkerBundle = (): {
 });
 
 export const sampleArtifact = (
-  slug: string
+  slug: string,
+  secrets: string[] = []
 ): {
   buildJson: string;
   bundle: string;
@@ -36,7 +37,7 @@ export const sampleArtifact = (
 } => ({
   buildJson: JSON.stringify({ cliVersion: '0.1.0' }),
   bundle: sampleWorkerBundle().modules['main.js'] ?? '',
-  manifestJson: JSON.stringify({ package: slug }),
+  manifestJson: JSON.stringify({ package: slug, secrets }),
   sourceMap: '{}',
 });
 
@@ -65,6 +66,7 @@ export interface FinalizePackageInput {
   gitDirty?: boolean;
   gitSha?: string;
   packageId: string;
+  secrets?: string[];
   slug: string;
 }
 
@@ -74,7 +76,7 @@ export const finalizePackage = async (
   input: FinalizePackageInput
 ): Promise<Response> => {
   const bundle = sampleWorkerBundle();
-  const artifact = sampleArtifact(input.slug);
+  const artifact = sampleArtifact(input.slug, input.secrets);
   const bundleHash = await sha256Hex(stableBundlePayload(bundle));
   const contentHash = await hashPublishArtifact(artifact);
   return handlePublishFinalize(

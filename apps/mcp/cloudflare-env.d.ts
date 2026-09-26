@@ -1,6 +1,7 @@
 interface CloudflareEnv {
   AI: Ai;
   OPENROUTER_API_KEY?: SecretsStoreSecret | string;
+  FUNCTHIS_SECRETS_KEY?: SecretsStoreSecret | string;
   ANALYTICS: AnalyticsEngineDataset;
   BUNDLES: KVNamespace;
   CONSOLE_URL: string;

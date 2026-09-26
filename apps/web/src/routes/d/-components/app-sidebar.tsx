@@ -13,6 +13,7 @@ import {
 } from '#/components/ui/sheet';
 import { authClient } from '#/lib/auth/auth-client';
 import { cn } from '#/lib/utils';
+import { SidebarOrgSwitcher } from '#/routes/d/-components/sidebar-org-switcher';
 
 const NAV_ITEMS = [
   { icon: IconHome, label: 'Home', to: '/d' },
@@ -86,10 +87,8 @@ const SidebarAccount = () => {
 
 const SidebarBody = ({ onNavigate }: { onNavigate?: () => void }) => (
   <div className="flex h-full min-h-0 flex-col pt-3">
-    <div className="mb-3 px-4">
-      <p className="text-[length:var(--app-font-size-ui,12px)] font-medium tracking-tight">
-        Functhis
-      </p>
+    <div className="mb-3 px-2">
+      <SidebarOrgSwitcher />
     </div>
     <SidebarNav onNavigate={onNavigate} />
     <SidebarAccount />
@@ -126,9 +125,7 @@ const MobileSidebar = () => {
           </SheetPanel>
         </SheetPopup>
       </Sheet>
-      <p className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-        Functhis
-      </p>
+      <SidebarOrgSwitcher className="min-w-0 flex-1" />
     </header>
   );
 };

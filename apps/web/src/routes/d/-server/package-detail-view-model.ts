@@ -24,24 +24,31 @@ export interface PackageDetailFunctionView {
 }
 
 export interface PackageDetailViewModel {
+  canWriteSecrets: boolean;
   executions: ExecutionSummaryRow[];
   functions: PackageDetailFunctionView[];
   handle: string;
   isOwner: boolean;
+  missingSecretNames: string[];
   organizationId: string;
   organizationSlug: string | null;
+  packageId: string;
   packageSlug: string;
   publishedAt: Date;
+  secrets: { name: string; updatedAt: Date }[];
   semver: string;
   visibility: CatalogPackageRow['visibility'];
 }
 
 export const buildPackageDetailViewModel = (input: {
+  canWriteSecrets: boolean;
   catalog: CatalogPackageRow;
   executions: PackageDetailViewModel['executions'];
   isOwner: boolean;
   mcpResource: string;
+  missingSecretNames: string[];
   organizationSlug: string | null;
+  secrets: PackageDetailViewModel['secrets'];
 }): PackageDetailViewModel => {
   const { catalog } = input;
   const mcpResource = input.mcpResource.replace(/\/$/u, '');
@@ -63,14 +70,18 @@ export const buildPackageDetailViewModel = (input: {
     .toSorted((left, right) => left.slug.localeCompare(right.slug));
 
   return {
+    canWriteSecrets: input.canWriteSecrets,
     executions: input.executions,
     functions,
     handle: catalog.handle,
     isOwner: input.isOwner,
+    missingSecretNames: input.missingSecretNames,
     organizationId: catalog.organizationId,
     organizationSlug: input.organizationSlug,
+    packageId: catalog.id,
     packageSlug: catalog.packageSlug,
     publishedAt: catalog.currentVersion.publishedAt,
+    secrets: input.secrets,
     semver: catalog.currentVersion.semver,
     visibility: catalog.visibility,
   };

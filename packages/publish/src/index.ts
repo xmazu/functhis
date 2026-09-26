@@ -167,6 +167,40 @@ export {
 } from './org-usage';
 export { type PackageVisibility } from './package-visibility';
 export {
+  canPublishPackage,
+  canWritePackageSecrets,
+  isOrgSecretsAdmin,
+  isSecretAdminRole,
+} from './secret-access';
+export {
+  deleteOrganizationSecret,
+  deletePackageSecret,
+  decryptSecretRows,
+  listOrganizationSecrets,
+  listPackageSecrets,
+  loadPackageVersionSecretNames,
+  resolveHostedRuntimeSecrets,
+  setOrganizationSecret,
+  setPackageSecret,
+  type HostedSecretListItem,
+  type HostedSecretListResult,
+  type HostedSecretScope,
+} from './hosted-secrets';
+export {
+  HostedSecretError,
+  decryptSecretValue,
+  encryptSecretValue,
+  parseSecretsKeyBytes,
+  resolveSecretsKeyBytes,
+  SECRETS_KEY_BYTES,
+  SECRETS_KEY_VERSION,
+} from './secret-crypto';
+export {
+  isValidSecretName,
+  mergeSecretValues,
+  parseSecretNamesFromManifestJson,
+} from './secret-names';
+export {
   buildPackageAccessContext,
   canAccessPackage,
   listMembershipOrganizationIds,

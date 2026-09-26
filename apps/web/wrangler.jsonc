@@ -96,6 +96,11 @@
           "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "STRIPE_PRO_PRICE_ID",
         },
+        {
+          "binding": "FUNCTHIS_SECRETS_KEY",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "FUNCTHIS_SECRETS_KEY",
+        },
       ],
       "vars": {
         "NODE_ENV": "production",

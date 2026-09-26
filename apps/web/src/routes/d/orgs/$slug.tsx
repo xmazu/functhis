@@ -5,13 +5,20 @@ import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
+import { SecretsPanel } from '#/routes/d/-components/secrets-panel';
 import { invitationIdFromInviteResponse } from '#/routes/d/-lib/organization-invite';
 import { getOrgBillingSummary } from '#/routes/d/-server/org-billing';
+import {
+  deleteOrgSecretForSession,
+  listOrgSecretsForSession,
+  setOrgSecretForSession,
+} from '#/routes/d/-server/secrets';
 
 const inviteAcceptUrl = (invitationId: string): string =>
   `${globalThis.location.origin}/d/accept-invitation/${invitationId}`;
 
 type BillingSummary = Awaited<ReturnType<typeof getOrgBillingSummary>>;
+type OrgSecrets = Awaited<ReturnType<typeof listOrgSecretsForSession>>;
 
 const BillingActions = ({
   billing,
@@ -67,6 +74,7 @@ const OrganizationDetailPage = () => {
     { email: string; id: string; role: string; userId: string }[]
   >([]);
   const [billing, setBilling] = useState<BillingSummary>(null);
+  const [secrets, setSecrets] = useState<OrgSecrets>(null);
   const [billingBusy, setBillingBusy] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -77,13 +85,16 @@ const OrganizationDetailPage = () => {
       return;
     }
     const load = async (): Promise<void> => {
-      const [{ data: memberData }, summary] = await Promise.all([
+      const [{ data: memberData }, summary, secretList] = await Promise.all([
         authClient.organization.listMembers({
           query: {
             organizationId: organization.id,
           },
         }),
         getOrgBillingSummary({ data: { organizationId: organization.id } }),
+        listOrgSecretsForSession({
+          data: { organizationId: organization.id },
+        }),
       ]);
       if (memberData) {
         setMembers(
@@ -96,6 +107,7 @@ const OrganizationDetailPage = () => {
         );
       }
       setBilling(summary);
+      setSecrets(secretList);
     };
     void load();
   }, [organization?.id]);
@@ -216,6 +228,40 @@ const OrganizationDetailPage = () => {
               }}
             />
           </section>
+        ) : null}
+        {secrets ? (
+          <div className="max-w-md border p-3">
+            <SecretsPanel
+              canWrite={secrets.canWrite}
+              heading="Secrets"
+              onDelete={async (name) => {
+                if (!organization.id) {
+                  return;
+                }
+                await deleteOrgSecretForSession({
+                  data: { name, organizationId: organization.id },
+                });
+                const next = await listOrgSecretsForSession({
+                  data: { organizationId: organization.id },
+                });
+                setSecrets(next);
+              }}
+              onSet={async (name, value) => {
+                await setOrgSecretForSession({
+                  data: {
+                    name,
+                    organizationId: organization.id,
+                    value,
+                  },
+                });
+                const next = await listOrgSecretsForSession({
+                  data: { organizationId: organization.id },
+                });
+                setSecrets(next);
+              }}
+              secrets={secrets.secrets}
+            />
+          </div>
         ) : null}
         <section className="flex max-w-md flex-col gap-2 border p-3">
           <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">

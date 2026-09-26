@@ -112,7 +112,7 @@ apps/mcp/wrangler.jsonc      functhis-mcp (+ production env block)
 - KV `functhis-bundles-{env}` (compiled bundles) and `functhis-hot-{env}` (function docs, search indexes, membership, JWKS snapshot)
 - R2 `functhis-artifacts-{env}` (published package artifacts; Terraform; not the Terraform state bucket)
 - Local Terraform state file (`production.tfstate`, ignored by Git)
-- Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
+- Secrets Store `functhis-{env}` (`BETTER_AUTH_SECRET`, GitHub OAuth, `FUNCTHIS_SECRETS_KEY`). Migrations use Neon direct URL from `packages/db/.env` / CI, not Workers.
 - Analytics Engine execution metrics: Wrangler-bound on `functhis-mcp` (`functhis_executions`; dataset name in Terraform output `analytics_execution_dataset`)
 
 **Wrangler** (after `terraform apply`, paste output IDs into env blocks in `apps/*/wrangler.jsonc`):
@@ -133,7 +133,7 @@ Not Workers for Platforms. Customer packages are not persisted as account script
 Package code runs as a **Dynamic Worker** on `functhis-mcp` via a Worker Loader binding (`env.LOADER`). Implementation lives in `apps/mcp` (`src/execute.ts`); HTTP `search` / `execute` tools ship in phase 6.
 
 - Authors write ordinary TypeScript; no required Functhis SDK. No author `wrangler.toml`.
-- Optional `import { context, secret } from 'functhis:runtime'`. The host injects `./__functhis_runtime.mjs` at `LOADER.get` time (not in the published KV blob). Per-invocation context and secrets use AsyncLocalStorage inside that module. Published bundles must be built with a CLI that externalizes `functhis:runtime` and wraps handlers in `__runInRuntime`; republish after upgrading the runtime kernel. Hosted execute passes invocation `context` today; package `secret()` is local CLI (`functhis run --secret`) until hosted secret wiring ships. Editor types for that import ship in the public `functhis` npm package (`dist/index.d.ts`); function projects load them with `/// <reference types="functhis" />` after `npm install -D functhis`.
+- Optional `import { context, secret } from 'functhis:runtime'`. The host injects `./__functhis_runtime.mjs` at `LOADER.get` time (not in the published KV blob). Per-invocation context and secrets use AsyncLocalStorage inside that module. Published bundles must be built with a CLI that externalizes `functhis:runtime` and wraps handlers in `__runInRuntime`; republish after upgrading the runtime kernel. Hosted execute injects declared `secret()` names from organization and package ciphertext in Postgres (package overrides organization). The AES-GCM key is `FUNCTHIS_SECRETS_KEY` in Secrets Store. Local CLI still uses `functhis run --secret`. Editor types for that import ship in the public `functhis` npm package (`dist/index.d.ts`); function projects load them with `/// <reference types="functhis" />` after `npm install -D functhis`.
 - One isolate per **package version** plus runtime kernel version. `LOADER.get(versionId:runtimeVersion, () => bundle + injected runtime)` reuses a warm isolate; `load()` is only for one-off try-it of unpublished code.
 - Isolation: no parent `env`. Bindings the Dynamic Worker receives are explicit and empty in alpha.
 - Limits on `getEntrypoint()`: `cpuMs` and `subRequests` from the caller’s plan. Fail closed.
