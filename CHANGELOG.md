@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 The published npm CLI (`functhis`) is versioned with each GitHub Release.
 
+## [0.1.2] - 2026-09-26
+
+### Other
+
+- Add Functhis function authoring skill and enhance documentation; update agent prompts and lifecycle references for improved user guidance
+
+- Enhance organization workspace onboarding and billing features; update architecture and roadmap documentation to reflect new organizational structure and billing capabilities; integrate Stripe for payment processing and improve user experience in organization management
+
+- Update workspace onboarding flow to use new `/d/onboard` route; modify architecture and roadmap documentation accordingly; enhance ultracite script for linting and formatting; update package dependencies for improved compatibility
+
+- Implement new database migration for user and organization management; add subscription and billing tables with necessary fields; remove legacy billing migration files to streamline database structure
+
+- Introduce functhis SDK with client and Next.js handler; enhance CLI package to support new SDK features, update documentation for usage, and improve build scripts for SDK components
+
+- Implement isMemberOfOrganization function for membership validation; refactor org-billing route to utilize new membership check, and add corresponding tests for functionality
+
 ## [0.1.1] - 2026-09-25
 
 ### Other
@@ -16,6 +32,8 @@ The published npm CLI (`functhis`) is versioned with each GitHub Release.
 - Update configuration files to ignore generated CHANGELOG.md in oxfmt and oxlint setups, ensuring cleaner output and preventing unnecessary changes in version control
 
 - Update repository links in documentation and components to reflect new ownership under xmazu
+
+- V0.1.1
 
 ## [0.1.0] - 2026-09-25
 
