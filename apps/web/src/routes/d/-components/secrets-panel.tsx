@@ -4,6 +4,7 @@ import type { FormEvent, ReactElement } from 'react';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
+import { messageFromUnknown } from '#/lib/errors/dashboard';
 import {
   SectionHeading,
   packageDetailUiClass,
@@ -15,9 +16,6 @@ export interface SecretListItem {
 }
 
 const EMPTY_MISSING_NAMES: string[] = [];
-
-const messageFromUnknown = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : 'Save failed';
 
 export const SecretsPanel = ({
   canWrite,

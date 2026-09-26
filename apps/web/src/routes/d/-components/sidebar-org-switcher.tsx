@@ -1,5 +1,6 @@
 import { IconCheck, IconChevronDown, IconPlus } from '@tabler/icons-react';
 import { Link, getRouteApi, useRouter } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 import {
   DropdownMenu,
@@ -11,6 +12,11 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu';
 import { authClient } from '#/lib/auth/auth-client';
+import { messageFromUnknown } from '#/lib/errors/dashboard';
+import { useOrganizationsDashboardQuery } from '#/lib/query/dashboard-cache';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
+import { runOptimistic } from '#/lib/query/optimistic';
+import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { cn } from '#/lib/utils';
 
 const dRouteApi = getRouteApi('/d');
@@ -20,7 +26,10 @@ const triggerClassName =
 
 export const SidebarOrgSwitcher = ({ className }: { className?: string }) => {
   const router = useRouter();
-  const { activeOrganizationId, organizations } = dRouteApi.useLoaderData();
+  const queryClient = useAppQueryClient();
+  const loaderData = dRouteApi.useLoaderData();
+  const { activeOrganizationId, organizations } =
+    useOrganizationsDashboardQuery(loaderData);
 
   const effectiveActiveId =
     activeOrganizationId ?? organizations[0]?.id ?? null;
@@ -33,8 +42,32 @@ export const SidebarOrgSwitcher = ({ className }: { className?: string }) => {
     if (organizationId === effectiveActiveId) {
       return;
     }
-    await authClient.organization.setActive({ organizationId });
-    await router.invalidate();
+    try {
+      await runOptimistic(
+        queryClient,
+        [
+          {
+            queryKey: dashboardKeys.organizations(),
+            updater: (previous) => {
+              if (!previous || typeof previous !== 'object') {
+                return previous;
+              }
+              return {
+                ...previous,
+                activeOrganizationId: organizationId,
+              };
+            },
+          },
+        ],
+        async () => {
+          await authClient.organization.setActive({ organizationId });
+          await router.invalidate();
+        },
+        { invalidateOnSuccess: false }
+      );
+    } catch (error) {
+      toast.error(messageFromUnknown(error));
+    }
   };
 
   return (

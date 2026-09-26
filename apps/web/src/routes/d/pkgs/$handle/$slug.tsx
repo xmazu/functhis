@@ -2,6 +2,10 @@ import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import type { ReactElement } from 'react';
 
 import { authClient } from '#/lib/auth/auth-client';
+import { usePackageDetailDashboardQuery } from '#/lib/query/dashboard-cache';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
+import { runOptimistic } from '#/lib/query/optimistic';
+import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { CommandRow } from '#/routes/d/-components/command-row';
 import { CopyButton } from '#/routes/d/-components/copy-button';
 import {
@@ -16,6 +20,7 @@ import {
   formatPackageDateTime,
   toPackageIso,
 } from '#/routes/d/-lib/package-dates';
+import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-view-model';
 import { getPackageDetailForSession } from '#/routes/d/-server/packages';
 import {
   deletePackageSecretForSession,
@@ -30,10 +35,40 @@ const VISIBILITY_LABEL = {
   private: 'Private',
 } as const;
 
+const patchPackageSecrets = (
+  detail: PackageDetailViewModel,
+  name: string,
+  mode: 'delete' | 'set'
+): PackageDetailViewModel => {
+  if (mode === 'delete') {
+    return {
+      ...detail,
+      missingSecretNames: detail.missingSecretNames.filter(
+        (missing) => missing !== name
+      ),
+      secrets: detail.secrets.filter((secret) => secret.name !== name),
+    };
+  }
+  const now = new Date();
+  const without = detail.secrets.filter((secret) => secret.name !== name);
+  return {
+    ...detail,
+    missingSecretNames: detail.missingSecretNames.filter(
+      (missing) => missing !== name
+    ),
+    secrets: [...without, { name, updatedAt: now }].toSorted((a, b) =>
+      a.name.localeCompare(b.name)
+    ),
+  };
+};
+
 const PackageDetailPage = (): ReactElement => {
   const { handle, slug } = Route.useParams();
-  const detail = Route.useLoaderData();
+  const loaderDetail = Route.useLoaderData();
+  const detail = usePackageDetailDashboardQuery(loaderDetail, handle, slug);
   const router = useRouter();
+  const queryClient = useAppQueryClient();
+  const detailKey = dashboardKeys.packageDetail(handle, slug);
   const { data: organizations } = authClient.useListOrganizations();
 
   if (!detail) {
@@ -129,16 +164,58 @@ const PackageDetailPage = (): ReactElement => {
             heading="Secrets"
             missingNames={detail.missingSecretNames}
             onDelete={async (name) => {
-              await deletePackageSecretForSession({
-                data: { handle, name, packageSlug: slug },
-              });
-              await router.invalidate();
+              await runOptimistic(
+                queryClient,
+                [
+                  {
+                    queryKey: detailKey,
+                    updater: (previous) => {
+                      if (!previous || typeof previous !== 'object') {
+                        return previous;
+                      }
+                      return patchPackageSecrets(
+                        previous as PackageDetailViewModel,
+                        name,
+                        'delete'
+                      );
+                    },
+                  },
+                ],
+                async () => {
+                  await deletePackageSecretForSession({
+                    data: { handle, name, packageSlug: slug },
+                  });
+                  await router.invalidate();
+                },
+                { invalidateOnSuccess: false }
+              );
             }}
             onSet={async (name, value) => {
-              await setPackageSecretForSession({
-                data: { handle, name, packageSlug: slug, value },
-              });
-              await router.invalidate();
+              await runOptimistic(
+                queryClient,
+                [
+                  {
+                    queryKey: detailKey,
+                    updater: (previous) => {
+                      if (!previous || typeof previous !== 'object') {
+                        return previous;
+                      }
+                      return patchPackageSecrets(
+                        previous as PackageDetailViewModel,
+                        name,
+                        'set'
+                      );
+                    },
+                  },
+                ],
+                async () => {
+                  await setPackageSecretForSession({
+                    data: { handle, name, packageSlug: slug, value },
+                  });
+                  await router.invalidate();
+                },
+                { invalidateOnSuccess: false }
+              );
             }}
             secrets={detail.secrets}
           />

@@ -6,18 +6,26 @@ import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
+import { messageFromUnknown } from '#/lib/errors/dashboard';
+import { useOrganizationsDashboardQuery } from '#/lib/query/dashboard-cache';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
+import { runOptimistic } from '#/lib/query/optimistic';
+import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { listOrganizationsForSession } from '#/routes/d/-server/organizations';
 
 const OrganizationsPage = () => {
   const router = useRouter();
-  const { activeOrganizationId, organizations } = Route.useLoaderData();
+  const queryClient = useAppQueryClient();
+  const loaderData = Route.useLoaderData();
+  const { activeOrganizationId, organizations } =
+    useOrganizationsDashboardQuery(loaderData);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async (): Promise<void> => {
-    setError(null);
+    setPageError(null);
     setCreating(true);
     try {
       const { error: createError } = await authClient.organization.create({
@@ -25,7 +33,7 @@ const OrganizationsPage = () => {
         slug: slug.trim() || normalizeOrganizationSlug(name),
       });
       if (createError) {
-        setError(createError.message ?? 'Failed to create organization');
+        setPageError(createError.message ?? 'Failed to create organization');
         setCreating(false);
         return;
       }
@@ -33,7 +41,7 @@ const OrganizationsPage = () => {
       setSlug('');
       await router.invalidate();
     } catch {
-      setError('Failed to create organization');
+      setPageError('Failed to create organization');
     }
     setCreating(false);
   };
@@ -73,9 +81,9 @@ const OrganizationsPage = () => {
               value={slug}
             />
           </div>
-          {error ? (
+          {pageError ? (
             <p className="text-destructive text-[length:var(--app-font-size-ui,12px)]">
-              {error}
+              {pageError}
             </p>
           ) : null}
           <Button
@@ -117,11 +125,40 @@ const OrganizationsPage = () => {
                     <span className="text-muted-foreground">· active</span>
                   ) : (
                     <Button
-                      onClick={async () => {
-                        await authClient.organization.setActive({
-                          organizationId: org.id,
-                        });
-                        await router.invalidate();
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            await runOptimistic(
+                              queryClient,
+                              [
+                                {
+                                  queryKey: dashboardKeys.organizations(),
+                                  updater: (previous) => {
+                                    if (
+                                      !previous ||
+                                      typeof previous !== 'object'
+                                    ) {
+                                      return previous;
+                                    }
+                                    return {
+                                      ...previous,
+                                      activeOrganizationId: org.id,
+                                    };
+                                  },
+                                },
+                              ],
+                              async () => {
+                                await authClient.organization.setActive({
+                                  organizationId: org.id,
+                                });
+                                await router.invalidate();
+                              },
+                              { invalidateOnSuccess: false }
+                            );
+                          } catch (error) {
+                            setPageError(messageFromUnknown(error));
+                          }
+                        })();
                       }}
                       size="sm"
                       variant="ghost"

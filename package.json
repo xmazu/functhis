@@ -34,7 +34,7 @@
     "check-types": "turbo run check-types",
     "postinstall": "tsc -b packages/api && varlock codegen --path ./apps/web/ && varlock codegen --path ./packages/db/ && bun run cf-typegen",
     "cf-typegen": "turbo run cf-typegen -F web -F @functhis/mcp --",
-    "test": "bun test packages/auth apps/mcp/src scripts apps/web/src/lib/auth apps/web/src/routes/d/-lib && bun run --filter functhis test && bun run --filter @functhis/publish test && bun run --filter @functhis/runtime test",
+    "test": "bun test packages/auth apps/mcp/src scripts apps/web/src/lib/auth apps/web/src/lib/errors apps/web/src/lib/query apps/web/src/routes/d/-lib && bun run --filter functhis test && bun run --filter @functhis/publish test && bun run --filter @functhis/runtime test",
     "test:integration": "docker compose up -d postgres && bun tests/integration/scripts/migrate.ts && bun run --filter @functhis/integration-tests test:integration",
     "dev:types": "tsc -b packages/api --watch",
     "dev:web": "bun scripts/run-with-local-database-url.ts bunx turbo run dev:bare -F web --",

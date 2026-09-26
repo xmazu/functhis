@@ -15,6 +15,7 @@ import {
 import { createServerFn } from '@tanstack/react-start';
 
 import { env } from '#/env.server';
+import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
 import { getDb } from '#/services';
 
@@ -104,7 +105,7 @@ export const updatePackageSharingForSession = createServerFn({
     const userId = context.session?.user.id;
 
     if (!userId) {
-      throw new Error('Unauthorized');
+      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
 
     const database = await getDb();
@@ -114,7 +115,7 @@ export const updatePackageSharingForSession = createServerFn({
       data.packageSlug
     );
     if (!catalog) {
-      throw new Error('Package not found');
+      throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
 
     const result = await updatePackageSharing(
@@ -128,7 +129,7 @@ export const updatePackageSharingForSession = createServerFn({
       }
     );
     if (!result.ok) {
-      throw new Error(result.error);
+      throw dashboardApiErrors.apiError('INVALID_REQUEST', result.error);
     }
 
     try {

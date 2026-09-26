@@ -5,10 +5,15 @@ import type { ReactElement } from 'react';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
+import { messageFromUnknown } from '#/lib/errors/dashboard';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
+import { runOptimistic } from '#/lib/query/optimistic';
+import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import {
   SectionHeading,
   packageDetailUiClass,
 } from '#/routes/d/-components/package-detail-primitives';
+import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-view-model';
 import { updatePackageSharingForSession } from '#/routes/d/-server/packages';
 
 const VISIBILITY_OPTIONS = ['private', 'organization'] as const;
@@ -32,6 +37,7 @@ export const PackageSharingPanel = ({
 }): ReactElement => {
   const ui = packageDetailUiClass;
   const router = useRouter();
+  const queryClient = useAppQueryClient();
   const [visibility, setVisibility] = useState(initialVisibility);
   const [organizationSlug, setOrganizationSlug] = useState(
     initialOrganizationSlug
@@ -42,22 +48,45 @@ export const PackageSharingPanel = ({
   const handleSaveSharing = async (): Promise<void> => {
     setSaveError(null);
     setSaved(false);
+    const trimmedOrgSlug =
+      organizationSlug.trim().length > 0 ? organizationSlug.trim() : undefined;
+    const detailKey = dashboardKeys.packageDetail(handle, packageSlug);
+
     try {
-      await updatePackageSharingForSession({
-        data: {
-          handle,
-          organizationSlug:
-            organizationSlug.trim().length > 0
-              ? organizationSlug.trim()
-              : undefined,
-          packageSlug,
-          visibility,
+      await runOptimistic(
+        queryClient,
+        [
+          {
+            queryKey: detailKey,
+            updater: (previous) => {
+              if (!previous || typeof previous !== 'object') {
+                return previous;
+              }
+              const detail = previous as PackageDetailViewModel;
+              return {
+                ...detail,
+                organizationSlug: trimmedOrgSlug ?? detail.organizationSlug,
+                visibility,
+              };
+            },
+          },
+        ],
+        async () => {
+          await updatePackageSharingForSession({
+            data: {
+              handle,
+              organizationSlug: trimmedOrgSlug,
+              packageSlug,
+              visibility,
+            },
+          });
+          await router.invalidate();
         },
-      });
+        { invalidateOnSuccess: false }
+      );
       setSaved(true);
-      await router.invalidate();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed');
+      setSaveError(messageFromUnknown(error));
     }
   };
 

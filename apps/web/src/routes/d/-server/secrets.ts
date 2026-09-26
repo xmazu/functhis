@@ -11,6 +11,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
 import { env } from '#/env.server';
+import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
 import { getDb } from '#/services';
 
@@ -22,7 +23,7 @@ const secretNameSchema = z
 
 const rethrowHostedSecretError = (error: unknown): never => {
   if (error instanceof HostedSecretError) {
-    throw new TypeError(error.message);
+    throw dashboardApiErrors.apiError('INVALID_REQUEST', error.message);
   }
   throw error;
 };
@@ -51,7 +52,7 @@ export const setOrgSecretForSession = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error('Unauthorized');
+      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
     const database = await getDb();
     try {
@@ -78,7 +79,7 @@ export const deleteOrgSecretForSession = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error('Unauthorized');
+      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
     const database = await getDb();
     try {
@@ -106,7 +107,7 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error('Unauthorized');
+      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
     const database = await getDb();
     const catalog = await getPackageBySlugs(
@@ -115,7 +116,7 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
       data.packageSlug
     );
     if (!catalog) {
-      throw new Error('Package not found');
+      throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
       return await setPackageSecret(database, {
@@ -142,7 +143,7 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error('Unauthorized');
+      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
     const database = await getDb();
     const catalog = await getPackageBySlugs(
@@ -151,7 +152,7 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
       data.packageSlug
     );
     if (!catalog) {
-      throw new Error('Package not found');
+      throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
       await deletePackageSecret(database, {

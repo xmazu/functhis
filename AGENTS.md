@@ -195,6 +195,44 @@ Remove dead code; do not grow public surfaces “just in case.”
 - Prefer **direct imports** to the defining module over re-exporting through barrels when only one app needs the code (see also **Avoid barrel files** under Performance above).
 - Wrangler bundles the module you import, including its top-level imports. It cannot resolve TanStack Start's virtual modules (`#tanstack-router-entry`, `#tanstack-start-entry`, `tanstack-start-manifest:v`). `@functhis/auth` is the web session app and imports that plugin. Workers import a subpath (`@functhis/auth/publish-token`, `@functhis/auth/seed-cli-client`). When a package defines a subpath, a Wrangler worker imports that subpath so the bundle stays limited to that module.
 
+## Owner dashboard (`/d`) — auth, cache, and mutations
+
+These helpers live under `apps/web/src/lib/` (web-only until a second app needs them). Prefer them over ad hoc `router.invalidate()`-only flows when the UI should update before the server round-trip finishes.
+
+### Browser Better Auth
+
+- **`createFuncthisAuthClient`** — `apps/web/src/lib/auth/create-auth-client.ts`. Single place for OAuth-provider, organization, and Stripe client plugins.
+- **`authClient`** — `apps/web/src/lib/auth/auth-client.ts` re-exports the default instance. Import `#/lib/auth/auth-client` in routes and components; do not call `createAuthClient` from `better-auth/react` directly in the app.
+- **Server sessions** — `createAuth` in `packages/auth` (Wrangler-safe subpaths for workers). Do not move TanStack Start cookie plugins into shared packages workers import.
+
+### React Query + TanStack Router loaders
+
+Dashboard routes still load data with **route loaders** and server functions. Optimistic UI uses the root **`queryClient`** (see `apps/web/src/router.tsx` and `RouterAppContext` in `__root.tsx`).
+
+| Module | Use for |
+| --- | --- |
+| `useAppQueryClient` | `queryClient` from `__root__` route context |
+| `dashboardKeys` | Stable query keys for org list, package detail, org secrets |
+| `useOrganizationsDashboardQuery`, `usePackageDetailDashboardQuery`, `useOrgSecretsDashboardQuery` | Sync loader data into the query cache and subscribe to optimistic patches |
+| `runOptimistic` / `runOptimisticQuery` | Patch cache → run mutation → roll back on failure; optional invalidation on success |
+
+**Mutation pattern:** wrap server fn or `authClient` calls in `runOptimistic` with an `updater` on the right `dashboardKeys.*` entry. After success, either call `router.invalidate()` for loader truth and pass **`{ invalidateOnSuccess: false }`** (avoids double refetch), or refresh with `setQueryData` from a follow-up server fn. On failure, show **`messageFromUnknown`** from `#/lib/errors/dashboard` (or `toast.error`).
+
+**New dashboard mutations** (org switch, sharing, secrets, similar): add or reuse a `dashboardKeys` entry, sync loader shape in `dashboard-cache.ts` if needed, and use `runOptimistic` instead of only invalidating the router.
+
+### Dashboard server function errors
+
+- **`dashboardApiErrors`** — `apps/web/src/lib/errors/dashboard.ts`. Throw `dashboardApiErrors.apiError(code, message)` from `apps/web/src/routes/d/-server/*` handlers (unauthorized, not found, invalid request). Codes are typed; messages are what the UI displays after server-fn serialization.
+- **`createApiErrors` / `ApiError`** — `apps/web/src/lib/errors/api-errors.ts`. Generic envelope factory; extend with new code maps only when adding a new error surface (e.g. a public REST API), not per route.
+
+### oRPC (marketing / shared API client)
+
+Keep using **`apps/web/src/utils/orpc.ts`** (`createQueryClient`, isomorphic oRPC client, `@orpc/tanstack-query` utils). Do not add a second browser-only oRPC factory unless SSR/isomorphic behavior changes.
+
+### Tests
+
+Colocated under `apps/web/src/lib/query/` and `apps/web/src/lib/errors/` (`bun:test`). Root `bun run test` includes those paths.
+
 ---
 
 Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run **`bun x ultracite fix`**, then satisfy **Verification before finishing** above. Commit with a Conventional Commits subject as above.

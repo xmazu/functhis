@@ -5,6 +5,11 @@ import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
+import { useOrgSecretsDashboardQuery } from '#/lib/query/dashboard-cache';
+import type { OrgSecretsQueryData } from '#/lib/query/dashboard-cache';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
+import { runOptimistic } from '#/lib/query/optimistic';
+import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { SecretsPanel } from '#/routes/d/-components/secrets-panel';
 import { invitationIdFromInviteResponse } from '#/routes/d/-lib/organization-invite';
 import { getOrgBillingSummary } from '#/routes/d/-server/org-billing';
@@ -19,6 +24,27 @@ const inviteAcceptUrl = (invitationId: string): string =>
 
 type BillingSummary = Awaited<ReturnType<typeof getOrgBillingSummary>>;
 type OrgSecrets = Awaited<ReturnType<typeof listOrgSecretsForSession>>;
+
+const patchOrgSecrets = (
+  data: OrgSecretsQueryData,
+  name: string,
+  mode: 'delete' | 'set'
+): OrgSecretsQueryData => {
+  if (mode === 'delete') {
+    return {
+      ...data,
+      secrets: data.secrets.filter((secret) => secret.name !== name),
+    };
+  }
+  const now = new Date();
+  const without = data.secrets.filter((secret) => secret.name !== name);
+  return {
+    ...data,
+    secrets: [...without, { name, updatedAt: now }].toSorted((a, b) =>
+      a.name.localeCompare(b.name)
+    ),
+  };
+};
 
 const BillingActions = ({
   billing,
@@ -68,8 +94,10 @@ const BillingActions = ({
 
 const OrganizationDetailPage = () => {
   const { slug } = Route.useParams();
+  const queryClient = useAppQueryClient();
   const { data: organizations } = authClient.useListOrganizations();
   const organization = (organizations ?? []).find((org) => org.slug === slug);
+  const organizationId = organization?.id ?? '';
   const [members, setMembers] = useState<
     { email: string; id: string; role: string; userId: string }[]
   >([]);
@@ -79,6 +107,8 @@ const OrganizationDetailPage = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const secretsView = useOrgSecretsDashboardQuery(organizationId, secrets);
+  const secretsKey = dashboardKeys.orgSecrets(organizationId);
 
   useEffect(() => {
     if (!organization?.id) {
@@ -229,37 +259,85 @@ const OrganizationDetailPage = () => {
             />
           </section>
         ) : null}
-        {secrets ? (
+        {secretsView ? (
           <div className="max-w-md border p-3">
             <SecretsPanel
-              canWrite={secrets.canWrite}
+              canWrite={secretsView.canWrite}
               heading="Secrets"
               onDelete={async (name) => {
                 if (!organization.id) {
                   return;
                 }
-                await deleteOrgSecretForSession({
-                  data: { name, organizationId: organization.id },
-                });
-                const next = await listOrgSecretsForSession({
-                  data: { organizationId: organization.id },
-                });
-                setSecrets(next);
+                await runOptimistic(
+                  queryClient,
+                  [
+                    {
+                      queryKey: secretsKey,
+                      updater: (previous) => {
+                        if (!previous || typeof previous !== 'object') {
+                          return previous;
+                        }
+                        return patchOrgSecrets(
+                          previous as OrgSecretsQueryData,
+                          name,
+                          'delete'
+                        );
+                      },
+                    },
+                  ],
+                  async () => {
+                    await deleteOrgSecretForSession({
+                      data: { name, organizationId: organization.id },
+                    });
+                    const next = await listOrgSecretsForSession({
+                      data: { organizationId: organization.id },
+                    });
+                    setSecrets(next);
+                    if (next) {
+                      queryClient.setQueryData(secretsKey, next);
+                    }
+                  },
+                  { invalidateOnSuccess: false }
+                );
               }}
               onSet={async (name, value) => {
-                await setOrgSecretForSession({
-                  data: {
-                    name,
-                    organizationId: organization.id,
-                    value,
+                await runOptimistic(
+                  queryClient,
+                  [
+                    {
+                      queryKey: secretsKey,
+                      updater: (previous) => {
+                        if (!previous || typeof previous !== 'object') {
+                          return previous;
+                        }
+                        return patchOrgSecrets(
+                          previous as OrgSecretsQueryData,
+                          name,
+                          'set'
+                        );
+                      },
+                    },
+                  ],
+                  async () => {
+                    await setOrgSecretForSession({
+                      data: {
+                        name,
+                        organizationId: organization.id,
+                        value,
+                      },
+                    });
+                    const next = await listOrgSecretsForSession({
+                      data: { organizationId: organization.id },
+                    });
+                    setSecrets(next);
+                    if (next) {
+                      queryClient.setQueryData(secretsKey, next);
+                    }
                   },
-                });
-                const next = await listOrgSecretsForSession({
-                  data: { organizationId: organization.id },
-                });
-                setSecrets(next);
+                  { invalidateOnSuccess: false }
+                );
               }}
-              secrets={secrets.secrets}
+              secrets={secretsView.secrets}
             />
           </div>
         ) : null}
