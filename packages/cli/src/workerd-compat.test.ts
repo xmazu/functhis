@@ -56,6 +56,14 @@ describe('assertBundleHasNoBannedNodeImports', () => {
 });
 
 describe('assertSourceHasNoBannedNodeImports', () => {
+  test('rejects functhis/sdk/next in function sources', () => {
+    expect(() =>
+      assertSourceHasNoBannedNodeImports(
+        "import { createHandler } from 'functhis/sdk/next';\nexport default async () => ({});\n"
+      )
+    ).toThrow(/Next.js app routes only/u);
+  });
+
   test('rejects node:fs in unused author imports', () => {
     expect(() =>
       assertSourceHasNoBannedNodeImports(
@@ -108,6 +116,14 @@ describe('workerdCompatibilityPlugin', () => {
     await expect(
       buildWithPlugin("import fs from 'node:fs'; export default fs;\n")
     ).rejects.toThrow(/node:fs/u);
+  });
+
+  test('rejects functhis/sdk/next during resolve', async () => {
+    await expect(
+      buildWithPlugin(
+        "import { createHandler } from 'functhis/sdk/next';\nexport default createHandler({ functions: {} });\n"
+      )
+    ).rejects.toThrow(/Next.js app routes only/u);
   });
 
   test('rejects native addon paths', async () => {

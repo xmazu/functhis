@@ -1,0 +1,13 @@
+{
+  "extends": "@functhis/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist/sdk",
+    "rootDir": "sdk",
+    "skipLibCheck": true
+  },
+  "include": ["sdk/protocol.ts", "sdk/next.ts", "sdk/client.ts"]
+}

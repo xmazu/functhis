@@ -1,5 +1,10 @@
 import type { Plugin } from 'esbuild';
 
+const BANNED_FUNCTHIS_SDK_IMPORTS = new Set([
+  'functhis/next',
+  'functhis/sdk/next',
+]);
+
 const BANNED_SPECIFIERS = new Set([
   'async_hooks',
   'child_process',
@@ -28,6 +33,18 @@ const normalizeSpecifier = (specifier: string): string =>
 
 export const isBannedNodeSpecifier = (specifier: string): boolean =>
   BANNED_SPECIFIERS.has(normalizeSpecifier(specifier));
+
+export const isBannedFuncthisSdkImport = (specifier: string): boolean =>
+  BANNED_FUNCTHIS_SDK_IMPORTS.has(specifier);
+
+const functhisSdkImportError = (specifier: string) => ({
+  errors: [
+    {
+      text: `"${specifier}" is for Next.js app routes only. Use functhis/sdk/client in published functions and import type { Api } from your app module.`,
+    },
+  ],
+  path: specifier,
+});
 
 const nativeAddonError = (specifier: string) => ({
   errors: [
@@ -67,6 +84,9 @@ export const workerdCompatibilityPlugin = (): Plugin => ({
 
     // eslint-disable-next-line require-unicode-regexp
     build.onResolve({ filter: /^[^./]/ }, (args) => {
+      if (isBannedFuncthisSdkImport(args.path)) {
+        return functhisSdkImportError(args.path);
+      }
       if (isBannedNodeSpecifier(args.path)) {
         return bannedNodeError(args.path);
       }
@@ -87,6 +107,11 @@ export const assertSourceHasNoBannedNodeImports = (code: string): void => {
     if (specifier.endsWith('.node')) {
       throw new Error(
         `Native addon "${specifier}" is not supported on Functhis (workerd).`
+      );
+    }
+    if (isBannedFuncthisSdkImport(specifier)) {
+      throw new Error(
+        `"${specifier}" is for Next.js app routes only. Use functhis/sdk/client in published functions.`
       );
     }
     if (isBannedNodeSpecifier(specifier)) {

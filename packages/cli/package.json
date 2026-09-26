@@ -21,6 +21,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./sdk/next": {
+      "types": "./dist/sdk/next.d.ts",
+      "default": "./dist/sdk/next.js"
+    },
+    "./sdk/client": {
+      "types": "./dist/sdk/client.d.ts",
+      "default": "./dist/sdk/client.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

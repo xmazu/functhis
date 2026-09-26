@@ -10,6 +10,16 @@ This project uses **Ultracite**, a zero-config preset that enforces strict code 
 
 Oxlint + Oxfmt (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
 
+## Verification before finishing
+
+After making code changes, **do not consider the task done** until all of these exit successfully:
+
+1. **`bun run check`** — `env:generate`, Ultracite (`ultracite check`), and knip. Run **`bun x ultracite fix`** first when issues are auto-fixable.
+2. **`bun run check-types`** — TypeScript across the monorepo (`turbo run check-types`).
+3. **`bun run precommit`** — matches what Husky runs after staged lint: `check`, affected `check-types` (`--filter='...[HEAD]'`), and `test`.
+
+Fix every failure before stopping or committing. A green Ultracite run alone is not enough if types or pre-commit still fail.
+
 ## Git Commits
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/). Every commit message:
@@ -187,4 +197,4 @@ Remove dead code; do not grow public surfaces “just in case.”
 
 ---
 
-Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance. Commit with a Conventional Commits subject as above.
+Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run **`bun x ultracite fix`**, then satisfy **Verification before finishing** above. Commit with a Conventional Commits subject as above.

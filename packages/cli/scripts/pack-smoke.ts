@@ -38,13 +38,8 @@ try {
   }
 
   const binPath = path.join(installPrefix, 'node_modules', '.bin', 'functhis');
-  const typesPath = path.join(
-    installPrefix,
-    'node_modules',
-    'functhis',
-    'dist',
-    'index.d.ts'
-  );
+  const packageDir = path.join(installPrefix, 'node_modules', 'functhis');
+  const typesPath = path.join(packageDir, 'dist', 'index.d.ts');
 
   const typesFile = Bun.file(typesPath);
   if (!(await typesFile.exists())) {
@@ -54,6 +49,33 @@ try {
   const typesContent = await typesFile.text();
   if (!typesContent.includes("declare module 'functhis:runtime'")) {
     console.error('pack smoke: index.d.ts must declare functhis:runtime');
+    process.exit(1);
+  }
+
+  const sdkSubpaths = ['next', 'client'] as const;
+  const sdkFileChecks = sdkSubpaths.flatMap((subpath) => [
+    {
+      ext: 'js' as const,
+      filePath: path.join(packageDir, 'dist', 'sdk', `${subpath}.js`),
+      subpath,
+    },
+    {
+      ext: 'd.ts' as const,
+      filePath: path.join(packageDir, 'dist', 'sdk', `${subpath}.d.ts`),
+      subpath,
+    },
+  ]);
+  const sdkResults = await Promise.all(
+    sdkFileChecks.map(async (check) => ({
+      ...check,
+      missing: !(await Bun.file(check.filePath).exists()),
+    }))
+  );
+  const sdkMissing = sdkResults.filter((check) => check.missing);
+  for (const { subpath, ext } of sdkMissing) {
+    console.error(
+      `pack smoke: missing dist/${subpath}.${ext} in installed package`
+    );
     process.exit(1);
   }
 

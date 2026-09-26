@@ -76,8 +76,16 @@
       "project": ["**/*.ts"]
     },
     "packages/cli": {
-      "entry": ["src/cli.ts", "src/**/*.test.ts", "scripts/**/*.ts"],
-      "project": ["src/**/*.ts", "scripts/**/*.ts"]
+      "entry": [
+        "src/cli.ts",
+        "sdk/protocol.ts",
+        "sdk/next.ts",
+        "sdk/client.ts",
+        "sdk/**/*.test.ts",
+        "src/**/*.test.ts",
+        "scripts/**/*.ts"
+      ],
+      "project": ["src/**/*.ts", "sdk/**/*.ts", "scripts/**/*.ts"]
     },
     "packages/publish": {
       "entry": ["src/index.ts", "src/**/*.test.ts", "scripts/**/*.ts"],

@@ -6,6 +6,6 @@
     "noEmit": true,
     "types": ["bun"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": ["src/**/*.ts", "sdk/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "sdk/**/*.test.ts"]
 }

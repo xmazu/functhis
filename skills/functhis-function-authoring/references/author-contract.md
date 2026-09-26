@@ -90,3 +90,16 @@ import { context, secret } from 'functhis:runtime';
 ```
 
 `context()` exposes invocation identity. `secret(name)` reads secrets supplied to local runs with `--secret NAME=value`. Hosted secret wiring is not available yet, so do not design a hosted function that depends on it without confirming current platform support.
+
+## Calling your app
+
+When a function needs a database or other resources that only exist in your application, keep that logic in the app and call it over HTTP from the published function. Functhis ships optional helpers on the `functhis` npm package:
+
+- `functhis/sdk/next` — `createHandler` registers slugged handlers and returns Next.js `GET` and `POST` route handlers for `/api/functhis`.
+- `functhis/sdk/client` — `createClient<typeof api>` calls those handlers from a published function.
+
+The function file stays a default export with its own JSDoc and contract. The app module exports `api` from `createHandler` and `export type Api = typeof api`. The function imports `Api` with `import type` only. A value import of the app module would bundle database code into the isolate and usually fails publish checks.
+
+Pass `url` and `token` into `createClient` for now. The same token must match `FUNCTHIS_TOKEN` on the app. A hardcoded token is included in the published bundle; keep the package private until hosted secrets are available.
+
+Mount the Next.js route with `export const runtime = 'nodejs'` — `functhis/sdk/next` is not Edge-compatible. The handler expects requests at `/api/functhis` on the app URL you pass to `createClient` (Next.js `basePath` breaks that unless you adjust routing). In app handlers, throw `FuncthisError` with an HTTP status when the published function should receive a specific error code; other failures return 500 with a generic message. Do not value-import `functhis/sdk/next` from published function code — use `functhis/sdk/client` and `import type` for `Api`.

@@ -5,9 +5,11 @@ const packageRoot = path.join(import.meta.dirname, '..');
 const minimumLineCoverage = 85;
 const skippedFiles = new Set(['cli.ts', 'login.ts', 'open-url.ts']);
 const srcDir = path.join(packageRoot, 'src');
+const sdkDir = path.join(packageRoot, 'sdk');
 const packageSrcMarker = `packages/${path.basename(packageRoot)}/src/`;
+const packageSdkMarker = `packages/${path.basename(packageRoot)}/sdk/`;
 
-const result = spawnSync('bun', ['test', srcDir, '--coverage'], {
+const result = spawnSync('bun', ['test', srcDir, sdkDir, '--coverage'], {
   cwd: packageRoot,
   encoding: 'utf-8',
   maxBuffer: 10 * 1024 * 1024,
@@ -36,8 +38,11 @@ const srcRows = combinedOutput.split('\n').filter((line) => {
   }
   return (
     filePath.startsWith('src/') ||
+    filePath.startsWith('sdk/') ||
     filePath.includes(packageSrcMarker) ||
-    /(?:^|\s)src\/[a-z][\w.-]*\.ts(?:\s|$)/u.test(line)
+    filePath.includes(packageSdkMarker) ||
+    /(?:^|\s)src\/[a-z][\w.-]*\.ts(?:\s|$)/u.test(line) ||
+    /(?:^|\s)sdk\/[a-z][\w.-]*\.ts(?:\s|$)/u.test(line)
   );
 });
 
@@ -62,6 +67,6 @@ for (const row of srcRows) {
 }
 
 if (srcRows.length === 0) {
-  console.error('No src/ coverage rows found in test output');
+  console.error('No src/ or sdk/ coverage rows found in test output');
   process.exit(1);
 }
