@@ -1,4 +1,4 @@
-import { IconKey, IconPlus } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -98,10 +98,6 @@ const SettingsSecretsPage = () => {
       description="Store values that your deployed functions can read at runtime."
       title="Secrets"
     >
-      <header className="-mt-1 flex items-center gap-2">
-        <IconKey className="text-muted-foreground size-4" aria-hidden="true" />
-        <h2 className={`${settingsText} font-medium`}>Organization secrets</h2>
-      </header>
       <SecretsSettingsPanel
         canWrite={secretsView.canWrite}
         createOpen={createOpen}
