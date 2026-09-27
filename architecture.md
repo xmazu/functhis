@@ -26,7 +26,7 @@ Identity is the MCP id. Execute is MCP `execute`.
 ```
 
 - MCP ids are `@handle/package/function`.
-- `@` is reserved. Marketing routes do not start with `@`. Web does not serve `/@…` pages in alpha.
+- `@` is reserved. Marketing routes do not start with `@`. Package console at `/@{$handle}/$slug` (signed-in + ACL; not a public catalog in alpha).
 - Compute identity is the package version id (`ver_{versionId}`). Slugs can change without moving the isolate.
 
 ## Auth
@@ -69,7 +69,7 @@ MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI devi
 
 Signed-in owner app at `apps/web` under `/d` (pkgs, orgs). Visual system: [apps/web/src/routes/d/DESIGN.md](apps/web/src/routes/d/DESIGN.md).
 
-Alpha: GitHub login, workspace onboarding at `/d/onboard`, MCP consent, device approval, signed-in home at `/d`, package list at `/d/pkgs`, package detail at `/d/pkgs/:handle/:slug` (handle is org slug), organizations at `/d/orgs` with Free/Pro billing via Stripe Checkout and Customer Portal, sharing controls on owned packages. Package detail copies MCP ids; there is no try-it playground. Library browse/catalog UI remains later.
+Alpha: GitHub login, workspace onboarding at `/d/onboard`, MCP consent, device approval, signed-in home at `/d`, package list at `/d/pkgs`, package detail at `/@{$handle}/$slug` (handle is org slug), organizations at `/d/orgs` with Free/Pro billing via Stripe Checkout and Customer Portal, sharing controls on owned packages. Package detail copies MCP ids; there is no try-it playground. Library browse/catalog UI remains later.
 
 ## MCP
 

@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 
+import { packageConsoleHref } from '#/routes/d/-lib/package-console-href';
 import { listPackagesForSession } from '#/routes/d/-server/packages';
 
 const PackagesPage = () => {
@@ -27,8 +28,7 @@ const PackagesPage = () => {
               >
                 <Link
                   className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-                  params={{ handle: pkg.handle, slug: pkg.packageSlug }}
-                  to="/d/pkgs/$handle/$slug"
+                  to={packageConsoleHref(pkg.handle, pkg.packageSlug)}
                 >
                   @{pkg.handle}/{pkg.packageSlug}
                 </Link>
