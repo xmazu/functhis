@@ -1,7 +1,6 @@
 import type { Database } from '@functhis/db';
 import { execution, packageVersion } from '@functhis/db/schema/catalog';
 import {
-  asHotKvBinding,
   buildPackageAccessContext,
   canAccessPackage,
   canWritePackageSecrets,
@@ -11,14 +10,11 @@ import {
   listPackageSecrets,
   listRecentExecutions,
   resolveOrganizationSlugById,
-  syncPackageToHot,
-  updatePackageSharing,
 } from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { env } from '#/env.server';
-import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
 import { withCallCounts } from '#/routes/d/-lib/package-list';
 import { getDb } from '#/services';
@@ -120,56 +116,4 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       organizationSlug,
       secrets: packageSecrets?.secrets ?? [],
     });
-  });
-
-export const updatePackageSharingForSession = createServerFn({
-  method: 'POST',
-})
-  .middleware([authMiddleware])
-  .validator(
-    (input: {
-      handle: string;
-      organizationSlug?: string;
-      packageSlug: string;
-      visibility: 'organization' | 'private';
-    }) => input
-  )
-  .handler(async ({ context, data }) => {
-    const userId = context.session?.user.id;
-
-    if (!userId) {
-      throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
-    }
-
-    const database = await getDb();
-    const catalog = await getPackageBySlugs(
-      database,
-      data.handle,
-      data.packageSlug
-    );
-    if (!catalog) {
-      throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
-    }
-
-    const result = await updatePackageSharing(
-      database,
-      userId,
-      data.handle,
-      data.packageSlug,
-      {
-        organizationSlug: data.organizationSlug,
-        visibility: data.visibility,
-      }
-    );
-    if (!result.ok) {
-      throw dashboardApiErrors.apiError('INVALID_REQUEST', result.error);
-    }
-
-    try {
-      await syncPackageToHot(asHotKvBinding(env.HOT), database, catalog.id);
-    } catch {
-      // HOT is best-effort
-    }
-
-    return { ok: true as const };
   });

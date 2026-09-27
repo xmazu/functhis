@@ -3,7 +3,6 @@ import {
   IconKey,
   IconLayoutDashboard,
   IconMenu2,
-  IconShare,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
 import {
@@ -36,10 +35,6 @@ import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-v
 
 const packageRouteApi = getRouteApi(packageConsoleRouteId);
 
-const showsSharingNav = (detail: PackageDetailViewModel): boolean =>
-  detail.isOwner &&
-  (detail.visibility === 'private' || detail.visibility === 'organization');
-
 interface PackageNavItem {
   href: string;
   icon: Icon;
@@ -70,17 +65,6 @@ const buildPackageNavItems = (
         pathname ===
         packageConsoleHref(detail.handle, detail.packageSlug, 'secrets'),
       label: 'Secrets',
-    });
-  }
-
-  if (showsSharingNav(detail)) {
-    items.push({
-      href: packageConsoleHref(detail.handle, detail.packageSlug, 'sharing'),
-      icon: IconShare,
-      isActive: (pathname) =>
-        pathname ===
-        packageConsoleHref(detail.handle, detail.packageSlug, 'sharing'),
-      label: 'Sharing',
     });
   }
 
@@ -213,5 +197,3 @@ export const PackageSidebar = (): ReactElement | null => {
     </>
   );
 };
-
-export { showsSharingNav };

@@ -24,6 +24,7 @@ Source of truth: [`src/index.css`](src/index.css). Root is forced `.dark` on `<h
 | `--app-sidebar-backdrop-filter` | `blur(4px) saturate(130%)` |
 | `--font-ui-family` | `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui` |
 | `--app-font-size-ui` | `12px` |
+| `--app-density-line-height` | `1.25` |
 | `--app-density-row-height` | `1.75rem` |
 
 `--font-sans` and `--font-heading` map to `--font-ui-family`. Body `letter-spacing: normal` so SF Pro on macOS reads native.

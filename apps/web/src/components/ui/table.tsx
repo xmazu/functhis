@@ -101,7 +101,7 @@ export const TableHead = ({
 }: React.ComponentProps<'th'>): React.ReactElement => (
   <th
     className={cn(
-      'text-muted-foreground h-[var(--app-density-row-height,1.75rem)] px-2.5 text-left align-middle leading-none font-medium whitespace-nowrap has-[[role=checkbox]]:w-px first:has-[[role=checkbox]]:pe-0 last:has-[[role=checkbox]]:ps-0',
+      'text-muted-foreground h-[var(--app-density-row-height,1.75rem)] px-2.5 text-left align-middle leading-[var(--app-density-line-height,1.25)] font-medium whitespace-nowrap has-[[role=checkbox]]:w-px first:has-[[role=checkbox]]:pe-0 last:has-[[role=checkbox]]:ps-0',
       className
     )}
     data-slot="table-head"
@@ -115,7 +115,7 @@ export const TableCell = ({
 }: React.ComponentProps<'td'>): React.ReactElement => (
   <td
     className={cn(
-      'bg-clip-padding p-2.5 align-middle leading-none whitespace-nowrap in-data-[slot=table-footer]:py-3.5 in-data-[variant=card]:first:ps-[calc(--spacing(2.5)-1px)] in-data-[variant=card]:last:pe-[calc(--spacing(2.5)-1px)] has-[[role=checkbox]]:w-px first:has-[[role=checkbox]]:pe-0 last:has-[[role=checkbox]]:ps-0',
+      'bg-clip-padding p-2.5 align-middle leading-[var(--app-density-line-height,1.25)] whitespace-nowrap in-data-[slot=table-footer]:py-3.5 in-data-[variant=card]:first:ps-[calc(--spacing(2.5)-1px)] in-data-[variant=card]:last:pe-[calc(--spacing(2.5)-1px)] has-[[role=checkbox]]:w-px first:has-[[role=checkbox]]:pe-0 last:has-[[role=checkbox]]:ps-0',
       className
     )}
     data-slot="table-cell"

@@ -18,7 +18,7 @@ export const sidebarAsideClassName =
   'app-sidebar-surface hidden w-56 shrink-0 flex-col md:flex';
 
 export const navRowClassName =
-  'flex h-[var(--app-density-row-height,1.75rem)] w-full min-w-0 items-center gap-2 rounded-md px-2 text-[length:var(--app-font-size-ui,12px)] leading-none font-normal outline-hidden transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset';
+  'flex h-[var(--app-density-row-height,1.75rem)] w-full min-w-0 items-center gap-2 rounded-md px-2 text-[length:var(--app-font-size-ui,12px)] leading-[var(--app-density-line-height,1.25)] font-normal outline-hidden transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset';
 
 export const SidebarAccount = (): ReactElement | null => {
   const { data: session } = authClient.useSession();

@@ -33,6 +33,10 @@ export const PackageConsoleHeader = (): ReactElement | null => {
   const isOverview =
     pathname === overviewPath || pathname === `${overviewPath}/`;
 
+  if (isOverview) {
+    return null;
+  }
+
   return (
     <header className={cn(packageConsoleWidthClassName, 'shrink-0 pt-6 pb-5')}>
       <div className="flex items-start justify-between gap-4">
@@ -45,14 +49,12 @@ export const PackageConsoleHeader = (): ReactElement | null => {
           </h1>
           <CopyButton label="Copy package name" value={packageName} />
         </div>
-        {isOverview ? (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            <p className={`${ui} font-mono`}>{detail.semver}</p>
-            {detail.isOwner ? null : (
-              <p className={`${ui} text-muted-foreground`}>Shared with you</p>
-            )}
-          </div>
-        ) : null}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <p className={`${ui} font-mono`}>{detail.semver}</p>
+          {detail.isOwner ? null : (
+            <p className={`${ui} text-muted-foreground`}>Shared with you</p>
+          )}
+        </div>
       </div>
     </header>
   );

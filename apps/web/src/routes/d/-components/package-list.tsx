@@ -23,7 +23,11 @@ import type { PackageListItem } from '#/routes/d/-lib/package-list';
 const ui = 'text-[length:var(--app-font-size-ui,12px)]';
 
 const rowGridClassName =
-  'grid h-[var(--app-density-row-height,1.75rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[2rem_minmax(0,1fr)_3.25rem_5.5rem_4.5rem] lg:gap-4';
+  'grid h-[var(--app-density-row-height,1.75rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[2rem_minmax(0,1fr)_3.75rem_6rem_5rem] lg:gap-4';
+
+const metricHeaderClassName = 'hidden px-2 text-right lg:block';
+const metricCellClassName = 'px-2 text-right tabular-nums';
+const metricCellClassNameLg = cn(metricCellClassName, 'hidden lg:block');
 
 export const PackageList = ({
   packages,
@@ -106,9 +110,9 @@ export const PackageList = ({
       >
         <span className="tabular-nums">#</span>
         <span>Package</span>
-        <span className="hidden text-right lg:block">Fns</span>
-        <span className="hidden text-right lg:block">Visibility</span>
-        <span className="text-right">Calls</span>
+        <span className={metricHeaderClassName}>Fns</span>
+        <span className={metricHeaderClassName}>Visibility</span>
+        <span className={metricHeaderClassName}>Calls</span>
       </div>
       {visible.length === 0 ? (
         <output className={`${ui} text-muted-foreground py-3`}>
@@ -137,13 +141,20 @@ export const PackageList = ({
                     @{pkg.handle}
                   </span>
                 </span>
-                <span className="text-muted-foreground hidden text-right tabular-nums lg:block">
+                <span
+                  className={cn(metricCellClassNameLg, 'text-muted-foreground')}
+                >
                   {formatFunctionCountLabel(pkg.functionCount)}
                 </span>
-                <span className="text-muted-foreground hidden truncate text-right lg:block">
+                <span
+                  className={cn(
+                    metricCellClassNameLg,
+                    'text-muted-foreground truncate'
+                  )}
+                >
                   {formatVisibilityLabel(pkg)}
                 </span>
-                <span className="text-right tabular-nums">
+                <span className={metricCellClassName}>
                   {formatCallCount(pkg.callCount)}
                 </span>
               </Link>
