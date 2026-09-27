@@ -12,7 +12,6 @@
   "ignoreDependencies": [
     "@cloudflare/vite-plugin",
     "@tailwindcss/vite",
-    "@tanstack/react-form",
     "@tanstack/react-router-devtools",
     "@testing-library/dom",
     "@testing-library/react",

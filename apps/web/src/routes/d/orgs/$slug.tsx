@@ -5,46 +5,13 @@ import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
-import { useOrgSecretsDashboardQuery } from '#/lib/query/dashboard-cache';
-import type { OrgSecretsQueryData } from '#/lib/query/dashboard-cache';
-import { dashboardKeys } from '#/lib/query/dashboard-keys';
-import { runOptimistic } from '#/lib/query/optimistic';
-import { useAppQueryClient } from '#/lib/query/use-app-query-client';
-import { SecretsPanel } from '#/routes/d/-components/secrets-panel';
 import { invitationIdFromInviteResponse } from '#/routes/d/-lib/organization-invite';
 import { getOrgBillingSummary } from '#/routes/d/-server/org-billing';
-import {
-  deleteOrgSecretForSession,
-  listOrgSecretsForSession,
-  setOrgSecretForSession,
-} from '#/routes/d/-server/secrets';
 
 const inviteAcceptUrl = (invitationId: string): string =>
   `${globalThis.location.origin}/d/accept-invitation/${invitationId}`;
 
 type BillingSummary = Awaited<ReturnType<typeof getOrgBillingSummary>>;
-type OrgSecrets = Awaited<ReturnType<typeof listOrgSecretsForSession>>;
-
-const patchOrgSecrets = (
-  data: OrgSecretsQueryData,
-  name: string,
-  mode: 'delete' | 'set'
-): OrgSecretsQueryData => {
-  if (mode === 'delete') {
-    return {
-      ...data,
-      secrets: data.secrets.filter((secret) => secret.name !== name),
-    };
-  }
-  const now = new Date();
-  const without = data.secrets.filter((secret) => secret.name !== name);
-  return {
-    ...data,
-    secrets: [...without, { name, updatedAt: now }].toSorted((a, b) =>
-      a.name.localeCompare(b.name)
-    ),
-  };
-};
 
 const BillingActions = ({
   billing,
@@ -94,37 +61,29 @@ const BillingActions = ({
 
 const OrganizationDetailPage = () => {
   const { slug } = Route.useParams();
-  const queryClient = useAppQueryClient();
   const { data: organizations } = authClient.useListOrganizations();
   const organization = (organizations ?? []).find((org) => org.slug === slug);
-  const organizationId = organization?.id ?? '';
   const [members, setMembers] = useState<
     { email: string; id: string; role: string; userId: string }[]
   >([]);
   const [billing, setBilling] = useState<BillingSummary>(null);
-  const [secrets, setSecrets] = useState<OrgSecrets>(null);
   const [billingBusy, setBillingBusy] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const secretsView = useOrgSecretsDashboardQuery(organizationId, secrets);
-  const secretsKey = dashboardKeys.orgSecrets(organizationId);
 
   useEffect(() => {
     if (!organization?.id) {
       return;
     }
     const load = async (): Promise<void> => {
-      const [{ data: memberData }, summary, secretList] = await Promise.all([
+      const [{ data: memberData }, summary] = await Promise.all([
         authClient.organization.listMembers({
           query: {
             organizationId: organization.id,
           },
         }),
         getOrgBillingSummary({ data: { organizationId: organization.id } }),
-        listOrgSecretsForSession({
-          data: { organizationId: organization.id },
-        }),
       ]);
       if (memberData) {
         setMembers(
@@ -137,7 +96,6 @@ const OrganizationDetailPage = () => {
         );
       }
       setBilling(summary);
-      setSecrets(secretList);
     };
     void load();
   }, [organization?.id]);
@@ -259,88 +217,20 @@ const OrganizationDetailPage = () => {
             />
           </section>
         ) : null}
-        {secretsView ? (
-          <div className="max-w-md border p-3">
-            <SecretsPanel
-              canWrite={secretsView.canWrite}
-              heading="Secrets"
-              onDelete={async (name) => {
-                if (!organization.id) {
-                  return;
-                }
-                await runOptimistic(
-                  queryClient,
-                  [
-                    {
-                      queryKey: secretsKey,
-                      updater: (previous) => {
-                        if (!previous || typeof previous !== 'object') {
-                          return previous;
-                        }
-                        return patchOrgSecrets(
-                          previous as OrgSecretsQueryData,
-                          name,
-                          'delete'
-                        );
-                      },
-                    },
-                  ],
-                  async () => {
-                    await deleteOrgSecretForSession({
-                      data: { name, organizationId: organization.id },
-                    });
-                    const next = await listOrgSecretsForSession({
-                      data: { organizationId: organization.id },
-                    });
-                    setSecrets(next);
-                    if (next) {
-                      queryClient.setQueryData(secretsKey, next);
-                    }
-                  },
-                  { invalidateOnSuccess: false }
-                );
-              }}
-              onSet={async (name, value) => {
-                await runOptimistic(
-                  queryClient,
-                  [
-                    {
-                      queryKey: secretsKey,
-                      updater: (previous) => {
-                        if (!previous || typeof previous !== 'object') {
-                          return previous;
-                        }
-                        return patchOrgSecrets(
-                          previous as OrgSecretsQueryData,
-                          name,
-                          'set'
-                        );
-                      },
-                    },
-                  ],
-                  async () => {
-                    await setOrgSecretForSession({
-                      data: {
-                        name,
-                        organizationId: organization.id,
-                        value,
-                      },
-                    });
-                    const next = await listOrgSecretsForSession({
-                      data: { organizationId: organization.id },
-                    });
-                    setSecrets(next);
-                    if (next) {
-                      queryClient.setQueryData(secretsKey, next);
-                    }
-                  },
-                  { invalidateOnSuccess: false }
-                );
-              }}
-              secrets={secretsView.secrets}
-            />
-          </div>
-        ) : null}
+        <section className="flex max-w-md flex-col gap-2 border p-3">
+          <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
+            Secrets
+          </h2>
+          <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
+            Organization secrets are managed in workspace settings.
+          </p>
+          <Link
+            className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
+            to="/d/settings/secrets"
+          >
+            Open secrets settings
+          </Link>
+        </section>
         <section className="flex max-w-md flex-col gap-2 border p-3">
           <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
             Invite member

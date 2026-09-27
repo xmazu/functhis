@@ -283,6 +283,7 @@ describe('writeExecutionAnalytics', () => {
         callerUserId: 'user-1',
         durationMs: 12,
         functionSlug: 'hello',
+        organizationId: 'org-1',
         requestBytes: 3,
         responseBytes: 4,
         status: 'ok',
@@ -291,9 +292,9 @@ describe('writeExecutionAnalytics', () => {
     );
     expect(writes).toEqual([
       {
-        blobs: ['ver_1', 'hello', 'ok'],
+        blobs: ['ver_1', 'hello', 'ok', 'user-1'],
         doubles: [12, 3, 4],
-        indexes: ['user-1'],
+        indexes: ['org-1'],
       },
     ]);
   });
@@ -328,7 +329,8 @@ describe('finalizeExecute', () => {
         responseText: '{"ok":true}',
         status: 'ok',
         tooLarge: false,
-      }
+      },
+      'org-1'
     );
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('{"ok":true}');
@@ -353,7 +355,8 @@ describe('finalizeExecute', () => {
         responseText: '{"error":"too_large"}',
         status: 'error',
         tooLarge: true,
-      }
+      },
+      'org-1'
     );
     expect(response.status).toBe(413);
     expect(await response.json()).toEqual({ error: 'too_large' });

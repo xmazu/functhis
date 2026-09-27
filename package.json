@@ -75,5 +75,10 @@
     "varlock": "catalog:",
     "wrangler": "^4.140.0"
   },
+  "overrides": {
+    "@tanstack/query-core": "5.104.0",
+    "@tanstack/react-router": "1.170.33",
+    "@tanstack/router-core": "1.171.28"
+  },
   "packageManager": "bun@1.4.0"
 }

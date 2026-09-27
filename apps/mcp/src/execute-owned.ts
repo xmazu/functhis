@@ -194,6 +194,7 @@ export const executeOwnedFunction = async (
       versionId: row.versionId,
     },
     run,
+    row.organizationId,
     row.functionId
   );
 

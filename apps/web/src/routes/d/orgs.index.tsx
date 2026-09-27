@@ -1,10 +1,7 @@
-import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { Button } from '#/components/ui/button';
-import { Input } from '#/components/ui/input';
-import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
 import { messageFromUnknown } from '#/lib/errors/dashboard';
 import { useOrganizationsDashboardQuery } from '#/lib/query/dashboard-cache';
@@ -19,32 +16,7 @@ const OrganizationsPage = () => {
   const loaderData = Route.useLoaderData();
   const { activeOrganizationId, organizations } =
     useOrganizationsDashboardQuery(loaderData);
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
   const [pageError, setPageError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-
-  const handleCreate = async (): Promise<void> => {
-    setPageError(null);
-    setCreating(true);
-    try {
-      const { error: createError } = await authClient.organization.create({
-        name: name.trim(),
-        slug: slug.trim() || normalizeOrganizationSlug(name),
-      });
-      if (createError) {
-        setPageError(createError.message ?? 'Failed to create organization');
-        setCreating(false);
-        return;
-      }
-      setName('');
-      setSlug('');
-      await router.invalidate();
-    } catch {
-      setPageError('Failed to create organization');
-    }
-    setCreating(false);
-  };
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
@@ -54,48 +26,11 @@ const OrganizationsPage = () => {
         </h1>
       </header>
       <div className="flex flex-col gap-4 p-4">
-        <section className="flex max-w-md flex-col gap-2 border p-3">
-          <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-            Create organization
-          </h2>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="org-name">Name</Label>
-            <Input
-              id="org-name"
-              onChange={(event) => {
-                setName(event.target.value);
-                if (slug.length === 0) {
-                  setSlug(normalizeOrganizationSlug(event.target.value));
-                }
-              }}
-              value={name}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="org-slug">Slug</Label>
-            <Input
-              id="org-slug"
-              onChange={(event) => {
-                setSlug(event.target.value);
-              }}
-              value={slug}
-            />
-          </div>
-          {pageError ? (
-            <p className="text-destructive text-[length:var(--app-font-size-ui,12px)]">
-              {pageError}
-            </p>
-          ) : null}
-          <Button
-            disabled={creating || name.trim().length === 0}
-            onClick={() => {
-              void handleCreate();
-            }}
-            size="sm"
-          >
-            Create organization
-          </Button>
-        </section>
+        {pageError ? (
+          <p className="text-destructive text-[length:var(--app-font-size-ui,12px)]">
+            {pageError}
+          </p>
+        ) : null}
         <section className="flex flex-col gap-2">
           <h2 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
             Your organizations

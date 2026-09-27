@@ -35,7 +35,11 @@ export interface PackageDetailViewModel {
   packageId: string;
   packageSlug: string;
   publishedAt: Date;
-  secrets: { name: string; updatedAt: Date }[];
+  secrets: {
+    lastUsedAt: Date | null;
+    name: string;
+    updatedAt: Date;
+  }[];
   semver: string;
   visibility: CatalogPackageRow['visibility'];
 }

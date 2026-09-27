@@ -95,6 +95,7 @@ export const writeExecutionAnalytics = (
     callerUserId?: string;
     durationMs: number;
     functionSlug?: string;
+    organizationId: string;
     requestBytes: number;
     responseBytes: number;
     status: string;
@@ -102,9 +103,14 @@ export const writeExecutionAnalytics = (
   }
 ): void => {
   bindings.ANALYTICS.writeDataPoint({
-    blobs: [input.versionId, input.functionSlug ?? '', input.status],
+    blobs: [
+      input.versionId,
+      input.functionSlug ?? '',
+      input.status,
+      input.callerUserId ?? '',
+    ],
     doubles: [input.durationMs, input.requestBytes, input.responseBytes],
-    indexes: [input.callerUserId ?? 'anonymous'],
+    indexes: [input.organizationId],
   });
 };
 
@@ -246,12 +252,14 @@ export const finalizeExecute = async (
   bindings: WorkerExecuteBindings,
   parsed: RuntimeExecuteBody,
   run: DynamicRunResult,
+  organizationId: string,
   functionId?: string
 ): Promise<Response> => {
   writeExecutionAnalytics(bindings, {
     callerUserId: parsed.callerUserId,
     durationMs: run.durationMs,
     functionSlug: parsed.functionSlug,
+    organizationId,
     requestBytes: run.requestBytes,
     responseBytes: run.responseBytes,
     status: run.status,

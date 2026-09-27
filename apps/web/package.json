@@ -9,7 +9,7 @@
     "dev:bare": "vite dev",
     "env:generate": "varlock codegen",
     "cf-typegen": "wrangler types",
-    "deploy:production": "CLOUDFLARE_ENV=production bun run build && wrangler deploy --env production"
+    "deploy:production": "CLOUDFLARE_ENV=production bun run build && wrangler deploy --env production ${CLOUDFLARE_ACCOUNT_ID:+--var CLOUDFLARE_ACCOUNT_ID:$CLOUDFLARE_ACCOUNT_ID}"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -28,8 +28,8 @@
     "@tabler/icons-react": "^3.46.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.5",
-    "@tanstack/react-query": "^5.102.8",
-    "@tanstack/react-router": "^1.170.32",
+    "@tanstack/react-query": "^5.104.0",
+    "@tanstack/react-router": "1.170.33",
     "@tanstack/react-router-ssr-query": "^1.167.2",
     "@tanstack/react-start": "^1.168.49",
     "@tanstack/start-storage-context": "^1.167.30",
@@ -52,7 +52,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.60.1",
     "@functhis/config": "workspace:*",
-    "@tanstack/react-query-devtools": "^5.102.8",
+    "@tanstack/react-query-devtools": "^5.104.0",
     "@tanstack/react-router-devtools": "^1.167.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.3",

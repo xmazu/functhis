@@ -33,6 +33,7 @@
     },
   ],
   "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "",
     "NODE_ENV": "development",
     "BETTER_AUTH_URL": "http://localhost:3001",
     "MCP_RESOURCE": "http://localhost:3003",
@@ -66,6 +67,11 @@
         },
       ],
       "secrets_store_secrets": [
+        {
+          "binding": "ANALYTICS_ENGINE_READ_TOKEN",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "ANALYTICS_ENGINE_READ_TOKEN",
+        },
         {
           "binding": "BETTER_AUTH_SECRET",
           "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
@@ -103,6 +109,7 @@
         },
       ],
       "vars": {
+        "CLOUDFLARE_ACCOUNT_ID": "",
         "NODE_ENV": "production",
         "BETTER_AUTH_URL": "https://functhis.now",
         "MCP_RESOURCE": "https://mcp.functhis.now",

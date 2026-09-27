@@ -1,5 +1,6 @@
 import { IconCheck, IconChevronDown, IconPlus } from '@tabler/icons-react';
-import { Link, getRouteApi, useRouter } from '@tanstack/react-router';
+import { getRouteApi, useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -18,6 +19,7 @@ import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { runOptimistic } from '#/lib/query/optimistic';
 import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { cn } from '#/lib/utils';
+import { CreateOrganizationDialog } from '#/routes/d/-components/create-organization-dialog';
 
 const dRouteApi = getRouteApi('/d');
 
@@ -25,6 +27,7 @@ const triggerClassName =
   'flex h-[var(--app-density-row-height,1.75rem)] w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-[length:var(--app-font-size-ui,12px)] font-medium outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-sidebar-accent';
 
 export const SidebarOrgSwitcher = ({ className }: { className?: string }) => {
+  const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
   const queryClient = useAppQueryClient();
   const loaderData = dRouteApi.useLoaderData();
@@ -71,52 +74,58 @@ export const SidebarOrgSwitcher = ({ className }: { className?: string }) => {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className={cn(triggerClassName, className)}>
-        <span className="min-w-0 flex-1 truncate">{label}</span>
-        <IconChevronDown className="size-3.5 shrink-0 opacity-70" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-48" sideOffset={2}>
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-          {organizations.length === 0 ? (
-            <DropdownMenuItem disabled>
-              <span className="text-muted-foreground">
-                No organizations yet
-              </span>
-            </DropdownMenuItem>
-          ) : (
-            organizations.map((org) => {
-              const isActive = org.id === effectiveActiveId;
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger className={cn(triggerClassName, className)}>
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          <IconChevronDown className="size-3.5 shrink-0 opacity-70" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-48" sideOffset={2}>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+            {organizations.length === 0 ? (
+              <DropdownMenuItem disabled>
+                <span className="text-muted-foreground">
+                  No organizations yet
+                </span>
+              </DropdownMenuItem>
+            ) : (
+              organizations.map((org) => {
+                const isActive = org.id === effectiveActiveId;
 
-              return (
-                <DropdownMenuItem
-                  key={org.id}
-                  onClick={() => {
-                    void handleSelect(org.id);
-                  }}
-                >
-                  <span className="min-w-0 flex-1 truncate">{org.name}</span>
-                  {isActive ? (
-                    <IconCheck className="size-3.5 shrink-0 opacity-80" />
-                  ) : null}
-                </DropdownMenuItem>
-              );
-            })
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            render={
-              <Link className="flex w-full items-center gap-2" to="/d/orgs" />
-            }
-          >
-            <IconPlus className="size-3.5 shrink-0 opacity-80" />
-            Create organization
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                return (
+                  <DropdownMenuItem
+                    key={org.id}
+                    onClick={() => {
+                      void handleSelect(org.id);
+                    }}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{org.name}</span>
+                    {isActive ? (
+                      <IconCheck className="size-3.5 shrink-0 opacity-80" />
+                    ) : null}
+                  </DropdownMenuItem>
+                );
+              })
+            )}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={() => {
+                setCreateOpen(true);
+              }}
+            >
+              <IconPlus className="size-3.5 shrink-0 opacity-80" />
+              Create organization
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <CreateOrganizationDialog
+        onOpenChange={setCreateOpen}
+        open={createOpen}
+      />
+    </>
   );
 };

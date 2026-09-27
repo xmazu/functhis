@@ -241,6 +241,12 @@ bun run deploy:web:production
 bun run deploy:production
 ```
 
+Organization Usage reads the `functhis_executions` Workers Analytics Engine dataset. Set `CLOUDFLARE_ACCOUNT_ID` and the web Worker's `ANALYTICS_ENGINE_READ_TOKEN` secret in production. The token needs the Cloudflare Account Analytics Read permission. Local usage remains unavailable unless both values are configured; execution quota enforcement continues to use Postgres. When deploying web, export `CLOUDFLARE_ACCOUNT_ID` (same value as Terraform `account_id`) so `bun run deploy:web:production` passes it to Wrangler via `--var`.
+
+**Schema deploy order:** run `bun run db:migrate:local` (or your production migration path) **before** deploying web or MCP whenever migrations add columns the Workers read (for example `secret.last_used_at`). Shipping code first against an unmigrated database breaks execute and dashboard secret views.
+
+**Analytics continuity:** runtime execution analytics now index by `organizationId`. Organization Usage charts only include activity recorded after that change; older datapoints keyed by caller user id do not appear in org-filtered queries.
+
 Those scripts set `CLOUDFLARE_ENV` during `vite build` so the generated Worker config matches the target environment, then run `wrangler deploy` from `apps/web`. Do not deploy web with `wrangler deploy -c apps/web/wrangler.jsonc` from another directory without building first - Wrangler will try to rebundle `worker-entry.ts` and fail.
 
 **GitHub Actions:** workflow [Deploy web](.github/workflows/deploy-web.yml) (`workflow_dispatch`). Add repository secrets `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit) and `CLOUDFLARE_ACCOUNT_ID`.

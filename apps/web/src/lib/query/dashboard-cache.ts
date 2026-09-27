@@ -16,8 +16,72 @@ export interface OrganizationsQueryData {
 
 export interface OrgSecretsQueryData {
   canWrite: boolean;
-  secrets: { name: string; updatedAt: Date | string }[];
+  secrets: {
+    lastUsedAt: Date | string | null;
+    name: string;
+    updatedAt: Date | string;
+  }[];
 }
+
+export const patchPackageSecrets = (
+  detail: PackageDetailViewModel,
+  name: string,
+  mode: 'delete' | 'set'
+): PackageDetailViewModel => {
+  if (mode === 'delete') {
+    return {
+      ...detail,
+      missingSecretNames: detail.missingSecretNames.filter(
+        (missing) => missing !== name
+      ),
+      secrets: detail.secrets.filter((secret) => secret.name !== name),
+    };
+  }
+  const now = new Date();
+  const previous = detail.secrets.find((secret) => secret.name === name);
+  const without = detail.secrets.filter((secret) => secret.name !== name);
+  return {
+    ...detail,
+    missingSecretNames: detail.missingSecretNames.filter(
+      (missing) => missing !== name
+    ),
+    secrets: [
+      ...without,
+      {
+        lastUsedAt: previous?.lastUsedAt ?? null,
+        name,
+        updatedAt: now,
+      },
+    ].toSorted((a, b) => a.name.localeCompare(b.name)),
+  };
+};
+
+export const patchOrgSecrets = (
+  data: OrgSecretsQueryData,
+  name: string,
+  mode: 'delete' | 'set'
+): OrgSecretsQueryData => {
+  if (mode === 'delete') {
+    return {
+      ...data,
+      secrets: data.secrets.filter((secret) => secret.name !== name),
+    };
+  }
+  const now = new Date();
+  const previous = data.secrets.find((secret) => secret.name === name);
+  const without = data.secrets.filter((secret) => secret.name !== name);
+  return {
+    ...data,
+    secrets: [
+      ...without,
+      {
+        lastUsedAt: previous?.lastUsedAt ?? null,
+        name,
+        updatedAt: now,
+      },
+    ].toSorted((a, b) => a.name.localeCompare(b.name)),
+  };
+};
 
 export const useOrganizationsDashboardQuery = (
   loaderData: OrganizationsQueryData

@@ -1,8 +1,10 @@
 interface CloudflareEnv {
+  ANALYTICS_ENGINE_READ_TOKEN?: string;
   ARTIFACTS: R2Bucket;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
   BUNDLES: KVNamespace;
+  CLOUDFLARE_ACCOUNT_ID?: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   STRIPE_PRO_PRICE_ID?: string;

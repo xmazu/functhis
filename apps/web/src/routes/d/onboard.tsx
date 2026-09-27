@@ -1,7 +1,8 @@
 import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
+import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import { Button } from '#/components/ui/button';
 import {
@@ -14,37 +15,39 @@ import {
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { authClient } from '#/lib/auth/auth-client';
+import { zodOnSubmit } from '#/lib/form/zod-on-submit';
+
+const onboardSchema = z.object({
+  name: z.string().trim().min(1),
+});
 
 const OnboardPage = () => {
-  const [name, setName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleContinue = async (): Promise<void> => {
-    const trimmed = name.trim();
-    if (trimmed.length === 0 || isSubmitting) {
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const slug = normalizeOrganizationSlug(trimmed);
-      const { data, error } = await authClient.organization.create({
-        name: trimmed,
-        slug,
-      });
-      if (error || !data?.id) {
-        toast.error(error?.message ?? 'Unable to create workspace');
-        setIsSubmitting(false);
-        return;
+  const form = useForm({
+    defaultValues: { name: '' },
+    validators: {
+      onSubmit: zodOnSubmit(onboardSchema),
+    },
+    onSubmit: async ({ value }) => {
+      const trimmed = value.name.trim();
+      try {
+        const slug = normalizeOrganizationSlug(trimmed);
+        const { data: created, error } = await authClient.organization.create({
+          name: trimmed,
+          slug,
+        });
+        if (error || !created?.id) {
+          toast.error(error?.message ?? 'Unable to create workspace');
+          return;
+        }
+        await authClient.organization.setActive({
+          organizationId: created.id,
+        });
+        window.location.assign('/d');
+      } catch {
+        toast.error('Unable to create workspace');
       }
-      await authClient.organization.setActive({
-        organizationId: data.id,
-      });
-      window.location.assign('/d');
-    } catch {
-      toast.error('Unable to create workspace');
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
   return (
     <Card className="w-full max-w-md">
@@ -62,30 +65,45 @@ const OnboardPage = () => {
           className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            void handleContinue();
+            void form.handleSubmit();
           }}
         >
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="workspace-name">Workspace name</Label>
-            <Input
-              autoComplete="organization"
-              autoFocus
-              id="workspace-name"
-              onChange={(event) => {
-                setName(event.currentTarget.value);
-              }}
-              placeholder="Acme tools"
-              required
-              value={name}
-            />
-          </div>
-          <Button
-            className="w-full"
-            disabled={name.trim().length === 0 || isSubmitting}
-            type="submit"
+          <form.Field name="name">
+            {(field) => (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="workspace-name">Workspace name</Label>
+                <Input
+                  autoComplete="organization"
+                  autoFocus
+                  id="workspace-name"
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => {
+                    field.handleChange(event.target.value);
+                  }}
+                  placeholder="Acme tools"
+                  required
+                  value={field.state.value}
+                />
+              </div>
+            )}
+          </form.Field>
+          <form.Subscribe
+            selector={(state) => ({
+              isSubmitting: state.isSubmitting,
+              name: state.values.name,
+            })}
           >
-            Continue
-          </Button>
+            {({ isSubmitting, name }) => (
+              <Button
+                className="w-full"
+                disabled={name.trim().length === 0 || isSubmitting}
+                type="submit"
+              >
+                Continue
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </CardContent>
     </Card>

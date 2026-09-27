@@ -84,6 +84,7 @@ describe('resolveHostedRuntimeSecrets', () => {
     const org = await encryptSecretValue('from-org', key);
     const pkg = await encryptSecretValue('from-pkg', key);
     const orgOnly = await encryptSecretValue('org-only', key);
+    const touchedIds: string[] = [];
     const database = {
       select: () => ({
         from: () => ({
@@ -91,23 +92,37 @@ describe('resolveHostedRuntimeSecrets', () => {
             Promise.resolve([
               {
                 ciphertext: org.ciphertext,
+                id: 'secret-org-shared',
+                lastUsedAt: null,
                 name: 'SHARED',
                 nonce: org.nonce,
                 packageId: null,
               },
               {
                 ciphertext: orgOnly.ciphertext,
+                id: 'secret-org-only',
+                lastUsedAt: null,
                 name: 'ORG_ONLY',
                 nonce: orgOnly.nonce,
                 packageId: null,
               },
               {
                 ciphertext: pkg.ciphertext,
+                id: 'secret-pkg-shared',
+                lastUsedAt: null,
                 name: 'SHARED',
                 nonce: pkg.nonce,
                 packageId: 'pkg-1',
               },
             ]),
+        }),
+      }),
+      update: () => ({
+        set: () => ({
+          where: () => {
+            touchedIds.push('touched');
+            return Promise.resolve();
+          },
         }),
       }),
     };
@@ -120,6 +135,7 @@ describe('resolveHostedRuntimeSecrets', () => {
         secretNames: ['SHARED', 'ORG_ONLY'],
       })
     ).resolves.toEqual({ ORG_ONLY: 'org-only', SHARED: 'from-pkg' });
+    expect(touchedIds).toEqual(['touched']);
   });
 });
 
@@ -135,6 +151,7 @@ describe('listOrganizationSecrets', () => {
             expect(table).toBe(hostedSecret);
             return Promise.resolve([
               {
+                lastUsedAt: null,
                 name: 'API_KEY',
                 packageId: null,
                 updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -154,6 +171,7 @@ describe('listOrganizationSecrets', () => {
       canWrite: false,
       secrets: [
         {
+          lastUsedAt: null,
           name: 'API_KEY',
           scope: 'organization',
           updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -310,6 +328,7 @@ describe('listPackageSecrets', () => {
             if (table === hostedSecret) {
               return Promise.resolve([
                 {
+                  lastUsedAt: null,
                   name: 'TOKEN',
                   packageId: 'pkg-1',
                   updatedAt: new Date('2026-02-01T00:00:00.000Z'),
@@ -331,6 +350,7 @@ describe('listPackageSecrets', () => {
       canWrite: true,
       secrets: [
         {
+          lastUsedAt: null,
           name: 'TOKEN',
           scope: 'package',
           updatedAt: new Date('2026-02-01T00:00:00.000Z'),

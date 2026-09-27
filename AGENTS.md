@@ -83,6 +83,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### React & JSX
 
+- **Forms** (`apps/web` and any future UI apps): use **[@tanstack/react-form](https://tanstack.com/form)** with **Zod** (`validators.onSubmit` via `#/lib/form/zod-on-submit`). Do not wire forms with ad hoc `useState` per field or alternate form libraries.
 - Use function components over class components
 - Call hooks at the top level only, never conditionally
 - Specify all dependencies in hook dependency arrays correctly

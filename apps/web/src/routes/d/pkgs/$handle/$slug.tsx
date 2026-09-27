@@ -2,7 +2,10 @@ import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import type { ReactElement } from 'react';
 
 import { authClient } from '#/lib/auth/auth-client';
-import { usePackageDetailDashboardQuery } from '#/lib/query/dashboard-cache';
+import {
+  patchPackageSecrets,
+  usePackageDetailDashboardQuery,
+} from '#/lib/query/dashboard-cache';
 import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { runOptimistic } from '#/lib/query/optimistic';
 import { useAppQueryClient } from '#/lib/query/use-app-query-client';
@@ -34,33 +37,6 @@ const VISIBILITY_LABEL = {
   organization: 'Organization',
   private: 'Private',
 } as const;
-
-const patchPackageSecrets = (
-  detail: PackageDetailViewModel,
-  name: string,
-  mode: 'delete' | 'set'
-): PackageDetailViewModel => {
-  if (mode === 'delete') {
-    return {
-      ...detail,
-      missingSecretNames: detail.missingSecretNames.filter(
-        (missing) => missing !== name
-      ),
-      secrets: detail.secrets.filter((secret) => secret.name !== name),
-    };
-  }
-  const now = new Date();
-  const without = detail.secrets.filter((secret) => secret.name !== name);
-  return {
-    ...detail,
-    missingSecretNames: detail.missingSecretNames.filter(
-      (missing) => missing !== name
-    ),
-    secrets: [...without, { name, updatedAt: now }].toSorted((a, b) =>
-      a.name.localeCompare(b.name)
-    ),
-  };
-};
 
 const PackageDetailPage = (): ReactElement => {
   const { handle, slug } = Route.useParams();

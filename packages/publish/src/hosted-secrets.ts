@@ -20,7 +20,15 @@ import {
 
 export type HostedSecretScope = 'organization' | 'package';
 
+/** Skip `last_used_at` writes when touched within this window (execute hot path). */
+export const LAST_USED_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
+
+const shouldTouchLastUsedAt = (lastUsedAt: Date | null): boolean =>
+  lastUsedAt === null ||
+  Date.now() - lastUsedAt.getTime() >= LAST_USED_TOUCH_INTERVAL_MS;
+
 export interface HostedSecretListItem {
+  lastUsedAt: Date | null;
   name: string;
   scope: HostedSecretScope;
   updatedAt: Date;
@@ -41,13 +49,33 @@ const assertValidSecretInput = (name: string, value: string): void => {
 };
 
 const toListItem = (
-  row: { name: string; packageId: string | null; updatedAt: Date },
+  row: {
+    lastUsedAt: Date | null;
+    name: string;
+    packageId: string | null;
+    updatedAt: Date;
+  },
   scope: HostedSecretScope
 ): HostedSecretListItem => ({
+  lastUsedAt: row.lastUsedAt,
   name: row.name,
   scope,
   updatedAt: row.updatedAt,
 });
+
+const touchSecretsLastUsedAt = async (
+  database: Database,
+  secretIds: string[]
+): Promise<void> => {
+  if (secretIds.length === 0) {
+    return;
+  }
+  const usedAt = new Date();
+  await database
+    .update(hostedSecret)
+    .set({ lastUsedAt: usedAt })
+    .where(inArray(hostedSecret.id, secretIds));
+};
 
 export const listOrganizationSecrets = async (
   database: Database,
@@ -66,6 +94,7 @@ export const listOrganizationSecrets = async (
   const [rows, canWrite] = await Promise.all([
     database
       .select({
+        lastUsedAt: hostedSecret.lastUsedAt,
         name: hostedSecret.name,
         packageId: hostedSecret.packageId,
         updatedAt: hostedSecret.updatedAt,
@@ -107,6 +136,7 @@ export const listPackageSecrets = async (
 
   const rows = await database
     .select({
+      lastUsedAt: hostedSecret.lastUsedAt,
       name: hostedSecret.name,
       packageId: hostedSecret.packageId,
       updatedAt: hostedSecret.updatedAt,
@@ -204,6 +234,7 @@ export const setOrganizationSecret = async (
   });
 
   return {
+    lastUsedAt: null,
     name: input.name,
     scope: 'organization',
     updatedAt: new Date(),
@@ -239,6 +270,7 @@ export const setPackageSecret = async (
   });
 
   return {
+    lastUsedAt: null,
     name: input.name,
     scope: 'package',
     updatedAt: new Date(),
@@ -363,6 +395,8 @@ export const resolveHostedRuntimeSecrets = async (
   const rows = await database
     .select({
       ciphertext: hostedSecret.ciphertext,
+      id: hostedSecret.id,
+      lastUsedAt: hostedSecret.lastUsedAt,
       name: hostedSecret.name,
       nonce: hostedSecret.nonce,
       packageId: hostedSecret.packageId,
@@ -382,5 +416,25 @@ export const resolveHostedRuntimeSecrets = async (
     );
 
   const decrypted = await decryptSecretRows(rows, keyBytes);
-  return mergeSecretValues(decrypted.organization, decrypted.pkg);
+  const merged = mergeSecretValues(decrypted.organization, decrypted.pkg);
+
+  const secretIdsToTouch: string[] = [];
+  for (const name of input.secretNames) {
+    if (!(name in merged)) {
+      continue;
+    }
+    const packageRow = rows.find(
+      (row) => row.name === name && row.packageId !== null
+    );
+    const organizationRow = rows.find(
+      (row) => row.name === name && row.packageId === null
+    );
+    const winningRow = packageRow ?? organizationRow;
+    if (winningRow && shouldTouchLastUsedAt(winningRow.lastUsedAt ?? null)) {
+      secretIdsToTouch.push(winningRow.id);
+    }
+  }
+
+  await touchSecretsLastUsedAt(database, secretIdsToTouch);
+  return merged;
 };

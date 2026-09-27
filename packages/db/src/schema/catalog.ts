@@ -175,6 +175,7 @@ export const hostedSecret = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     keyVersion: integer('key_version').default(1).notNull(),
+    lastUsedAt: timestamp('last_used_at'),
     name: text('name').notNull(),
     nonce: text('nonce').notNull(),
     organizationId: text('organization_id')
