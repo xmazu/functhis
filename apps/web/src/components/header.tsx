@@ -16,6 +16,12 @@ const Header = () => (
         </Link>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
+        <Link
+          className="hidden text-sm font-medium text-zinc-500 hover:text-zinc-50 sm:block"
+          to="/pricing"
+        >
+          Pricing
+        </Link>
         <a
           className="hidden text-sm font-medium text-zinc-500 hover:text-zinc-50 sm:block"
           href={DOCS_HREF}
