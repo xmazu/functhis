@@ -24,7 +24,7 @@ import { CreateOrganizationDialog } from '#/routes/d/-components/create-organiza
 const dRouteApi = getRouteApi('/d');
 
 const triggerClassName =
-  'flex h-[var(--app-density-row-height,1.75rem)] w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-[length:var(--app-font-size-ui,12px)] font-medium outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-sidebar-accent';
+  'flex h-[var(--app-density-row-height,1.75rem)] w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-[length:var(--app-font-size-ui,12px)] leading-none font-medium outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-sidebar-accent';
 
 export const SidebarOrgSwitcher = ({ className }: { className?: string }) => {
   const [createOpen, setCreateOpen] = useState(false);

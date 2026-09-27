@@ -1,4 +1,4 @@
-import { useRouterState } from '@tanstack/react-router';
+import { useMatch, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
 import {
@@ -6,14 +6,18 @@ import {
   SettingsSidebar,
 } from '#/routes/d/-components/app-sidebar';
 import { PackageSidebar } from '#/routes/d/-components/package-sidebar';
-import { isPackageConsolePath } from '#/routes/d/-lib/package-console-path';
+import { packageConsoleRouteId } from '#/routes/d/-lib/package-console-path';
 
 export const AppShell = ({ children }: { children: ReactNode }) => {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const inSettings = pathname.startsWith('/d/settings');
-  const inPackageConsole = isPackageConsolePath(pathname);
+  const inPackageConsole =
+    useMatch({
+      from: packageConsoleRouteId,
+      shouldThrow: false,
+    }) !== undefined;
 
   let sidebar = <AppSidebar />;
   if (inPackageConsole) {

@@ -31,9 +31,10 @@ import {
   sidebarAsideClassName,
 } from '#/routes/d/-components/app-sidebar-primitives';
 import { packageConsoleHref } from '#/routes/d/-lib/package-console-href';
+import { packageConsoleRouteId } from '#/routes/d/-lib/package-console-path';
 import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-view-model';
 
-const packageRouteApi = getRouteApi('/@{$handle}/$slug');
+const packageRouteApi = getRouteApi(packageConsoleRouteId);
 
 const showsSharingNav = (detail: PackageDetailViewModel): boolean =>
   detail.isOwner &&
@@ -113,13 +114,7 @@ const PackageNav = ({
           <span className="truncate">Back to pkgs</span>
         </Link>
       </nav>
-      <p
-        className="text-foreground/45 mt-4 mb-1 truncate px-2 font-mono text-[length:var(--app-font-size-ui,12px)]"
-        title={`@${detail.handle}/${detail.packageSlug}`}
-      >
-        @{detail.handle}/{detail.packageSlug}
-      </p>
-      <nav aria-label="Package" className="flex flex-col gap-0.5 px-2">
+      <nav aria-label="Package" className="mt-4 flex flex-col gap-0.5 px-2">
         {items.map((item) => {
           const isActive = item.isActive(pathname);
           const ItemIcon = item.icon;
@@ -192,12 +187,6 @@ const PackageMobileSidebarChrome = ({
           </SheetPanel>
         </SheetPopup>
       </Sheet>
-      <p
-        className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-[length:var(--app-font-size-ui,12px)]"
-        title={`@${detail.handle}/${detail.packageSlug}`}
-      >
-        @{detail.handle}/{detail.packageSlug}
-      </p>
     </header>
   );
 };

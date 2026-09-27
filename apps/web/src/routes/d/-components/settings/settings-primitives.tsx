@@ -10,18 +10,21 @@ export const SettingsPage = ({
   action,
   children,
   contentClassName,
+  className,
 }: {
   title: string;
   description: string;
   action?: ReactNode;
   children: ReactNode;
   contentClassName?: string;
+  className?: string;
 }) => (
   <main className="min-h-0 flex-1 overflow-auto">
     <div
       className={cn(
         'mx-auto flex w-full max-w-[36rem] flex-col gap-5 px-4 pt-6 pb-10',
-        contentClassName
+        contentClassName,
+        className
       )}
     >
       <header className="flex items-start justify-between gap-4">

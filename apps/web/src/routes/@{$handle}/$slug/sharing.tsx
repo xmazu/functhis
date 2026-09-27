@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 
 import { authClient } from '#/lib/auth/auth-client';
 import { usePackageDetailDashboardQuery } from '#/lib/query/dashboard-cache';
+import { PackageConsolePage } from '#/routes/d/-components/package-console-content';
 import { PackageDetailNotFound } from '#/routes/d/-components/package-detail-not-found';
 import { PackageSharingPanel } from '#/routes/d/-components/package-sharing-panel';
 import { showsSharingNav } from '#/routes/d/-components/package-sidebar';
@@ -25,7 +26,7 @@ const PackageSharingPage = (): ReactElement => {
     detail.visibility === 'organization' ? 'organization' : 'private';
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-6">
+    <PackageConsolePage>
       <PackageSharingPanel
         handle={handle}
         initialOrganizationSlug={detail.organizationSlug ?? ''}
@@ -34,7 +35,7 @@ const PackageSharingPage = (): ReactElement => {
         organizationSlugs={(organizations ?? []).map((org) => org.slug)}
         packageSlug={slug}
       />
-    </main>
+    </PackageConsolePage>
   );
 };
 

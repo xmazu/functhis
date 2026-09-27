@@ -77,8 +77,8 @@
   },
   "overrides": {
     "@tanstack/query-core": "5.104.0",
-    "@tanstack/react-router": "1.170.33",
-    "@tanstack/router-core": "1.171.28"
+    "@tanstack/react-router": "1.170.40",
+    "@tanstack/router-core": "1.171.33"
   },
   "packageManager": "bun@1.4.0"
 }

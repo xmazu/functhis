@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { usePackageDetailDashboardQuery } from '#/lib/query/dashboard-cache';
 import { CommandRow } from '#/routes/d/-components/command-row';
 import { CopyButton } from '#/routes/d/-components/copy-button';
+import { PackageConsolePage } from '#/routes/d/-components/package-console-content';
 import { PackageDetailNotFound } from '#/routes/d/-components/package-detail-not-found';
 import {
   MetaItem,
@@ -35,31 +36,13 @@ const PackageOverviewPage = (): ReactElement => {
     return <PackageDetailNotFound />;
   }
 
-  const packageName = `@${detail.handle}/${detail.packageSlug}`;
   const description =
     detail.functions.find((fn) => fn.description !== null)?.description ?? null;
   const [firstFunction] = detail.functions;
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 border-b px-4 pt-4 pb-2">
-        <div className="flex min-w-0 items-center gap-1">
-          <h1
-            className={`${ui} min-w-0 font-mono font-medium break-all`}
-            title={packageName}
-          >
-            {packageName}
-          </h1>
-          <CopyButton label="Copy package name" value={packageName} />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <p className={`${ui} font-mono`}>{detail.semver}</p>
-          {detail.isOwner ? null : (
-            <p className={`${ui} text-muted-foreground`}>Shared with you</p>
-          )}
-        </div>
-      </header>
-      <article className="flex flex-col px-4 pt-4 pb-6">
+    <PackageConsolePage>
+      <article className="flex flex-col">
         <section>
           {description ? (
             <p className={`${ui} text-muted-foreground max-w-2xl text-pretty`}>
@@ -224,7 +207,7 @@ const PackageOverviewPage = (): ReactElement => {
           </aside>
         </div>
       </article>
-    </main>
+    </PackageConsolePage>
   );
 };
 

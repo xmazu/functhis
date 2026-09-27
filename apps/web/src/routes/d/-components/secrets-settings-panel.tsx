@@ -49,9 +49,12 @@ const replaceSecretSchema = z.object({
   value: z.string().min(1),
 });
 
+const EMPTY_MISSING_NAMES: string[] = [];
+
 export const SecretsSettingsPanel = ({
   canWrite,
   createOpen,
+  missingNames = EMPTY_MISSING_NAMES,
   onCreateOpenChange,
   onDelete,
   onSet,
@@ -59,6 +62,7 @@ export const SecretsSettingsPanel = ({
 }: {
   canWrite: boolean;
   createOpen: boolean;
+  missingNames?: string[];
   onCreateOpenChange: (open: boolean) => void;
   onDelete: (name: string) => Promise<void>;
   onSet: (name: string, value: string) => Promise<void>;
@@ -251,6 +255,12 @@ export const SecretsSettingsPanel = ({
           </Table>
         </div>
       )}
+
+      {missingNames.length > 0 ? (
+        <p className={`${settingsText} text-muted-foreground`}>
+          Declared in this version, not set: {missingNames.join(', ')}
+        </p>
+      ) : null}
 
       <Dialog
         onOpenChange={(open) => {

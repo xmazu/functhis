@@ -1,11 +1,14 @@
+import { IconPlus } from '@tabler/icons-react';
 import {
   createFileRoute,
   getRouteApi,
   redirect,
   useRouter,
 } from '@tanstack/react-router';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 
+import { Button } from '#/components/ui/button';
 import {
   patchPackageSecrets,
   usePackageDetailDashboardQuery,
@@ -14,7 +17,8 @@ import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { runOptimistic } from '#/lib/query/optimistic';
 import { useAppQueryClient } from '#/lib/query/use-app-query-client';
 import { PackageDetailNotFound } from '#/routes/d/-components/package-detail-not-found';
-import { SecretsPanel } from '#/routes/d/-components/secrets-panel';
+import { SecretsSettingsPanel } from '#/routes/d/-components/secrets-settings-panel';
+import { SettingsPage } from '#/routes/d/-components/settings/settings-primitives';
 import { packageConsoleHref } from '#/routes/d/-lib/package-console-href';
 import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-view-model';
 import { getPackageDetailForSession } from '#/routes/d/-server/packages';
@@ -25,6 +29,9 @@ import {
 
 const packageRouteApi = getRouteApi('/@{$handle}/$slug');
 
+const SECRETS_DESCRIPTION =
+  'Store values that your deployed functions can read at runtime.';
+
 const PackageSecretsPage = (): ReactElement => {
   const { handle, slug } = Route.useParams();
   const loaderDetail = packageRouteApi.useLoaderData();
@@ -32,17 +39,37 @@ const PackageSecretsPage = (): ReactElement => {
   const router = useRouter();
   const queryClient = useAppQueryClient();
   const detailKey = dashboardKeys.packageDetail(handle, slug);
+  const [createOpen, setCreateOpen] = useState(false);
 
   if (!detail) {
     return <PackageDetailNotFound />;
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-6">
-      <SecretsPanel
+    <SettingsPage
+      action={
+        detail.canWriteSecrets ? (
+          <Button
+            onClick={() => {
+              setCreateOpen(true);
+            }}
+            size="sm"
+          >
+            <IconPlus />
+            New secret
+          </Button>
+        ) : null
+      }
+      className="pt-0"
+      contentClassName="max-w-3xl"
+      description={SECRETS_DESCRIPTION}
+      title="Secrets"
+    >
+      <SecretsSettingsPanel
         canWrite={detail.canWriteSecrets}
-        heading="Secrets"
+        createOpen={createOpen}
         missingNames={detail.missingSecretNames}
+        onCreateOpenChange={setCreateOpen}
         onDelete={async (name) => {
           await runOptimistic(
             queryClient,
@@ -99,7 +126,7 @@ const PackageSecretsPage = (): ReactElement => {
         }}
         secrets={detail.secrets}
       />
-    </main>
+    </SettingsPage>
   );
 };
 
