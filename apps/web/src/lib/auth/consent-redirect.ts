@@ -11,6 +11,16 @@ const isHttpUrl = (url: string): boolean => {
   }
 };
 
+/** Custom schemes (for example `cursor://`) used by native MCP clients. */
+export const isNativeAppRedirectUrl = (url: string): boolean => {
+  try {
+    const { protocol } = new URL(url);
+    return protocol !== 'http:' && protocol !== 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export const isLoopbackRedirectUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url);
@@ -56,6 +66,9 @@ export const decideConsentRedirect = (
   }
   if (isLoopbackRedirectUrl(url)) {
     return { deliverUrl: url, kind: 'stay' };
+  }
+  if (isNativeAppRedirectUrl(url)) {
+    return { kind: 'leave', url };
   }
   if (isHttpUrl(url)) {
     return { kind: 'leave', url };

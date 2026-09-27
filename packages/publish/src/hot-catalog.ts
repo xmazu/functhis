@@ -1,5 +1,5 @@
 import type { Database } from '@functhis/db';
-import { user } from '@functhis/db/schema/auth';
+import { organization, user } from '@functhis/db/schema/auth';
 import { pkg, pkgFunction, packageVersion } from '@functhis/db/schema/catalog';
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 
@@ -10,6 +10,7 @@ import {
 import type { PackageAccessContext } from './catalog-access';
 import { formatFunctionId, parseFunctionId } from './function-id';
 import type { ParsedFunctionId } from './function-id';
+import { stripPackageFunctionIds } from './hot-index';
 import {
   functionHotKey,
   functionHotKeyFromId,
@@ -20,7 +21,7 @@ import {
   orgIndexHotKey,
 } from './hot-keys';
 import type { HotKvBinding } from './http-context';
-import { resolveOrganizationSlugById } from './org-membership-read';
+import { resolvePackagePublicHandle } from './package-public-handle';
 import type { PackageVisibility } from './package-visibility';
 
 export interface HotFunctionDoc {
@@ -80,18 +81,6 @@ const writeIndex = async (
   await putJson(hot, key, unique);
 };
 
-const functionIdPrefix = (handle: string, packageSlug: string): string =>
-  `@${handle}/${packageSlug}/`;
-
-const stripPackageFromIndex = (
-  ids: string[],
-  handle: string,
-  packageSlug: string
-): string[] => {
-  const prefix = functionIdPrefix(handle, packageSlug);
-  return ids.filter((id) => !id.startsWith(prefix));
-};
-
 export const writeHotFunctionDoc = async (
   hot: HotKvBinding,
   doc: HotFunctionDoc
@@ -127,25 +116,26 @@ export const syncPackageToHot = async (
     return;
   }
 
-  const [owner] = await database
+  const handle = await resolvePackagePublicHandle(
+    database,
+    packageRow.organizationId
+  );
+  if (!handle) {
+    return;
+  }
+
+  const [ownerRow] = await database
     .select({ handle: user.handle })
     .from(user)
     .where(eq(user.id, packageRow.ownerUserId))
     .limit(1);
-  if (!owner?.handle) {
-    return;
-  }
-
-  let { handle } = owner;
-  if (packageRow.organizationId) {
-    const orgHandle = await resolveOrganizationSlugById(
-      database,
-      packageRow.organizationId
-    );
-    if (orgHandle) {
-      handle = orgHandle;
-    }
-  }
+  const indexHandles = [
+    ...new Set(
+      [handle, ownerRow?.handle].filter((value): value is string =>
+        Boolean(value)
+      )
+    ),
+  ];
 
   const functions = await database
     .select({
@@ -187,27 +177,27 @@ export const syncPackageToHot = async (
   );
 
   const mineKey = mineIndexHotKey(packageRow.ownerUserId);
-  const mineIds = stripPackageFromIndex(
+  const mineIds = stripPackageFunctionIds(
     await readIndex(hot, mineKey),
-    handle,
+    indexHandles,
     packageRow.slug
   );
   await writeIndex(hot, mineKey, [...mineIds, ...newIds]);
 
   if (packageRow.organizationId && packageRow.visibility === 'organization') {
     const orgKey = orgIndexHotKey(packageRow.organizationId);
-    const orgIds = stripPackageFromIndex(
+    const orgIds = stripPackageFunctionIds(
       await readIndex(hot, orgKey),
-      handle,
+      indexHandles,
       packageRow.slug
     );
     await writeIndex(hot, orgKey, [...orgIds, ...newIds]);
   }
 
   if (packageRow.visibility === 'library') {
-    const libraryIds = stripPackageFromIndex(
+    const libraryIds = stripPackageFunctionIds(
       await readIndex(hot, HOT_IDX_LIBRARY_KEY),
-      handle,
+      indexHandles,
       packageRow.slug
     );
     await writeIndex(hot, HOT_IDX_LIBRARY_KEY, [...libraryIds, ...newIds]);
@@ -264,7 +254,7 @@ export const resolveHotFunctionDoc = async (
       contract: pkgFunction.contract,
       functionId: pkgFunction.id,
       functionSlug: pkgFunction.slug,
-      handle: user.handle,
+      handle: organization.slug,
       organizationId: pkg.organizationId,
       ownerUserId: pkg.ownerUserId,
       packageId: pkg.id,
@@ -275,11 +265,11 @@ export const resolveHotFunctionDoc = async (
     })
     .from(pkgFunction)
     .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(user, eq(pkg.ownerUserId, user.id))
+    .innerJoin(organization, eq(pkg.organizationId, organization.id))
     .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
     .where(
       and(
-        eq(user.handle, parsed.handle),
+        eq(organization.slug, parsed.handle),
         eq(pkg.slug, parsed.packageSlug),
         eq(pkgFunction.slug, parsed.functionSlug)
       )
@@ -337,12 +327,12 @@ const loadFunctionIdsForDomainFromPostgres = async (
     const rows = await database
       .select({
         functionSlug: pkgFunction.slug,
-        handle: user.handle,
+        handle: organization.slug,
         packageSlug: pkg.slug,
       })
       .from(pkgFunction)
       .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-      .innerJoin(user, eq(pkg.ownerUserId, user.id))
+      .innerJoin(organization, eq(pkg.organizationId, organization.id))
       .where(
         and(eq(pkg.ownerUserId, callerUserId), isNotNull(pkg.currentVersionId))
       );
@@ -358,12 +348,12 @@ const loadFunctionIdsForDomainFromPostgres = async (
     const rows = await database
       .select({
         functionSlug: pkgFunction.slug,
-        handle: user.handle,
+        handle: organization.slug,
         packageSlug: pkg.slug,
       })
       .from(pkgFunction)
       .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-      .innerJoin(user, eq(pkg.ownerUserId, user.id))
+      .innerJoin(organization, eq(pkg.organizationId, organization.id))
       .where(
         and(eq(pkg.visibility, 'library'), isNotNull(pkg.currentVersionId))
       );
@@ -381,12 +371,12 @@ const loadFunctionIdsForDomainFromPostgres = async (
   const rows = await database
     .select({
       functionSlug: pkgFunction.slug,
-      handle: user.handle,
+      handle: organization.slug,
       packageSlug: pkg.slug,
     })
     .from(pkgFunction)
     .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(user, eq(pkg.ownerUserId, user.id))
+    .innerJoin(organization, eq(pkg.organizationId, organization.id))
     .where(
       and(
         inArray(pkg.organizationId, organizationIds),

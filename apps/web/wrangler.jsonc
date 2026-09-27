@@ -33,6 +33,7 @@
     },
   ],
   "vars": {
+    "AXIOM_DATASET": "functhis_executions",
     "CLOUDFLARE_ACCOUNT_ID": "",
     "NODE_ENV": "development",
     "BETTER_AUTH_URL": "http://localhost:3001",
@@ -68,6 +69,11 @@
       ],
       "secrets_store_secrets": [
         {
+          "binding": "AXIOM_API_TOKEN",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "AXIOM_API_TOKEN",
+        },
+        {
           "binding": "ANALYTICS_ENGINE_READ_TOKEN",
           "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "ANALYTICS_ENGINE_READ_TOKEN",
@@ -98,6 +104,16 @@
           "secret_name": "STRIPE_WEBHOOK_SECRET",
         },
         {
+          "binding": "STRIPE_PRICE_DEVELOPER_MONTHLY",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "STRIPE_PRICE_DEVELOPER_MONTHLY",
+        },
+        {
+          "binding": "STRIPE_PRICE_TEAM_MONTHLY",
+          "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
+          "secret_name": "STRIPE_PRICE_TEAM_MONTHLY",
+        },
+        {
           "binding": "STRIPE_PRO_PRICE_ID",
           "store_id": "fdcdd40afc4d41fbbc9f6ffbe99fce77",
           "secret_name": "STRIPE_PRO_PRICE_ID",
@@ -109,6 +125,7 @@
         },
       ],
       "vars": {
+        "AXIOM_DATASET": "functhis_executions",
         "CLOUDFLARE_ACCOUNT_ID": "",
         "NODE_ENV": "production",
         "BETTER_AUTH_URL": "https://functhis.now",

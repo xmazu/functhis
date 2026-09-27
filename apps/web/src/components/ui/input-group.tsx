@@ -137,7 +137,7 @@ const InputGroupInput = ({
     unstyled
     data-slot="input-group-control"
     className={cn(
-      'relative inline-flex min-w-0 flex-1 border-0 bg-transparent shadow-none ring-0 focus-within:ring-0 has-focus-visible:border-0 has-focus-visible:ring-0',
+      'relative flex w-full min-w-0 flex-1 border-0 bg-transparent shadow-none ring-0 focus-within:ring-0 has-focus-visible:border-0 has-focus-visible:ring-0',
       className
     )}
     {...props}

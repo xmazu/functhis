@@ -63,6 +63,17 @@ TRUSTED_ORIGINS=http://localhost:3001,http://localhost:3003
 
 Copy the same `FUNCTHIS_SECRETS_KEY` into `apps/mcp/.dev.vars` so hosted `secret()` injection works locally.
 
+For local detailed telemetry, add the Axiom dataset and token to **`apps/mcp/.dev.vars`** (ingest on execute) and **`apps/web/.dev.vars`** (dashboard execution payloads and logs):
+
+```bash
+AXIOM_API_TOKEN=...
+AXIOM_DATASET=functhis_executions
+```
+
+`AXIOM_API_TOKEN` is secret-only; `AXIOM_DATASET` is the Wrangler variable. Without both values on the worker that needs them, execution still works but detailed payloads and logs are unavailable in that surface.
+
+Detailed telemetry is correlated with Postgres and Workers Analytics Engine by one shared `executionId`. Axiom stores sanitized payloads only: input/output are capped at 32 KiB each, with at most 200 log records of 2 KiB each. Configure Axiom dataset retention to match the plan: trial 0 days, Developer 7 days, Team 30 days, and Enterprise by contract. A scheduled MCP cron cleanup is reserved for API-backed cleanup if dataset policy changes.
+
 After editing any `.env.schema`, regenerate types:
 
 ```bash
@@ -169,7 +180,7 @@ Auth queries must not use a cached Hyperdrive config on the web Worker.
 
 ## Database (reference)
 
-Postgres + Drizzle. Local: Docker + `packages/db/.env` `DATABASE_URL`. Production runtime: `env.HYPERDRIVE.connectionString`. Migrations always use `DATABASE_URL` from `packages/db/.env`, never through Hyperdrive.
+Postgres + Drizzle owns catalog rows, package ownership, ACL, quotas, and execution metadata. Local: Docker + `packages/db/.env` `DATABASE_URL`. Production runtime: `env.HYPERDRIVE.connectionString`. Migrations always use `DATABASE_URL` from `packages/db/.env`, never through Hyperdrive. Analytics Engine is for aggregate usage, while Axiom holds redacted detailed input/output/log telemetry; all three use the same execution ID for correlation. Postgres remains the access-control source of truth, and telemetry stores never grant access.
 
 ## UI Customization
 
@@ -202,6 +213,7 @@ Each app owns its environment schema in `.env.schema`. Varlock generates `src/en
 | --- | --- | --- |
 | `packages/db` | `packages/db/.env` | `DATABASE_URL` - migrations + local dev DB |
 | `apps/web` | `apps/web/.env` | Better Auth + GitHub OAuth |
+| `apps/mcp` | `apps/mcp/.dev.vars` | Axiom token for detailed telemetry and local hosted secrets |
 
 Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` - no manual `CLOUDFLARE_HYPERDRIVE_*` export.
 
@@ -242,6 +254,10 @@ bun run deploy:production
 ```
 
 Organization Usage reads the `functhis_executions` Workers Analytics Engine dataset. Set `CLOUDFLARE_ACCOUNT_ID` and the web Worker's `ANALYTICS_ENGINE_READ_TOKEN` secret in production. The token needs the Cloudflare Account Analytics Read permission. Local usage remains unavailable unless both values are configured; execution quota enforcement continues to use Postgres. When deploying web, export `CLOUDFLARE_ACCOUNT_ID` (same value as Terraform `account_id`) so `bun run deploy:web:production` passes it to Wrangler via `--var`.
+
+Detailed execution telemetry uses `AXIOM_API_TOKEN` and `AXIOM_DATASET` on **`functhis-mcp`** (ingest) and **`functhis-web`** (owner execution detail queries). Configure the same dataset retention policy as the pricing window: trial 0 days, Developer 7 days, Team 30 days, and Enterprise by contract. Input/output telemetry is capped at 32 KiB each; Tail Worker logs are capped at 200 records and 2 KiB per record (`AXIOM_MAX_LOGS` / `AXIOM_MAX_LOG_BYTES` in `packages/publish/src/axiom.ts`). Cleanup is a scheduled operations task: Axiom dataset retention is the current enforcement mechanism, and the MCP scheduled hook is reserved for an idempotent API cleanup job if that policy changes.
+
+Stripe price environment names are `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`. Enterprise is contract-priced and does not use a Stripe price environment variable.
 
 **Schema deploy order:** run `bun run db:migrate:local` (or your production migration path) **before** deploying web or MCP whenever migrations add columns the Workers read (for example `secret.last_used_at`). Shipping code first against an unmigrated database breaks execute and dashboard secret views.
 

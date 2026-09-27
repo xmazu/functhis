@@ -1,9 +1,12 @@
 import './ensure-zod-init';
-import { handleProtectedMcpPost } from './mcp-route';
-import { oauthProtectedResourceMetadata } from './prm';
+import { createEvlogWorkerFetch } from '@functhis/config/evlog-workers';
+import type { AuditableLogger } from 'evlog';
 
-const WELL_KNOWN_OAUTH_PROTECTED_RESOURCE =
-  '/.well-known/oauth-protected-resource';
+import { handleProtectedMcpPost } from './mcp-route';
+import {
+  oauthProtectedResourceMetadata,
+  oauthProtectedResourceMetadataPaths,
+} from './prm';
 
 const methodNotAllowed = (): Response =>
   new Response('Method Not Allowed', {
@@ -11,29 +14,49 @@ const methodNotAllowed = (): Response =>
     status: 405,
   });
 
+const routeFetch = (
+  request: Request,
+  env: Env,
+  _ctx: unknown,
+  log: AuditableLogger
+): Response | Promise<Response> => {
+  const url = new URL(request.url);
+
+  if (url.pathname === '/health') {
+    return new Response('ok');
+  }
+
+  if (oauthProtectedResourceMetadataPaths().includes(url.pathname)) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return methodNotAllowed();
+    }
+    return oauthProtectedResourceMetadata(env);
+  }
+
+  if (url.pathname === '/mcp') {
+    if (request.method !== 'POST') {
+      return methodNotAllowed();
+    }
+
+    log.set({
+      mcp: {
+        mcpMethod: request.headers.get('Mcp-Method') ?? undefined,
+        protocolVersion:
+          request.headers.get('MCP-Protocol-Version') ?? undefined,
+      },
+    });
+    return handleProtectedMcpPost(request, env, log);
+  }
+
+  return new Response('Not Found', { status: 404 });
+};
+
+const instrumented = createEvlogWorkerFetch('functhis-mcp', routeFetch);
+
 export default {
-  fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    if (url.pathname === '/health') {
-      return Promise.resolve(new Response('ok'));
-    }
-
-    if (url.pathname === WELL_KNOWN_OAUTH_PROTECTED_RESOURCE) {
-      if (request.method !== 'GET' && request.method !== 'HEAD') {
-        return Promise.resolve(methodNotAllowed());
-      }
-      return Promise.resolve(oauthProtectedResourceMetadata(env));
-    }
-
-    if (url.pathname === '/mcp') {
-      if (request.method !== 'POST') {
-        return Promise.resolve(methodNotAllowed());
-      }
-
-      return handleProtectedMcpPost(request, env);
-    }
-
-    return Promise.resolve(new Response('Not Found', { status: 404 }));
+  fetch: instrumented.fetch,
+  scheduled(_controller: ScheduledController, _env: Env): void {
+    // Axiom dataset retention is configured on the dataset; this hook keeps
+    // deployment-compatible room for an API-backed cleanup if that changes.
   },
 };

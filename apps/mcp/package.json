@@ -7,23 +7,24 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "dev:bare": "wrangler dev",
+    "dev:bare": "wrangler dev --persist-to ../web/.wrangler/state",
     "cf-typegen": "wrangler types",
     "test": "bun test src"
   },
   "dependencies": {
     "@functhis/auth": "workspace:*",
+    "@functhis/config": "workspace:*",
     "@functhis/db": "workspace:*",
     "@functhis/publish": "workspace:*",
     "@modelcontextprotocol/server": "2.0.0",
     "@openrouter/ai-sdk-provider": "^3.1.0",
     "ai": "^7",
+    "evlog": "^2.28.1",
     "jose": "^6.1.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260906.1",
-    "@functhis/config": "workspace:*",
     "typescript": "catalog:",
     "wrangler": "^4.40.2"
   }

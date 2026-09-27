@@ -4,30 +4,40 @@ import { pkg } from '@functhis/db/schema/catalog';
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import type { PackageVisibility } from './catalog-access';
+import { normalizePlanId, planLimits } from './plan-catalog';
+import type { FuncthisPlanLimits } from './plan-catalog';
 
 type EntitlementsDb = Pick<Database, 'select'>;
 
-export type OrgPlanId = 'free' | 'pro';
+export type OrgPlanId =
+  | 'trial'
+  | 'developer'
+  | 'team'
+  | 'enterprise'
+  | 'free'
+  | 'pro';
 
-export interface OrgPlanLimits {
-  maxExecutionsPerMonth: number;
-  maxPackages: number;
-}
+export type OrgPlanLimits = FuncthisPlanLimits;
 
-export const FREE_ORG_LIMITS: OrgPlanLimits = {
-  maxExecutionsPerMonth: 1000,
-  maxPackages: 3,
-};
-
-export const PRO_ORG_LIMITS: OrgPlanLimits = {
-  maxExecutionsPerMonth: 100_000,
-  maxPackages: 50,
-};
+export const TRIAL_ORG_LIMITS = planLimits('trial');
+export const DEVELOPER_ORG_LIMITS = planLimits('developer');
+export const TEAM_ORG_LIMITS = planLimits('team');
+export const ENTERPRISE_ORG_LIMITS = planLimits('enterprise');
 
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing'] as const;
 
+const normalizePlan = (plan: string): OrgPlanId => {
+  if (plan === 'pro') {
+    return 'developer';
+  }
+  if (plan === 'developer' || plan === 'team' || plan === 'enterprise') {
+    return plan;
+  }
+  return 'trial';
+};
+
 export const limitsForPlan = (plan: OrgPlanId): OrgPlanLimits =>
-  plan === 'pro' ? PRO_ORG_LIMITS : FREE_ORG_LIMITS;
+  planLimits(normalizePlanId(plan));
 
 export const resolveOrgPlan = async (
   database: EntitlementsDb,
@@ -47,15 +57,14 @@ export const resolveOrgPlan = async (
 
   if (
     row &&
-    row.plan === 'pro' &&
     ACTIVE_SUBSCRIPTION_STATUSES.includes(
       row.status as (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number]
     )
   ) {
-    return 'pro';
+    return row.plan === 'pro' ? 'developer' : normalizePlan(row.plan);
   }
 
-  return 'free';
+  return 'trial';
 };
 
 export const countOrgPackages = async (
@@ -96,7 +105,7 @@ export const assertOrgCanAddPackage = async (
   const plan = await resolveOrgPlan(database, organizationId);
   const limits = limitsForPlan(plan);
   const packageCount = await countOrgPackages(database, organizationId);
-  if (packageCount >= limits.maxPackages) {
+  if (limits.maxPackages !== null && packageCount >= limits.maxPackages) {
     throw new OrgQuotaExceededError(
       'package_limit',
       organizationId,

@@ -4,6 +4,8 @@ coverageSkip = [
   "../**",
   "http-handlers.ts",
   "catalog-read.ts",
+  "**/worker-execute.ts",
+  "**/execution-store.ts",
   "**/private/**",
   "**/var/**",
 ]

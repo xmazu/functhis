@@ -1,11 +1,16 @@
 import { stripe } from '@better-auth/stripe';
 import type { Database } from '@functhis/db';
 import { member } from '@functhis/db/schema/auth';
-import { PRO_ORG_LIMITS } from '@functhis/publish/org-entitlements';
+import {
+  DEVELOPER_ORG_LIMITS,
+  TEAM_ORG_LIMITS,
+} from '@functhis/publish/org-entitlements';
 import { and, eq } from 'drizzle-orm';
 import StripeSdk from 'stripe';
 
 export interface StripePluginConfig {
+  STRIPE_PRICE_DEVELOPER_MONTHLY?: string;
+  STRIPE_PRICE_TEAM_MONTHLY?: string;
   STRIPE_PRO_PRICE_ID?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
@@ -18,18 +23,23 @@ export const isBillingRole = (role: string): boolean => billingRoles.has(role);
 const resolveRequiredStripeConfig = (
   config: StripePluginConfig
 ): {
-  STRIPE_PRO_PRICE_ID: string;
+  developerPriceId: string;
+  teamPriceId?: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
 } | null => {
   const stripeSecretKey = config.STRIPE_SECRET_KEY?.trim();
   const stripeWebhookSecret = config.STRIPE_WEBHOOK_SECRET?.trim();
-  const stripeProPriceId = config.STRIPE_PRO_PRICE_ID?.trim();
-  if (!stripeSecretKey || !stripeWebhookSecret || !stripeProPriceId) {
+  const developerPriceId =
+    config.STRIPE_PRICE_DEVELOPER_MONTHLY?.trim() ??
+    config.STRIPE_PRO_PRICE_ID?.trim();
+  const teamPriceId = config.STRIPE_PRICE_TEAM_MONTHLY?.trim();
+  if (!stripeSecretKey || !stripeWebhookSecret || !developerPriceId) {
     return null;
   }
   return {
-    STRIPE_PRO_PRICE_ID: stripeProPriceId,
+    developerPriceId,
+    ...(teamPriceId ? { teamPriceId } : {}),
     STRIPE_SECRET_KEY: stripeSecretKey,
     STRIPE_WEBHOOK_SECRET: stripeWebhookSecret,
   };
@@ -76,10 +86,19 @@ export const createStripePlugin = (
       enabled: true,
       plans: [
         {
-          limits: { ...PRO_ORG_LIMITS },
-          name: 'pro',
-          priceId: stripeConfig.STRIPE_PRO_PRICE_ID,
+          limits: { ...DEVELOPER_ORG_LIMITS },
+          name: 'developer',
+          priceId: stripeConfig.developerPriceId,
         },
+        ...(stripeConfig.teamPriceId
+          ? [
+              {
+                limits: { ...TEAM_ORG_LIMITS },
+                name: 'team',
+                priceId: stripeConfig.teamPriceId,
+              },
+            ]
+          : []),
       ],
     },
   });

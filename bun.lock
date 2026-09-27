@@ -28,11 +28,13 @@
       "name": "@functhis/mcp",
       "dependencies": {
         "@functhis/auth": "workspace:*",
+        "@functhis/config": "workspace:*",
         "@functhis/db": "workspace:*",
         "@functhis/publish": "workspace:*",
         "@modelcontextprotocol/server": "2.0.0",
         "@openrouter/ai-sdk-provider": "^3.1.0",
         "ai": "^7",
+        "evlog": "^2.28.1",
         "jose": "^6.1.0",
         "zod": "catalog:",
       },

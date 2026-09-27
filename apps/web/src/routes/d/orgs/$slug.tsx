@@ -22,7 +22,7 @@ const BillingActions = ({
   billing: NonNullable<BillingSummary>;
   billingBusy: boolean;
   onManageBilling: () => void;
-  onUpgrade: () => void;
+  onUpgrade: (plan: 'developer' | 'team') => void;
 }) => {
   if (!billing.billingEnabled) {
     return (
@@ -42,10 +42,28 @@ const BillingActions = ({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {billing.plan === 'free' ? (
-        <Button disabled={billingBusy} onClick={onUpgrade} size="sm">
-          Upgrade to Pro
-        </Button>
+      {billing.plan === 'trial' ? (
+        <>
+          <Button
+            disabled={billingBusy}
+            onClick={() => {
+              onUpgrade('developer');
+            }}
+            size="sm"
+          >
+            Developer · $19/mo
+          </Button>
+          <Button
+            disabled={billingBusy}
+            onClick={() => {
+              onUpgrade('team');
+            }}
+            size="sm"
+            variant="outline"
+          >
+            Team · $79/mo
+          </Button>
+        </>
       ) : null}
       <Button
         disabled={billingBusy}
@@ -100,7 +118,7 @@ const OrganizationDetailPage = () => {
     void load();
   }, [organization?.id]);
 
-  const handleUpgrade = async (): Promise<void> => {
+  const handleUpgrade = async (plan: 'developer' | 'team'): Promise<void> => {
     if (!organization?.id) {
       return;
     }
@@ -110,7 +128,7 @@ const OrganizationDetailPage = () => {
       cancelUrl: returnUrl,
       customerType: 'organization',
       disableRedirect: false,
-      plan: 'pro',
+      plan,
       referenceId: organization.id,
       successUrl: returnUrl,
     });
@@ -198,7 +216,15 @@ const OrganizationDetailPage = () => {
               Billing
             </h2>
             <p className="text-[length:var(--app-font-size-ui,12px)]">
-              Plan: {billing.plan === 'pro' ? 'Pro' : 'Free'}
+              Plan:{' '}
+              {{
+                free: 'Free trial',
+                trial: 'Free trial',
+                developer: 'Developer',
+                pro: 'Developer',
+                team: 'Team',
+                enterprise: 'Enterprise',
+              }[billing.plan] ?? billing.plan}
             </p>
             <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
               {billing.packageCount} / {billing.limits.maxPackages} packages ·{' '}
@@ -211,8 +237,8 @@ const OrganizationDetailPage = () => {
               onManageBilling={() => {
                 void handleManageBilling();
               }}
-              onUpgrade={() => {
-                void handleUpgrade();
+              onUpgrade={(plan) => {
+                void handleUpgrade(plan);
               }}
             />
           </section>

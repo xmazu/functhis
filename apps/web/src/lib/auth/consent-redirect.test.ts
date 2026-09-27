@@ -44,11 +44,20 @@ describe('decideConsentRedirect', () => {
     );
   });
 
+  it('leaves for native app redirects such as Cursor MCP OAuth', () => {
+    expect(
+      decideConsentRedirect(
+        'cursor://anysphere.cursor-mcp/oauth/callback?code=abc&state=xyz'
+      )
+    ).toEqual({
+      kind: 'leave',
+      url: 'cursor://anysphere.cursor-mcp/oauth/callback?code=abc&state=xyz',
+    });
+  });
+
   it('stays when there is no usable redirect', () => {
     expect(decideConsentRedirect()).toEqual({ kind: 'stay' });
-    expect(decideConsentRedirect('ftp://client.example/cb')).toEqual({
-      kind: 'stay',
-    });
+    expect(decideConsentRedirect('not a url')).toEqual({ kind: 'stay' });
   });
 });
 

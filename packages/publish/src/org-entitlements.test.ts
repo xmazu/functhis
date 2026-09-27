@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   assertOrgCanAddPackage,
   countOrgPackages,
-  FREE_ORG_LIMITS,
+  TRIAL_ORG_LIMITS,
   insertOrgPackageIfUnderLimit,
   limitsForPlan,
   OrgQuotaExceededError,
@@ -16,9 +16,9 @@ import {
 } from './org-usage';
 
 describe('limitsForPlan', () => {
-  test('returns pro limits for pro', () => {
+  test('returns developer limits for the legacy pro alias', () => {
     expect(limitsForPlan('pro').maxPackages).toBeGreaterThan(
-      FREE_ORG_LIMITS.maxPackages
+      TRIAL_ORG_LIMITS.maxPackages
     );
   });
 });
@@ -37,7 +37,7 @@ describe('resolveOrgPlan', () => {
       }),
     };
     await expect(resolveOrgPlan(database as never, 'org-1')).resolves.toBe(
-      'free'
+      'trial'
     );
   });
 
@@ -54,7 +54,7 @@ describe('resolveOrgPlan', () => {
       }),
     };
     await expect(resolveOrgPlan(database as never, 'org-1')).resolves.toBe(
-      'pro'
+      'developer'
     );
   });
 });
@@ -211,7 +211,7 @@ describe('countOrgPackages and assertOrgCanAddPackage', () => {
         return {
           from: () => ({
             where: () =>
-              Promise.resolve([{ value: FREE_ORG_LIMITS.maxPackages }]),
+              Promise.resolve([{ value: TRIAL_ORG_LIMITS.maxPackages }]),
           }),
         };
       },

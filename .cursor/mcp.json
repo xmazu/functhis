@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "functhis-local": {
+      "url": "http://localhost:3003/mcp",
+      "auth": {
+        "CLIENT_ID": "functhis-cursor-mcp"
+      }
+    }
+  }
+}

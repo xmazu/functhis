@@ -1,5 +1,6 @@
 import {
   IconArrowLeft,
+  IconActivity,
   IconKey,
   IconLayoutDashboard,
   IconMenu2,
@@ -54,6 +55,15 @@ const buildPackageNavItems = (
         return pathname === base || pathname === `${base}/`;
       },
       label: 'Overview',
+    },
+    {
+      href: packageConsoleHref(detail.handle, detail.packageSlug, 'executions'),
+      icon: IconActivity,
+      isActive: (pathname) =>
+        pathname.startsWith(
+          packageConsoleHref(detail.handle, detail.packageSlug, 'executions')
+        ),
+      label: 'Executions',
     },
   ];
 

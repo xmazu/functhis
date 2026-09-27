@@ -10,6 +10,19 @@ export {
 } from './bundle';
 export type { WorkerLoaderBundleShape } from './bundle';
 export {
+  AXIOM_MAX_INPUT_BYTES,
+  AXIOM_MAX_LOG_BYTES,
+  AXIOM_MAX_LOGS,
+  AXIOM_MAX_OUTPUT_BYTES,
+  buildExecutionEvent,
+  capTelemetryValue,
+  ingestAxiomEvents,
+  queryAxiom,
+  readAxiomQueryRecords,
+  resolveAxiomBindings,
+} from './axiom';
+export { redactTelemetry, redactTelemetryJson } from './telemetry-redaction';
+export {
   StoredBundleLoadError,
   type BundleLoadErrorCode,
 } from './bundle-load-error';
@@ -33,9 +46,18 @@ export {
   isValidSemver,
   type VersionBump,
 } from './semver';
+export { FUNCTHIS_PLANS, normalizePlanId, planLimits } from './plan-catalog';
+export type {
+  FuncthisPlan,
+  FuncthisPlanId,
+  FuncthisPlanLimits,
+} from './plan-catalog';
+export {
+  insertExecutionRow,
+  insertStartedExecutionRow,
+} from './execution-store';
 export {
   finalizeExecute,
-  insertExecutionRow,
   loadStoredBundle,
   runDynamicWorker,
   writeExecutionAnalytics,
@@ -157,8 +179,6 @@ export {
   resolveOrgPlan,
   type OrgPlanId,
   type OrgPlanLimits,
-  FREE_ORG_LIMITS,
-  PRO_ORG_LIMITS,
 } from './org-entitlements';
 export {
   currentUsagePeriodKey,
@@ -214,6 +234,7 @@ export {
   listAccessiblePackagesForUser,
   listOrgSharedPackages,
   listOwnerPackages,
+  listPackageExecutions,
   listRecentExecutions,
   type AccessiblePackageListRow,
   type CatalogFunctionRow,

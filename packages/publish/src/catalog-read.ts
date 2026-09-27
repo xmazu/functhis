@@ -6,7 +6,7 @@ import {
   pkgFunction,
   packageVersion,
 } from '@functhis/db/schema/catalog';
-import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 import {
@@ -254,18 +254,23 @@ export const listAccessiblePackagesForUser = async (
   return merged.toSorted((a, b) => a.packageSlug.localeCompare(b.packageSlug));
 };
 
-export const listRecentExecutions = async (
+export const listPackageExecutions = async (
   database: Database,
-  ownerUserId: string,
-  packageId?: string,
-  limit = 20
+  packageId: string,
+  options: { limit?: number; retentionCutoff?: Date } = {}
 ): Promise<ExecutionSummaryRow[]> => {
-  const conditions = [eq(pkg.ownerUserId, ownerUserId)];
-  if (packageId) {
-    conditions.push(eq(pkg.id, packageId));
+  const { limit = 20, retentionCutoff } = options;
+  const conditions = [eq(pkg.id, packageId)];
+  if (retentionCutoff) {
+    conditions.push(
+      gte(
+        sql`coalesce(${execution.startedAt}, ${execution.createdAt})`,
+        retentionCutoff
+      )
+    );
   }
 
-  const rows = await database
+  return await database
     .select({
       cpuMs: execution.cpuMs,
       createdAt: execution.createdAt,
@@ -283,6 +288,38 @@ export const listRecentExecutions = async (
     .innerJoin(pkg, eq(packageVersion.packageId, pkg.id))
     .leftJoin(pkgFunction, eq(execution.functionId, pkgFunction.id))
     .where(and(...conditions))
+    .orderBy(desc(execution.createdAt))
+    .limit(limit);
+};
+
+/** @deprecated Prefer {@link listPackageExecutions} for package-scoped history. */
+export const listRecentExecutions = async (
+  database: Database,
+  ownerUserId: string,
+  packageId?: string,
+  limit = 20
+): Promise<ExecutionSummaryRow[]> => {
+  if (packageId) {
+    return listPackageExecutions(database, packageId, { limit });
+  }
+  const rows = await database
+    .select({
+      cpuMs: execution.cpuMs,
+      createdAt: execution.createdAt,
+      functionSlug: pkgFunction.slug,
+      id: execution.id,
+      requestBytes: execution.requestBytes,
+      responseBytes: execution.responseBytes,
+      status: execution.status,
+    })
+    .from(execution)
+    .innerJoin(
+      packageVersion,
+      eq(execution.packageVersionId, packageVersion.id)
+    )
+    .innerJoin(pkg, eq(packageVersion.packageId, pkg.id))
+    .leftJoin(pkgFunction, eq(execution.functionId, pkgFunction.id))
+    .where(eq(pkg.ownerUserId, ownerUserId))
     .orderBy(desc(execution.createdAt))
     .limit(limit);
 

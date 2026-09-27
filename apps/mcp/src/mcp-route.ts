@@ -1,13 +1,20 @@
+import type { AuditableLogger } from 'evlog';
+
 import { createFuncthisMcpHandler } from './mcp';
 import { createProtectedMcpHandler } from './protect';
 
 const mcpEnvKey = (env: Env): string =>
   `${env.CONSOLE_URL}\0${env.MCP_RESOURCE}`;
 
+type ProtectedMcpGate = (
+  request: Request,
+  log?: AuditableLogger
+) => Promise<Response>;
+
 let cachedProtectedGate:
   | {
       envKey: string;
-      gate: (request: Request) => Promise<Response>;
+      gate: ProtectedMcpGate;
     }
   | undefined;
 
@@ -28,7 +35,8 @@ const getUserMcpHandler = (env: Env, userId: string) => {
 
 export const handleProtectedMcpPost = (
   request: Request,
-  env: Env
+  env: Env,
+  log?: AuditableLogger
 ): Promise<Response> => {
   const envKey = mcpEnvKey(env);
   if (cachedProtectedGate?.envKey !== envKey) {
@@ -39,5 +47,5 @@ export const handleProtectedMcpPost = (
       ),
     };
   }
-  return cachedProtectedGate.gate(request);
+  return cachedProtectedGate.gate(request, log);
 };

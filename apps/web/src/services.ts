@@ -1,6 +1,9 @@
 import { createAuth as createConfiguredAuth } from '@functhis/auth';
 import type { AuthConfig } from '@functhis/auth';
-import { ensureCliOAuthClient } from '@functhis/auth/seed-cli-client';
+import {
+  ensureCliOAuthClient,
+  ensureCursorMcpOAuthClient,
+} from '@functhis/auth/seed-cli-client';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
 import {
@@ -62,6 +65,7 @@ const ensureCliClientSeeded = (): Promise<void> => {
   cliSeedPromise ??= (async () => {
     const db = await getDb();
     await ensureCliOAuthClient(db, env.MCP_RESOURCE);
+    await ensureCursorMcpOAuthClient(db, env.MCP_RESOURCE);
     cliClientSeeded = true;
     // Must not await: jwks hits this worker and createAuth waits on seeding.
     void warmJwksHot();
@@ -78,6 +82,8 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       githubClientSecret,
       stripeSecretKey,
       stripeWebhookSecret,
+      stripeDeveloperPrice,
+      stripeTeamPrice,
       stripeProPriceId,
     ] = await Promise.all([
       resolveNamedSecret('BETTER_AUTH_SECRET', env.BETTER_AUTH_SECRET),
@@ -88,6 +94,18 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
         : Promise.resolve(),
       env.STRIPE_WEBHOOK_SECRET
         ? resolveNamedSecret('STRIPE_WEBHOOK_SECRET', env.STRIPE_WEBHOOK_SECRET)
+        : Promise.resolve(),
+      env.STRIPE_PRICE_DEVELOPER_MONTHLY
+        ? resolveNamedSecret(
+            'STRIPE_PRICE_DEVELOPER_MONTHLY',
+            env.STRIPE_PRICE_DEVELOPER_MONTHLY
+          )
+        : Promise.resolve(),
+      env.STRIPE_PRICE_TEAM_MONTHLY
+        ? resolveNamedSecret(
+            'STRIPE_PRICE_TEAM_MONTHLY',
+            env.STRIPE_PRICE_TEAM_MONTHLY
+          )
         : Promise.resolve(),
       env.STRIPE_PRO_PRICE_ID
         ? resolveNamedSecret('STRIPE_PRO_PRICE_ID', env.STRIPE_PRO_PRICE_ID)
@@ -100,6 +118,12 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       GITHUB_CLIENT_ID: githubClientId,
       GITHUB_CLIENT_SECRET: githubClientSecret,
       MCP_RESOURCE: env.MCP_RESOURCE,
+      ...(stripeDeveloperPrice
+        ? { STRIPE_PRICE_DEVELOPER_MONTHLY: stripeDeveloperPrice }
+        : {}),
+      ...(stripeTeamPrice
+        ? { STRIPE_PRICE_TEAM_MONTHLY: stripeTeamPrice }
+        : {}),
       ...(stripeProPriceId ? { STRIPE_PRO_PRICE_ID: stripeProPriceId } : {}),
       ...(stripeSecretKey ? { STRIPE_SECRET_KEY: stripeSecretKey } : {}),
       ...(stripeWebhookSecret

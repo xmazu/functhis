@@ -1,14 +1,13 @@
-interface CloudflareEnv {
+import type { SecretBinding } from '@functhis/db';
+import type { WorkerExecuteBindings } from '@functhis/publish/worker-execute';
+
+interface CloudflareEnv extends WorkerExecuteBindings {
   AI: Ai;
-  OPENROUTER_API_KEY?: SecretsStoreSecret | string;
-  FUNCTHIS_SECRETS_KEY?: SecretsStoreSecret | string;
-  ANALYTICS: AnalyticsEngineDataset;
-  BUNDLES: KVNamespace;
   CONSOLE_URL: string;
+  FUNCTHIS_SECRETS_KEY?: SecretBinding;
   HOT: KVNamespace;
-  HYPERDRIVE: Hyperdrive;
-  LOADER: WorkerLoader;
   MCP_RESOURCE: string;
+  OPENROUTER_API_KEY?: SecretBinding;
 }
 
 declare global {

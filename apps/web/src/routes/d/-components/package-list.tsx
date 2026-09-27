@@ -65,8 +65,8 @@ export const PackageList = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="pt-3 pb-2">
-        <InputGroup className="rounded-lg">
+      <div className="w-full min-w-0 pt-3 pb-2">
+        <InputGroup className="flex w-full min-w-0 rounded-lg">
           <label className="sr-only" htmlFor={searchId}>
             Search packages
           </label>
@@ -81,6 +81,7 @@ export const PackageList = ({
             autoCapitalize="off"
             autoComplete="off"
             autoCorrect="off"
+            className="w-full min-w-0"
             id={searchId}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -104,7 +105,7 @@ export const PackageList = ({
       <div
         className={cn(
           ui,
-          'text-muted-foreground hidden border-b lg:grid',
+          'text-muted-foreground hidden w-full min-w-0 border-b lg:grid',
           rowGridClassName
         )}
       >
@@ -119,14 +120,14 @@ export const PackageList = ({
           No packages match.
         </output>
       ) : (
-        <ul className="flex flex-col">
+        <ul className="flex w-full min-w-0 flex-col">
           {visible.map((pkg) => (
-            <li key={pkg.id}>
+            <li className="min-w-0" key={pkg.id}>
               <Link
                 className={cn(
                   ui,
                   rowGridClassName,
-                  'hover:bg-secondary border-b'
+                  'hover:bg-secondary w-full min-w-0 border-b'
                 )}
                 to={packageConsoleHref(pkg.handle, pkg.packageSlug)}
               >

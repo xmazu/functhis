@@ -22,6 +22,13 @@
       "when": 1790507012341,
       "tag": "0002_purple_invaders",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790533663564,
+      "tag": "0003_execution_lifecycle",
+      "breakpoints": true
     }
   ]
 }

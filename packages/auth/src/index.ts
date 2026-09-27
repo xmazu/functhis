@@ -7,6 +7,10 @@ import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
 import type { Database } from '@functhis/db';
 import * as schema from '@functhis/db/schema/auth';
 import { PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+import {
+  normalizeOAuthResourceIdentifier,
+  oauthResourceIdentifierVariants,
+} from '@functhis/publish/oauth-resource';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
@@ -27,6 +31,8 @@ export interface AuthConfig {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   MCP_RESOURCE: string;
+  STRIPE_PRICE_DEVELOPER_MONTHLY?: string;
+  STRIPE_PRICE_TEAM_MONTHLY?: string;
   STRIPE_PRO_PRICE_ID?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
@@ -102,8 +108,11 @@ export const createAuth = (env: AuthConfig, database: Database) => {
       mcp({
         consentPage: '/consent',
         loginPage: '/login',
-        resource: env.MCP_RESOURCE,
-        resources: [env.MCP_RESOURCE, PUBLISH_API_RESOURCE],
+        resource: normalizeOAuthResourceIdentifier(env.MCP_RESOURCE),
+        resources: [
+          ...oauthResourceIdentifierVariants(env.MCP_RESOURCE),
+          PUBLISH_API_RESOURCE,
+        ],
       }),
       cimd({
         fetchClientMetadataResource,

@@ -60,7 +60,7 @@ Forward issuer well-known URLs to `auth.handler`, not only `/api/auth/*`:
 
 - `{issuer}/.well-known/oauth-authorization-server`
 - `{issuer}/.well-known/openid-configuration` if `openid` is issued
-- `mcp.functhis.now/.well-known/oauth-protected-resource`
+- `mcp.functhis.now/.well-known/oauth-protected-resource` and path-aware `…/oauth-protected-resource/mcp` (RFC 9728; Cursor MCP clients)
 - `/oauth2/authorize`, `/oauth2/token`, `/oauth2/userinfo`, JWKS
 
 MCP POST `/mcp`: `requireMcpAuth` / `createMcpProtectedRequestHandler`. CLI device token is bound to the deploy API resource (`https://functhis.now`), not MCP.
@@ -139,6 +139,7 @@ Package code runs as a **Dynamic Worker** on `functhis-mcp` via a Worker Loader 
 - Limits on `getEntrypoint()`: `cpuMs` and `subRequests` from the caller’s plan. Fail closed.
 - Network: omit `globalOutbound` in the loader config so Dynamic Workers use default outbound (tools wrap APIs in alpha). Later: host allowlist / intercept. Never inherit origin secrets (`env: {}`).
 - Observability: Workers Analytics Engine data points per execute; Tail Worker / traces on `functhis-mcp` capture isolate logs.
+- Detailed telemetry: Axiom stores redacted execution input/output and Tail Worker logs, correlated by the same `executionId` used by the Dynamic Worker, Postgres row, and Analytics Engine point. Axiom payloads are capped at 32 KiB for input/output, 100 log records, and 4 KiB per log message.
 
 Do not add a Workers for Platforms dispatch namespace unless custom-domain hostname routing later needs it. Dynamic Workers already cover isolation, per-invoke limits, warm reuse, and egress control.
 
@@ -211,14 +212,20 @@ Do not copy Kody’s in-platform Git workspace or Gram’s third-party MCP Regis
 
 ## Data
 
-Postgres metadata. Better Auth tables stay in `packages/db/src/schema/auth.ts`. After plugins: `oauthClient`, tokens, consent, JWT keys, `organization` / `member` / `invitation`.
+Postgres is the ownership and authorization source of truth. Better Auth tables stay in `packages/db/src/schema/auth.ts`; catalog ownership, organization membership, package ACL, versions, quotas, and execution metadata stay in `packages/db/src/schema/catalog.ts`. Axiom and Analytics Engine are observability stores only and never grant access or replace Postgres rows.
 
 | Table | Notes |
 | --- | --- |
 | `package` | `slug`, `ownerUserId`, required `organizationId`, `visibility` (`private` \| `organization` \| `library`), `currentVersionId` |
 | `function` | `packageId`, `exportName`, `path`, `slug` (may include `/` namespaces), contract JSON, `search_text`. Unique `(packageId, slug)` |
 | `package_version` | Immutable: semver, source hash, bundle hash, artifact key, contracts, git sha, runtime version, createdBy |
-| `execution` | Thin: caller, status, cpu/ms, size. Retention-capped |
+| `execution` | Thin: shared `executionId`, caller, status, cpu/ms, size, and timestamps. Retention-capped metadata remains in Postgres |
+
+Execution payloads are queried from Axiom only after the Postgres package ACL check. The dashboard reports payloads as available, missing (no Axiom records yet inside the plan window), expired (outside the plan window or trial), or unavailable (Axiom is not configured or cannot be reached). Plan retention follows pricing: trial 0 days, Developer 7 days, Team 30 days, and Enterprise is configured per contract.
+
+Every execution creates one shared `executionId`. Postgres stores the authoritative metadata row, Axiom stores the redacted and capped detailed payload/log events, and Analytics Engine stores aggregate usage with the same id in its first blob. These stores are correlated only; Axiom and Analytics Engine never grant access. Input and output telemetry are each capped at 32 KiB, logs at 100 records and 4 KiB per message, and request/response execution limits remain separate.
+
+Axiom dataset retention must match the plan window (trial 0, Developer 7, Team 30, Enterprise by contract). A scheduled MCP cron cleanup is the fallback for API-backed deletion or policy changes; it must be idempotent and must not be required for execution availability.
 
 Local Docker is stock Postgres 16. Production is Neon Postgres. Workers use `drizzle-orm` + `pg` through Hyperdrive (`createDb` in `packages/db`). Migrations use `DATABASE_URL` from `packages/db/.env`, never Hyperdrive.
 
@@ -273,9 +280,9 @@ or (organizationId in memberships and visibility = organization)
 
 **Org migration (deploy):** SQL `0004` / `0005` backfill legacy user-scoped packages onto workspace orgs. If an owner’s handle slug is already taken by another workspace, migration creates `{handle}-workspace` instead of joining the foreign org. `0005` aborts when any package row still lacks `organization_id` (no silent deletes).
 
-Billing: Better Auth Stripe plugin with `customerType: organization` (optional when Stripe secrets are unset). Entitlements (Free vs Pro package and execution caps) are enforced in `@functhis/publish` from Postgres subscription rows and `org_usage_period` counters—not from Stripe on the MCP hot path.
+Billing: Better Auth Stripe plugin with `customerType: organization` (optional when Stripe secrets are unset). Entitlements (trial/Developer/Team package and execution caps) are enforced in `@functhis/publish` from Postgres subscription rows and `org_usage_period` counters—not from Stripe on the MCP hot path. Stripe price configuration uses `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`; Enterprise is contract-priced and has no Stripe price env name.
 
-Quotas fail closed from day one: CPU, concurrency, request/response size.
+Quotas fail closed from day one: CPU, concurrency, request/response size. Execute request and response payloads are capped at 1 MiB. Telemetry limits are separate and lower so detailed observability cannot become an unbounded storage or egress path.
 
 ## Repo
 

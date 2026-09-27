@@ -148,7 +148,17 @@ const UsagePage = () => {
           <>
             <SettingsRow
               description={`${billing.executionCount.toLocaleString()} of ${billing.limits.maxExecutionsPerMonth.toLocaleString()} executions this month`}
-              title={`${billing.plan === 'pro' ? 'Pro' : 'Free'} plan`}
+              title={`${
+                (
+                  {
+                    developer: 'Developer',
+                    enterprise: 'Enterprise',
+                    pro: 'Developer',
+                    team: 'Team',
+                    trial: 'Free trial',
+                  } as Record<string, string>
+                )[billing.plan] ?? billing.plan
+              } plan`}
             >
               <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full sm:w-48">
                 <div

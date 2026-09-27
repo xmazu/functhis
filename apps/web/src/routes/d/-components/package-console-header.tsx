@@ -30,10 +30,23 @@ export const PackageConsoleHeader = (): ReactElement | null => {
 
   const packageName = `@${detail.handle}/${detail.packageSlug}`;
   const overviewPath = packageConsoleHref(detail.handle, detail.packageSlug);
+  const executionsPath = packageConsoleHref(
+    detail.handle,
+    detail.packageSlug,
+    'executions'
+  );
+  const secretsPath = packageConsoleHref(
+    detail.handle,
+    detail.packageSlug,
+    'secrets'
+  );
   const isOverview =
     pathname === overviewPath || pathname === `${overviewPath}/`;
+  const isExecutionsSection =
+    pathname === executionsPath || pathname.startsWith(`${executionsPath}/`);
+  const isSecrets = pathname === secretsPath;
 
-  if (isOverview) {
+  if (isOverview || isExecutionsSection || isSecrets) {
     return null;
   }
 

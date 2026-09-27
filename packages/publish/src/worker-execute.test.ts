@@ -46,6 +46,7 @@ describe('runDynamicWorker', () => {
         }
       | undefined;
     let capturedBody: unknown;
+    let capturedExecutionId: string | null = null;
 
     await runDynamicWorker(
       {
@@ -57,6 +58,9 @@ describe('runDynamicWorker', () => {
               getEntrypoint: () => ({
                 fetch: async (request) => {
                   capturedBody = JSON.parse(await request.text());
+                  capturedExecutionId = request.headers.get(
+                    'x-functhis-execution-id'
+                  );
                   return Response.json({ result: null });
                 },
               }),
@@ -67,6 +71,7 @@ describe('runDynamicWorker', () => {
       {
         bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
         callerUserId: 'user-9',
+        executionId: 'exec-9',
         functionSlug: 'hello',
         requestBytes: 10,
         runInput: { ok: true },
@@ -85,12 +90,14 @@ describe('runDynamicWorker', () => {
       runtime: {
         context: {
           callerUserId: 'user-9',
+          executionId: 'exec-9',
           functionSlug: 'hello',
           packageVersionId: 'ver_test',
         },
         secrets: {},
       },
     });
+    expect(capturedExecutionId).toBe('exec-9');
   });
 
   test('passes published .mjs modules as explicit js objects for Worker Loader', async () => {
@@ -119,6 +126,7 @@ describe('runDynamicWorker', () => {
           mainModule: 'bundle.mjs',
           modules: { 'bundle.mjs': 'export default {};' },
         },
+        executionId: 'exec-1',
         requestBytes: 1,
         runInput: {},
         versionId: 'ver_test',
@@ -155,6 +163,7 @@ describe('runDynamicWorker', () => {
       },
       {
         bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        executionId: 'exec-1',
         requestBytes: 1,
         runInput: {},
         runtimeSecrets: { API_KEY: 'shh' },
@@ -183,6 +192,7 @@ describe('runDynamicWorker', () => {
       },
       {
         bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        executionId: 'exec-1',
         functionSlug: 'hello',
         requestBytes: 10,
         runInput: {},
@@ -215,6 +225,7 @@ describe('runDynamicWorker', () => {
       },
       {
         bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        executionId: 'exec-1',
         requestBytes: 10,
         runInput: {},
         versionId: 'ver_test',
@@ -238,6 +249,7 @@ describe('runDynamicWorker', () => {
       },
       {
         bundle: { mainModule: 'main.ts', modules: { 'main.ts': '' } },
+        executionId: 'exec-1',
         requestBytes: 4,
         runInput: {},
         versionId: 'ver_test',
@@ -282,6 +294,7 @@ describe('writeExecutionAnalytics', () => {
       {
         callerUserId: 'user-1',
         durationMs: 12,
+        executionId: 'exec-1',
         functionSlug: 'hello',
         organizationId: 'org-1',
         requestBytes: 3,
@@ -292,11 +305,12 @@ describe('writeExecutionAnalytics', () => {
     );
     expect(writes).toEqual([
       {
-        blobs: ['ver_1', 'hello', 'ok', 'user-1'],
+        blobs: ['exec-1', 'ver_1', 'hello', 'ok', 'user-1'],
         doubles: [12, 3, 4],
         indexes: ['org-1'],
       },
     ]);
+    expect((writes[0] as { blobs: string[] }).blobs[0]).toBe('exec-1');
   });
 });
 
@@ -322,15 +336,19 @@ describe('finalizeExecute', () => {
         versionId: 'ver_1',
       },
       {
+        completedAt: new Date(5),
         durationMs: 5,
         httpStatus: 200,
         requestBytes: 1,
         responseBytes: 2,
         responseText: '{"ok":true}',
+        startedAt: new Date(0),
         status: 'ok',
         tooLarge: false,
       },
-      'org-1'
+      'org-1',
+      undefined,
+      'exec-1'
     );
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('{"ok":true}');
@@ -348,15 +366,19 @@ describe('finalizeExecute', () => {
         versionId: 'ver_1',
       },
       {
+        completedAt: new Date(5),
         durationMs: 5,
         httpStatus: 413,
         requestBytes: 1,
         responseBytes: 2,
         responseText: '{"error":"too_large"}',
+        startedAt: new Date(0),
         status: 'error',
         tooLarge: true,
       },
-      'org-1'
+      'org-1',
+      undefined,
+      'exec-1'
     );
     expect(response.status).toBe(413);
     expect(await response.json()).toEqual({ error: 'too_large' });

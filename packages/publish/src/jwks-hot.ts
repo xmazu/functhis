@@ -36,7 +36,7 @@ export const resolveJwksVerifier = async (
 };
 
 export const verifyAccessTokenWithHotJwks = async (input: {
-  audience: string;
+  audience: string | string[];
   hot: HotKvBinding;
   issuer: string;
   jwksUrl: string;

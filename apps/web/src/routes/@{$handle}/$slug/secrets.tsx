@@ -16,6 +16,7 @@ import {
 import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { runOptimistic } from '#/lib/query/optimistic';
 import { useAppQueryClient } from '#/lib/query/use-app-query-client';
+import { PackageConsoleBreadcrumb } from '#/routes/d/-components/package-console-breadcrumb';
 import { PackageDetailNotFound } from '#/routes/d/-components/package-detail-not-found';
 import { SecretsSettingsPanel } from '#/routes/d/-components/secrets-settings-panel';
 import { SettingsPage } from '#/routes/d/-components/settings/settings-primitives';
@@ -60,9 +61,14 @@ const PackageSecretsPage = (): ReactElement => {
           </Button>
         ) : null
       }
-      className="pt-0"
       contentClassName="max-w-3xl"
       description={SECRETS_DESCRIPTION}
+      leading={
+        <PackageConsoleBreadcrumb
+          handle={detail.handle}
+          packageSlug={detail.packageSlug}
+        />
+      }
       title="Secrets"
     >
       <SecretsSettingsPanel

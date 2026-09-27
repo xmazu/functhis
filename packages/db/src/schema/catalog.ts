@@ -144,6 +144,7 @@ export const execution = pgTable(
     callerUserId: text('caller_user_id').references(() => user.id, {
       onDelete: 'set null',
     }),
+    completedAt: timestamp('completed_at'),
     cpuMs: integer('cpu_ms'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     functionId: text('function_id').references(() => pkgFunction.id, {
@@ -152,17 +153,23 @@ export const execution = pgTable(
     id: text('id')
       .primaryKey()
       .default(sql`gen_random_uuid()`),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     packageVersionId: text('package_version_id')
       .notNull()
       .references(() => packageVersion.id, { onDelete: 'cascade' }),
     requestBytes: integer('request_bytes'),
     responseBytes: integer('response_bytes'),
+    startedAt: timestamp('started_at'),
     status: text('status').notNull(),
   },
   (table) => [
+    index('execution_organization_id_idx').on(table.organizationId),
     index('execution_package_version_id_idx').on(table.packageVersionId),
     index('execution_created_at_idx').on(table.createdAt),
     index('execution_caller_user_id_idx').on(table.callerUserId),
+    index('execution_status_idx').on(table.status),
   ]
 );
 
@@ -273,6 +280,10 @@ export const executionRelations = relations(execution, ({ one }) => ({
   function: one(pkgFunction, {
     fields: [execution.functionId],
     references: [pkgFunction.id],
+  }),
+  organization: one(organization, {
+    fields: [execution.organizationId],
+    references: [organization.id],
   }),
   packageVersion: one(packageVersion, {
     fields: [execution.packageVersionId],

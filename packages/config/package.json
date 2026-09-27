@@ -6,6 +6,7 @@
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json",
     "./evlog-worker-entry": "./evlog-worker-entry.ts",
+    "./evlog-workers": "./evlog-workers.ts",
     "./vite.tanstack-app": "./vite.tanstack-app.ts"
   },
   "dependencies": {

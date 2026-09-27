@@ -30,6 +30,10 @@ bun run dev
 | Web (site, OAuth, `/d`, publish API) | http://localhost:3001 |
 | MCP (`search` / `execute`)           | http://localhost:3003 |
 
+Publish writes function bundles to the web worker’s local KV. The MCP worker reads the same **BUNDLES** namespace, so `apps/mcp` dev uses `--persist-to ../web/.wrangler/state`. If `search` finds a function but `execute` returns “Function not found”, restart dev (or republish after clearing KV).
+
+**Cursor:** [`.cursor/mcp.json`](./.cursor/mcp.json) points at `http://localhost:3003/mcp` with static OAuth client `functhis-cursor-mcp` (Cursor does not support our CIMD-only registration). Restart **`bun run dev`** so the web worker seeds that client, then enable **`functhis-local`** in **Settings → Tools & MCP** and sign in on http://localhost:3001. If logs say `does not support dynamic client registration`, pull latest and confirm `auth.CLIENT_ID` is present in `mcp.json`.
+
 Web only:
 
 ```bash

@@ -25,7 +25,7 @@ import {
   OrgQuotaExceededError,
   insertOrgPackageIfUnderLimit,
 } from './org-entitlements';
-import { resolveOrganizationSlugById } from './org-membership-read';
+import { resolvePackagePublicHandle } from './package-public-handle';
 import {
   resolvePublishSharingForPublishStart,
   resolvePublishStartSharing,
@@ -88,16 +88,6 @@ const validateArtifactSize = (artifact: PublishArtifact): string | null => {
     return `Artifact too large (max ${MAX_ARTIFACT_BYTES} bytes)`;
   }
   return null;
-};
-
-const publicHandleForPackage = (
-  database: PublishHandlerContext['db'],
-  packageRow: typeof pkg.$inferSelect
-): Promise<string | null> => {
-  if (!packageRow.organizationId) {
-    return Promise.resolve(null);
-  }
-  return resolveOrganizationSlugById(database, packageRow.organizationId);
 };
 
 const findPackageForIdentity = async (
@@ -332,9 +322,12 @@ export const handlePublishFinalize = async (
     return new Response('Not Found', { status: 404 });
   }
 
-  const handle = await publicHandleForPackage(database, packageRow);
+  const handle = await resolvePackagePublicHandle(
+    database,
+    packageRow.organizationId
+  );
   if (!handle) {
-    return new Response('Scope handle not found', { status: 500 });
+    return new Response('Organization scope not found', { status: 500 });
   }
 
   const contentHash = parsed.data.contentHash.toLowerCase();
@@ -573,9 +566,12 @@ export const handlePublishRollback = async (
     .set({ currentVersionId: version.id })
     .where(eq(pkg.id, packageRow.id));
 
-  const handle = await publicHandleForPackage(database, packageRow);
+  const handle = await resolvePackagePublicHandle(
+    database,
+    packageRow.organizationId
+  );
   if (!handle) {
-    return new Response('Scope handle not found', { status: 500 });
+    return new Response('Organization scope not found', { status: 500 });
   }
 
   try {

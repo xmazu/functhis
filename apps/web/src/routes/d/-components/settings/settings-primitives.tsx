@@ -11,6 +11,7 @@ export const SettingsPage = ({
   children,
   contentClassName,
   className,
+  leading,
 }: {
   title: string;
   description: string;
@@ -18,6 +19,7 @@ export const SettingsPage = ({
   children: ReactNode;
   contentClassName?: string;
   className?: string;
+  leading?: ReactNode;
 }) => (
   <main className="min-h-0 flex-1 overflow-auto">
     <div
@@ -27,6 +29,7 @@ export const SettingsPage = ({
         className
       )}
     >
+      {leading}
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className={`${settingsText} font-medium`}>{title}</h1>

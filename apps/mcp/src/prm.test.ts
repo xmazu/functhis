@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 
-import { oauthProtectedResourceMetadata } from './prm';
+import {
+  oauthProtectedResourceMetadata,
+  oauthProtectedResourceMetadataPaths,
+  oauthProtectedResourceMetadataUrl,
+} from './prm';
 import { authIssuerFromConsoleUrl } from './protect';
 
 describe('oauth protected resource metadata', () => {
@@ -20,5 +24,19 @@ describe('oauth protected resource metadata', () => {
     expect(body.authorization_servers).toEqual([
       authIssuerFromConsoleUrl(env.CONSOLE_URL),
     ]);
+  });
+
+  it('advertises path-aware metadata for MCP clients (RFC 9728)', () => {
+    const env = {
+      CONSOLE_URL: 'http://localhost:3001',
+      MCP_RESOURCE: 'http://localhost:3003',
+    } as Env;
+
+    expect(oauthProtectedResourceMetadataUrl(env)).toBe(
+      'http://localhost:3003/.well-known/oauth-protected-resource/mcp'
+    );
+    expect(oauthProtectedResourceMetadataPaths()).toContain(
+      '/.well-known/oauth-protected-resource/mcp'
+    );
   });
 });

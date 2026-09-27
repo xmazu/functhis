@@ -10,6 +10,10 @@
       "types": "./src/oauth.ts",
       "default": "./src/oauth.ts"
     },
+    "./oauth-resource": {
+      "types": "./src/oauth-resource.ts",
+      "default": "./src/oauth-resource.ts"
+    },
     "./schemas": {
       "types": "./src/schemas.ts",
       "default": "./src/schemas.ts"
@@ -105,6 +109,18 @@
     "./worker-execute": {
       "types": "./src/worker-execute.ts",
       "default": "./src/worker-execute.ts"
+    },
+    "./execution-store": {
+      "types": "./src/execution-store.ts",
+      "default": "./src/execution-store.ts"
+    },
+    "./axiom": {
+      "types": "./src/axiom.ts",
+      "default": "./src/axiom.ts"
+    },
+    "./telemetry-redaction": {
+      "types": "./src/telemetry-redaction.ts",
+      "default": "./src/telemetry-redaction.ts"
     }
   },
   "scripts": {

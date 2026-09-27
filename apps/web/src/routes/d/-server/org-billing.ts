@@ -46,6 +46,8 @@ export const getOrgBillingSummary = createServerFn({ method: 'GET' })
     ]);
 
     const billingEnabled = isStripePluginConfigured({
+      STRIPE_PRICE_DEVELOPER_MONTHLY: env.STRIPE_PRICE_DEVELOPER_MONTHLY,
+      STRIPE_PRICE_TEAM_MONTHLY: env.STRIPE_PRICE_TEAM_MONTHLY,
       STRIPE_PRO_PRICE_ID: env.STRIPE_PRO_PRICE_ID,
       STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
       STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET,

@@ -1,8 +1,10 @@
 import { ExecutePayloadTooLargeError } from '@functhis/publish/quotas';
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
+import { log } from 'evlog';
 import { z } from 'zod';
 
 import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';
+import { summarizeMcpSearchQuery } from './mcp-log';
 import { searchFunctions } from './search';
 
 const searchInputSchema = z.object({
@@ -44,6 +46,13 @@ export const createFuncthisMcpHandler = (
             domain: input.domain,
             query: input.query,
           });
+          log.info({
+            domain: input.domain ?? 'mine',
+            hitCount: hits.length,
+            message: 'mcp.search',
+            query: summarizeMcpSearchQuery(input.query),
+            userId,
+          });
           return {
             content: [
               {
@@ -69,6 +78,13 @@ export const createFuncthisMcpHandler = (
               id: input.id,
             });
             if (!result.ok) {
+              log.info({
+                error: result.error,
+                functionId: input.id,
+                message: 'mcp.execute.failed',
+                status: result.status,
+                userId,
+              });
               if (result.issues) {
                 return toolErrorContent(
                   JSON.stringify({
@@ -79,6 +95,12 @@ export const createFuncthisMcpHandler = (
               }
               return toolErrorContent(result.error);
             }
+            log.info({
+              functionId: input.id,
+              message: 'mcp.execute.ok',
+              status: result.status,
+              userId,
+            });
             return {
               content: [
                 {
@@ -90,6 +112,12 @@ export const createFuncthisMcpHandler = (
             };
           } catch (error) {
             if (error instanceof FunctionNotFoundError) {
+              log.info({
+                error: 'function_not_found',
+                functionId: input.id,
+                message: 'mcp.execute.failed',
+                userId,
+              });
               return toolErrorContent('Function not found');
             }
             if (error instanceof ExecutePayloadTooLargeError) {

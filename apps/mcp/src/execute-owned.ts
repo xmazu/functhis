@@ -1,6 +1,7 @@
 import { createDb } from '@functhis/db';
 import { StoredBundleLoadError } from '@functhis/publish/bundle-load-error';
 import { canAccessPackage } from '@functhis/publish/catalog-access';
+import { insertStartedExecutionRow } from '@functhis/publish/execution-store';
 import { parseFunctionId } from '@functhis/publish/function-id';
 import {
   loadPackageVersionSecretNames,
@@ -172,9 +173,20 @@ export const executeOwnedFunction = async (
     throw error;
   }
 
+  const executionId = crypto.randomUUID();
+  await insertStartedExecutionRow(env, {
+    callerUserId,
+    executionId,
+    functionId: row.functionId,
+    organizationId: row.organizationId,
+    packageVersionId: row.versionId,
+    requestBytes,
+    startedAt: new Date(),
+  });
   const run = await runDynamicWorker(env, {
     bundle,
     callerUserId,
+    executionId,
     functionSlug: parsedId.functionSlug,
     requestBytes,
     runInput,
@@ -191,11 +203,13 @@ export const executeOwnedFunction = async (
       callerUserId: executionCallerUserId,
       functionSlug: parsedId.functionSlug,
       input: runInput,
+      secretValues: Object.values(runtimeSecrets),
       versionId: row.versionId,
     },
     run,
     row.organizationId,
-    row.functionId
+    row.functionId,
+    executionId
   );
 
   const responseText = await httpResponse.text();

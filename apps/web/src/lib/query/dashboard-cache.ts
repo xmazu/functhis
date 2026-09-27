@@ -3,6 +3,10 @@ import { useLayoutEffect } from 'react';
 
 import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { useAppQueryClient } from '#/lib/query/use-app-query-client';
+import type {
+  ExecutionDetailViewModel,
+  ExecutionListViewModel,
+} from '#/routes/d/-server/executions';
 import type { PackageDetailViewModel } from '#/routes/d/-server/package-detail-view-model';
 
 export interface OrganizationsQueryData {
@@ -155,5 +159,64 @@ export const useOrgSecretsDashboardQuery = (
     staleTime: Number.POSITIVE_INFINITY,
   });
 
+  return query.data ?? loaderData;
+};
+
+export const usePackageExecutionsDashboardQuery = (
+  loaderData: ExecutionListViewModel | null,
+  handle: string,
+  packageSlug: string
+): ExecutionListViewModel | null => {
+  const queryClient = useAppQueryClient();
+  const queryKey = dashboardKeys.packageExecutions(handle, packageSlug);
+
+  useLayoutEffect(() => {
+    if (loaderData) {
+      queryClient.setQueryData(
+        dashboardKeys.packageExecutions(handle, packageSlug),
+        loaderData
+      );
+    }
+  }, [handle, loaderData, packageSlug, queryClient]);
+
+  const query = useQuery({
+    enabled: loaderData !== null,
+    initialData: loaderData ?? undefined,
+    queryFn: () => loaderData,
+    queryKey,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  return query.data ?? loaderData;
+};
+
+export const useExecutionDetailDashboardQuery = (
+  loaderData: ExecutionDetailViewModel | null,
+  handle: string,
+  packageSlug: string,
+  executionId: string
+): ExecutionDetailViewModel | null => {
+  const queryClient = useAppQueryClient();
+  const queryKey = dashboardKeys.executionDetail(
+    handle,
+    packageSlug,
+    executionId
+  );
+
+  useLayoutEffect(() => {
+    if (loaderData) {
+      queryClient.setQueryData(
+        dashboardKeys.executionDetail(handle, packageSlug, executionId),
+        loaderData
+      );
+    }
+  }, [executionId, handle, loaderData, packageSlug, queryClient]);
+
+  const query = useQuery({
+    enabled: loaderData !== null,
+    initialData: loaderData ?? undefined,
+    queryFn: () => loaderData,
+    queryKey,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
   return query.data ?? loaderData;
 };
