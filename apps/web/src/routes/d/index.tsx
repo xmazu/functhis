@@ -1,36 +1,24 @@
-import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
-const dRouteApi = getRouteApi('/d');
+import { cn } from '#/lib/utils';
+import { packageConsoleContentClassName } from '#/routes/d/-components/package-console-content';
+import { PackageList } from '#/routes/d/-components/package-list';
+import { listPackagesForSession } from '#/routes/d/-server/packages';
 
-const DashboardPage = () => {
-  const { session } = dRouteApi.useRouteContext();
+const PackagesPage = () => {
+  const packages = Route.useLoaderData();
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col">
-      <header className="border-b px-4 py-2.5">
-        <h1 className="text-[length:var(--app-font-size-ui,12px)] font-medium">
-          Home
-        </h1>
-      </header>
-      <div className="flex flex-col gap-2 p-4">
-        <p className="text-[length:var(--app-font-size-ui,12px)]">
-          Signed in as {session?.user.name} ({session?.user.email})
-        </p>
-        <p className="text-muted-foreground text-[length:var(--app-font-size-ui,12px)]">
-          Manage deployed packages, copy MCP ids and snippets, and review recent
-          executions from the Packages page.
-        </p>
-        <Link
-          className="text-[length:var(--app-font-size-ui,12px)] underline-offset-2 hover:underline"
-          to="/d/pkgs"
-        >
-          Open packages
-        </Link>
+    <main className="flex min-h-0 flex-1 flex-col overflow-auto">
+      <div className={cn(packageConsoleContentClassName, 'pt-6')}>
+        <h1 className="sr-only">Packages</h1>
+        <PackageList packages={packages} />
       </div>
     </main>
   );
 };
 
 export const Route = createFileRoute('/d/')({
-  component: DashboardPage,
+  component: PackagesPage,
+  loader: () => listPackagesForSession(),
 });

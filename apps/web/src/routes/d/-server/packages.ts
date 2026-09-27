@@ -1,3 +1,5 @@
+import type { Database } from '@functhis/db';
+import { execution, packageVersion } from '@functhis/db/schema/catalog';
 import {
   asHotKvBinding,
   buildPackageAccessContext,
@@ -13,13 +15,39 @@ import {
   updatePackageSharing,
 } from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 import { env } from '#/env.server';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
+import { withCallCounts } from '#/routes/d/-lib/package-list';
 import { getDb } from '#/services';
 
 import { buildPackageDetailViewModel } from './package-detail-view-model';
+
+const countCallsByPackageIds = async (
+  database: Database,
+  packageIds: string[]
+): Promise<Map<string, number>> => {
+  if (packageIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await database
+    .select({
+      callCount: sql<number>`count(${execution.id})`.mapWith(Number),
+      packageId: packageVersion.packageId,
+    })
+    .from(execution)
+    .innerJoin(
+      packageVersion,
+      eq(execution.packageVersionId, packageVersion.id)
+    )
+    .where(inArray(packageVersion.packageId, packageIds))
+    .groupBy(packageVersion.packageId);
+
+  return new Map(rows.map((row) => [row.packageId, row.callCount]));
+};
 
 export const listPackagesForSession = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -29,7 +57,12 @@ export const listPackagesForSession = createServerFn({ method: 'GET' })
       return [];
     }
     const database = await getDb();
-    return listAccessiblePackagesForUser(database, userId);
+    const packages = await listAccessiblePackagesForUser(database, userId);
+    const callCounts = await countCallsByPackageIds(
+      database,
+      packages.map((pkg) => pkg.id)
+    );
+    return withCallCounts(packages, callCounts);
   });
 
 export const getPackageDetailForSession = createServerFn({ method: 'GET' })

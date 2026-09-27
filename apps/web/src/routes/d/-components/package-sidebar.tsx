@@ -108,10 +108,10 @@ const PackageNav = ({
             'text-foreground/80 hover:bg-sidebar-accent hover:text-foreground'
           )}
           onClick={onNavigate}
-          to="/d/pkgs"
+          to="/d"
         >
           <IconArrowLeft className="size-3.5 shrink-0 opacity-80" />
-          <span className="truncate">Back to pkgs</span>
+          <span className="truncate">Back to packages</span>
         </Link>
       </nav>
       <nav aria-label="Package" className="mt-4 flex flex-col gap-0.5 px-2">

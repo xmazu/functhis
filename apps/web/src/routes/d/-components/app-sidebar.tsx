@@ -1,7 +1,6 @@
 import {
   IconArrowLeft,
   IconChartBar,
-  IconHome,
   IconKey,
   IconPackage,
   IconSettings,
@@ -20,17 +19,10 @@ import {
 
 const NAV_ITEMS = [
   {
-    icon: IconHome,
-    isActive: (pathname: string) => pathname === '/d' || pathname === '/d/',
-    label: 'Home',
-    to: '/d',
-  },
-  {
     icon: IconPackage,
-    isActive: (pathname: string) =>
-      pathname === '/d/pkgs' || pathname === '/d/pkgs/',
-    label: 'Pkgs',
-    to: '/d/pkgs',
+    isActive: (pathname: string) => pathname === '/d' || pathname === '/d/',
+    label: 'Packages',
+    to: '/d',
   },
   {
     icon: IconSettings,
