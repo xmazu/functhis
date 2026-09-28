@@ -28,8 +28,12 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/). Every commi
 <type>(<optional scope>): <description>
 ```
 
+Write **short but meaningful** subjects: one line that tells a reviewer what changed and why it matters, without filler or a file laundry list.
+
 - Use lowercase `type` and imperative description (what the commit does, not what you did)
-- Keep the description under 72 characters; put detail in the body
+- Keep the subject under 72 characters; put detail in the body
+- Prefer a specific outcome over vague verbs (`fix logs pagination off-by-one` not `fix bugs` or `update logs page`)
+- Do not repeat the scope in the description (`feat(web): add logs table` not `feat(web): add web logs table`)
 - Do not end the subject with a period
 - Use a body when the why is not obvious from the subject
 - Breaking changes: `BREAKING CHANGE:` in the body, or `!` after the type/scope (`feat(api)!: ...`)
@@ -50,6 +54,8 @@ Types:
 | `chore`    | Maintenance that does not fit the others |
 
 Examples: `feat(cli): add device login`, `fix(auth): reject special-use CIMD hosts`, `docs: describe terraform and wrangler split`.
+
+Weak subjects to avoid: `chore: wip`, `fix: review feedback`, `refactor: cleanup`.
 
 ---
 
