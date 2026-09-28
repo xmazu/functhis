@@ -106,10 +106,84 @@ describe('isolate/runtime', () => {
     ).rejects.toThrow(/Secret "MISSING" is not set/u);
   });
 
-  test('context throws outside an invocation', () => {
-    expect(() => context()).toThrow(
-      /functhis:runtime context is not available outside an invocation/u
-    );
+  test('context and secret throw outside an invocation', () => {
+    expect(() => context()).toThrow(/context is not available/u);
+    expect(() => secret('TOKEN')).toThrow(/secret is not available/u);
+  });
+
+  test('allows fetch without an allowlist and accepts URL or Request inputs', async () => {
+    const server = Bun.serve({
+      fetch: () => new Response('ok'),
+      hostname: '127.0.0.1',
+      port: 0,
+    });
+    const href = `http://127.0.0.1:${server.port}/`;
+    const store = {
+      context: {
+        callerUserId: null,
+        executionId: 'exec',
+        functionSlug: 'fn',
+        packageVersionId: 'ver',
+      },
+      secrets: {},
+    };
+    try {
+      const fromUrl = await __runInRuntime(store, () => fetch(new URL(href)));
+      expect(await (fromUrl as Response).text()).toBe('ok');
+      const fromRequest = await __runInRuntime(store, () =>
+        fetch(new Request(href))
+      );
+      expect(await (fromRequest as Response).text()).toBe('ok');
+      await expect(
+        __runInRuntime({ ...store, hostAllowlist: ['127.0.0.1'] }, () =>
+          fetch('not a url')
+        )
+      ).rejects.toThrow(/allowlist/u);
+    } finally {
+      server.stop(true);
+    }
+  });
+
+  test('blocks fetch when an allowlist is set', async () => {
+    const server = Bun.serve({
+      fetch: () => new Response('ok'),
+      hostname: '127.0.0.1',
+      port: 0,
+    });
+    try {
+      await expect(
+        __runInRuntime(
+          {
+            context: {
+              callerUserId: null,
+              executionId: 'exec',
+              functionSlug: 'fn',
+              packageVersionId: 'ver',
+            },
+            hostAllowlist: ['127.0.0.1'],
+            secrets: {},
+          },
+          () => fetch('https://evil.test/x')
+        )
+      ).rejects.toThrow(/allowlist/u);
+      const allowed = await __runInRuntime(
+        {
+          context: {
+            callerUserId: null,
+            executionId: 'exec',
+            functionSlug: 'fn',
+            packageVersionId: 'ver',
+          },
+          hostAllowlist: ['127.0.0.1'],
+          secrets: {},
+        },
+        () => fetch(`http://127.0.0.1:${server.port}/`)
+      );
+      expect(allowed).toBeInstanceOf(Response);
+      expect(await (allowed as Response).text()).toBe('ok');
+    } finally {
+      server.stop(true);
+    }
   });
 });
 

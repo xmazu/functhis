@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -36,6 +37,7 @@ export const pkg = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     slug: text('slug').notNull(),
+    sourceKind: text('source_kind').default('hosted_function').notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(
@@ -65,6 +67,7 @@ export const packageVersion = pgTable(
       .references(() => user.id, { onDelete: 'restrict' }),
     gitDirty: boolean('git_dirty').default(false).notNull(),
     gitSha: text('git_sha'),
+    hostAllowlist: text('host_allowlist').array(),
     id: text('id')
       .primaryKey()
       .default(sql`gen_random_uuid()`),
@@ -78,6 +81,7 @@ export const packageVersion = pgTable(
       .default(sql`'{}'::text[]`),
     semver: text('semver').notNull(),
     sourceHash: text('source_hash').notNull(),
+    strictOutput: boolean('strict_output').default(false).notNull(),
   },
   (table) => [
     index('package_version_package_id_idx').on(table.packageId),
@@ -161,6 +165,7 @@ export const execution = pgTable(
       .references(() => packageVersion.id, { onDelete: 'cascade' }),
     requestBytes: integer('request_bytes'),
     responseBytes: integer('response_bytes'),
+    searchId: text('search_id'),
     startedAt: timestamp('started_at'),
     status: text('status').notNull(),
   },
@@ -170,6 +175,7 @@ export const execution = pgTable(
     index('execution_created_at_idx').on(table.createdAt),
     index('execution_caller_user_id_idx').on(table.callerUserId),
     index('execution_status_idx').on(table.status),
+    index('execution_search_id_idx').on(table.searchId),
   ]
 );
 
@@ -212,6 +218,179 @@ export const hostedSecret = pgTable(
       .where(sql`${table.packageId} is not null`),
     index('secret_organization_id_idx').on(table.organizationId),
     index('secret_package_id_idx').on(table.packageId),
+  ]
+);
+
+export const orgCatalogSettings = pgTable('org_catalog_settings', {
+  organizationId: text('organization_id')
+    .primaryKey()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  rankingShareOptIn: boolean('ranking_share_opt_in').default(false).notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const capabilitySource = pgTable(
+  'capability_source',
+  {
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    credentialName: text('credential_name'),
+    currentGeneration: integer('current_generation').default(0).notNull(),
+    endpoint: text('endpoint').notNull(),
+    health: text('health').default('ready').notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    kind: text('kind').notNull(),
+    lastError: text('last_error'),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    packageId: text('package_id').references(() => pkg.id, {
+      onDelete: 'cascade',
+    }),
+    schemaHash: text('schema_hash'),
+    slug: text('slug').notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(
+        () =>
+          /* @__PURE__ */
+          new Date()
+      )
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('capability_source_org_slug_uidx').on(
+      table.organizationId,
+      table.slug
+    ),
+    index('capability_source_organization_id_idx').on(table.organizationId),
+    index('capability_source_package_id_idx').on(table.packageId),
+  ]
+);
+
+export const capabilityGeneration = pgTable(
+  'capability_generation',
+  {
+    contractBundle: jsonb('contract_bundle').notNull(),
+    contractHash: text('contract_hash').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    generation: integer('generation').notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    sourceId: text('source_id')
+      .notNull()
+      .references(() => capabilitySource.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('capability_generation_source_generation_uidx').on(
+      table.sourceId,
+      table.generation
+    ),
+    index('capability_generation_source_id_idx').on(table.sourceId),
+  ]
+);
+
+export const capabilityGraphEdge = pgTable(
+  'capability_graph_edge',
+  {
+    confidence: doublePrecision('confidence').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    fromId: text('from_id').notNull(),
+    generation: integer('generation').notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    provenance: text('provenance').notNull(),
+    toId: text('to_id').notNull(),
+    type: text('type').notNull(),
+    weight: doublePrecision('weight').notNull(),
+  },
+  (table) => [
+    uniqueIndex('capability_graph_edge_uidx').on(
+      table.organizationId,
+      table.fromId,
+      table.toId,
+      table.type,
+      table.generation
+    ),
+    index('capability_graph_edge_org_idx').on(table.organizationId),
+    index('capability_graph_edge_from_idx').on(table.fromId),
+    index('capability_graph_edge_to_idx').on(table.toId),
+  ]
+);
+
+export const searchEvent = pgTable(
+  'search_event',
+  {
+    callerUserId: text('caller_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    catalogGeneration: integer('catalog_generation').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    executionOutcome: text('execution_outcome').default('not_called').notNull(),
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    queryHash: text('query_hash').notNull(),
+    selectedCapabilityId: text('selected_capability_id'),
+  },
+  (table) => [
+    index('search_event_organization_id_idx').on(table.organizationId),
+    index('search_event_created_at_idx').on(table.createdAt),
+  ]
+);
+
+export const searchExposure = pgTable(
+  'search_exposure',
+  {
+    capabilityId: text('capability_id').notNull(),
+    exactChannel: boolean('exact_channel').default(false).notNull(),
+    graphChannel: boolean('graph_channel').default(false).notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    lexicalChannel: boolean('lexical_channel').default(false).notNull(),
+    position: integer('position').notNull(),
+    searchEventId: text('search_event_id')
+      .notNull()
+      .references(() => searchEvent.id, { onDelete: 'cascade' }),
+    vectorChannel: boolean('vector_channel').default(false).notNull(),
+  },
+  (table) => [
+    index('search_exposure_event_idx').on(table.searchEventId),
+    index('search_exposure_capability_idx').on(table.capabilityId),
+  ]
+);
+
+export const executeIdempotency = pgTable(
+  'execute_idempotency',
+  {
+    bodyText: text('body_text'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    key: text('key').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    requestHash: text('request_hash').notNull(),
+    responseStatus: integer('response_status'),
+    status: text('status').notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('execute_idempotency_org_key_uidx').on(
+      table.organizationId,
+      table.key
+    ),
+    index('execute_idempotency_updated_at_idx').on(table.updatedAt),
   ]
 );
 

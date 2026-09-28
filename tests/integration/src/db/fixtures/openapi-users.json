@@ -1,0 +1,14 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Users", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.example.test" }],
+  "paths": {
+    "/users/{id}": {
+      "get": {
+        "operationId": "getUser",
+        "summary": "Fetch user profile by identifier",
+        "description": "Fetch user profile by identifier"
+      }
+    }
+  }
+}

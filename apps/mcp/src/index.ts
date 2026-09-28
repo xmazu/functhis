@@ -1,5 +1,8 @@
 import './ensure-zod-init';
 import { createEvlogWorkerFetch } from '@functhis/config/evlog-workers';
+import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { VectorizeEmbeddingIndex } from '@functhis/publish/vectorize-index';
+import { reconcileSearchIndexDebt } from '@functhis/publish/vectorize-upsert';
 import type { AuditableLogger } from 'evlog';
 
 import { handleProtectedMcpPost } from './mcp-route';
@@ -55,8 +58,16 @@ const instrumented = createEvlogWorkerFetch('functhis-mcp', routeFetch);
 
 export default {
   fetch: instrumented.fetch,
-  scheduled(_controller: ScheduledController, _env: Env): void {
-    // Axiom dataset retention is configured on the dataset; this hook keeps
-    // deployment-compatible room for an API-backed cleanup if that changes.
+  scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext
+  ): void {
+    if (!env.CAPABILITY_VECTOR_INDEX) {
+      return;
+    }
+    const hot = asHotKvBinding(env.HOT);
+    const index = new VectorizeEmbeddingIndex(env.CAPABILITY_VECTOR_INDEX);
+    ctx.waitUntil(reconcileSearchIndexDebt({ env, hot, index }));
   },
 };

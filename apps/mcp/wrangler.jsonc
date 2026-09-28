@@ -22,6 +22,15 @@
   "ai": {
     "binding": "AI",
   },
+  "vectorize": [
+    {
+      "binding": "CAPABILITY_VECTOR_INDEX",
+      "index_name": "functhis-capabilities",
+    },
+  ],
+  "triggers": {
+    "crons": ["* * * * *"],
+  },
   "worker_loaders": [
     {
       "binding": "LOADER",
@@ -55,6 +64,15 @@
       "workers_dev": false,
       "ai": {
         "binding": "AI",
+      },
+      "vectorize": [
+        {
+          "binding": "CAPABILITY_VECTOR_INDEX",
+          "index_name": "functhis-capabilities",
+        },
+      ],
+      "triggers": {
+        "crons": ["* * * * *"],
       },
       "vars": {
         "AXIOM_DATASET": "functhis_executions",

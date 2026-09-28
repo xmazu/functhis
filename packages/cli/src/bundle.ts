@@ -47,6 +47,7 @@ export default {
       const result = await __runInRuntime(
         {
           context: runtime.context ?? {},
+          hostAllowlist: runtime.hostAllowlist,
           secrets: runtime.secrets ?? {},
         },
         () => handler(input)

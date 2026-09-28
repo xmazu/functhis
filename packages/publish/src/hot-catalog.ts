@@ -25,16 +25,25 @@ import { resolvePackagePublicHandle } from './package-public-handle';
 import type { PackageVisibility } from './package-visibility';
 
 export interface HotFunctionDoc {
+  availability?: 'degraded' | 'ready' | 'unavailable';
   bundleHash: string;
   contract: unknown;
   functionId: string;
   functionSlug: string;
+  generation?: number;
   handle: string;
+  hostAllowlist?: string[] | null;
   organizationId: string | null;
   ownerUserId: string;
   packageId: string;
   packageSlug: string;
   searchText: string;
+  sourceCredentialName?: string;
+  sourceEndpoint?: string;
+  sourceKind?: 'hosted_function' | 'openapi_operation' | 'remote_mcp_tool';
+  sourceMethod?: string;
+  sourcePath?: string;
+  strictOutput?: boolean;
   versionId: string;
   visibility: PackageVisibility;
 }
@@ -106,14 +115,14 @@ export const syncPackageToHot = async (
   hot: HotKvBinding,
   database: Database,
   packageId: string
-): Promise<void> => {
+): Promise<HotFunctionDoc[]> => {
   const [packageRow] = await database
     .select()
     .from(pkg)
     .where(eq(pkg.id, packageId))
     .limit(1);
   if (!packageRow?.currentVersionId) {
-    return;
+    return [];
   }
 
   const handle = await resolvePackagePublicHandle(
@@ -121,7 +130,7 @@ export const syncPackageToHot = async (
     packageRow.organizationId
   );
   if (!handle) {
-    return;
+    return [];
   }
 
   const [ownerRow] = await database
@@ -143,7 +152,9 @@ export const syncPackageToHot = async (
       contract: pkgFunction.contract,
       functionId: pkgFunction.id,
       functionSlug: pkgFunction.slug,
+      hostAllowlist: packageVersion.hostAllowlist,
       searchText: pkgFunction.searchText,
+      strictOutput: packageVersion.strictOutput,
       versionId: packageVersion.id,
     })
     .from(pkgFunction)
@@ -151,22 +162,33 @@ export const syncPackageToHot = async (
     .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
     .where(eq(pkg.id, packageId));
 
+  const docs: HotFunctionDoc[] = [];
   const newIds = await Promise.all(
     functions.map(async (row) => {
+      const sourceKind =
+        packageRow.sourceKind === 'openapi_operation' ||
+        packageRow.sourceKind === 'remote_mcp_tool'
+          ? packageRow.sourceKind
+          : 'hosted_function';
       const doc: HotFunctionDoc = {
+        availability: 'ready',
         bundleHash: row.bundleHash,
         contract: row.contract,
         functionId: row.functionId,
         functionSlug: row.functionSlug,
         handle,
+        hostAllowlist: row.hostAllowlist,
         organizationId: packageRow.organizationId,
         ownerUserId: packageRow.ownerUserId,
         packageId: packageRow.id,
         packageSlug: packageRow.slug,
         searchText: row.searchText ?? row.functionSlug,
+        sourceKind,
+        strictOutput: row.strictOutput,
         versionId: row.versionId,
         visibility: packageRow.visibility,
       };
+      docs.push(doc);
       await writeHotFunctionDoc(hot, doc);
       return formatFunctionId({
         functionSlug: row.functionSlug,
@@ -202,6 +224,7 @@ export const syncPackageToHot = async (
     );
     await writeIndex(hot, HOT_IDX_LIBRARY_KEY, [...libraryIds, ...newIds]);
   }
+  return docs;
 };
 
 export const getMembershipOrganizationIdsFromHot = async (
@@ -478,3 +501,73 @@ export const filterDocsByAccess = (
       accessContext
     )
   );
+
+export const getMembershipOrganizationIdsFromHotKv = async (
+  hot: HotKvBinding,
+  userId: string
+): Promise<string[]> => {
+  const raw = await hot.get(memberHotKey(userId));
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw) as { organizationIds?: string[] };
+    return Array.isArray(parsed.organizationIds) ? parsed.organizationIds : [];
+  } catch {
+    return [];
+  }
+};
+
+export const buildAccessContextFromHotKv = async (
+  hot: HotKvBinding,
+  userId: string | null
+): Promise<PackageAccessContext> => {
+  if (!userId) {
+    return { organizationIds: [], userId: null };
+  }
+  const organizationIds = await getMembershipOrganizationIdsFromHotKv(
+    hot,
+    userId
+  );
+  return { organizationIds, userId };
+};
+
+export const loadSearchFunctionIdsFromHot = async (
+  hot: HotKvBinding,
+  domain: SearchDomain,
+  callerUserId: string
+): Promise<string[]> => {
+  const organizationIds = await getMembershipOrganizationIdsFromHotKv(
+    hot,
+    callerUserId
+  );
+  if (domain === 'mine') {
+    return readIndex(hot, mineIndexHotKey(callerUserId));
+  }
+  if (domain === 'library') {
+    return readIndex(hot, HOT_IDX_LIBRARY_KEY);
+  }
+  if (organizationIds.length === 0) {
+    return [];
+  }
+  const indexChunks = await Promise.all(
+    organizationIds.map((orgId) => readIndex(hot, orgIndexHotKey(orgId)))
+  );
+  return [...new Set(indexChunks.flat())];
+};
+
+export const loadHotFunctionDocsFromKv = async (
+  hot: HotKvBinding,
+  ids: readonly string[]
+): Promise<HotFunctionDoc[]> => {
+  const docs = await Promise.all(
+    ids.map(async (id) => {
+      const raw = await hot.get(functionHotKeyFromId(id));
+      if (raw === null) {
+        return null;
+      }
+      return parseHotFunctionDoc(raw);
+    })
+  );
+  return docs.filter((doc): doc is HotFunctionDoc => doc !== null);
+};

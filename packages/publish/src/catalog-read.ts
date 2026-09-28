@@ -53,6 +53,7 @@ export interface ExecutionSummaryRow {
   id: string;
   requestBytes: number | null;
   responseBytes: number | null;
+  searchId: string | null;
   status: string;
 }
 
@@ -68,6 +69,7 @@ export interface PackageListRow {
   organizationId: string;
   ownerUserId: string;
   packageSlug: string;
+  sourceKind: string;
   visibility: PackageVisibility;
 }
 
@@ -89,6 +91,7 @@ const listPackagesGrouped = async (
       organizationId: pkg.organizationId,
       ownerUserId: pkg.ownerUserId,
       packageSlug: pkg.slug,
+      sourceKind: pkg.sourceKind,
       visibility: pkg.visibility,
     })
     .from(pkg)
@@ -99,6 +102,7 @@ const listPackagesGrouped = async (
       pkg.id,
       organization.slug,
       pkg.slug,
+      pkg.sourceKind,
       pkg.visibility,
       pkg.organizationId,
       pkg.ownerUserId
@@ -278,6 +282,7 @@ export const listPackageExecutions = async (
       id: execution.id,
       requestBytes: execution.requestBytes,
       responseBytes: execution.responseBytes,
+      searchId: execution.searchId,
       status: execution.status,
     })
     .from(execution)
@@ -310,6 +315,7 @@ export const listRecentExecutions = async (
       id: execution.id,
       requestBytes: execution.requestBytes,
       responseBytes: execution.responseBytes,
+      searchId: execution.searchId,
       status: execution.status,
     })
     .from(execution)

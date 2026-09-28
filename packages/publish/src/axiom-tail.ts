@@ -47,6 +47,7 @@ export default {
         const executionId = headers['x-functhis-execution-id'] || headers['X-Functhis-Execution-Id'];
         if (!executionId) continue;
         records.push({
+          cpuTime: event?.cpuTime ?? event?.diagnosticsCpuTime ?? null,
           executionId,
           ft_event_type: 'log',
           ft_execution_id: executionId,

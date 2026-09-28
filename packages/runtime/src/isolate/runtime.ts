@@ -14,6 +14,7 @@ export interface FuncthisInvocationContext {
 
 export interface RuntimeStore {
   context: FuncthisInvocationContext;
+  hostAllowlist?: readonly string[];
   secrets: Record<string, string>;
 }
 
@@ -50,3 +51,48 @@ export const secret = (name: string): string => {
   }
   return value;
 };
+
+const requestUrl = (input: Parameters<typeof fetch>[0]): string => {
+  if (typeof input === 'string') {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.href;
+  }
+  if (input instanceof Request) {
+    return input.url;
+  }
+  return String(input);
+};
+
+const hostAllowedForFetch = (
+  url: string,
+  allowlist: readonly string[] | undefined
+): boolean => {
+  if (allowlist === undefined) {
+    return true;
+  }
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return allowlist.some((entry) => entry.toLowerCase() === hostname);
+};
+
+const originalFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = ((
+  input: Parameters<typeof fetch>[0],
+  init?: RequestInit
+) => {
+  const store = __functhisRuntimeStorage.getStore();
+  if (store && !hostAllowedForFetch(requestUrl(input), store.hostAllowlist)) {
+    return Promise.reject(
+      new Error(
+        `Outbound fetch to ${requestUrl(input)} is not on the package host allowlist.`
+      )
+    );
+  }
+  return originalFetch(input as never, init);
+}) as typeof fetch;

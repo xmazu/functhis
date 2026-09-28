@@ -38,7 +38,15 @@ export const PackageOverviewHeader = ({
         </time>
         {' · '}
         {functionLabel}
+        {detail.sourceHealth
+          ? ` · ${detail.sourceHealth.health} · gen ${String(detail.sourceHealth.currentGeneration)}`
+          : ''}
       </p>
+      {detail.sourceHealth?.lastError ? (
+        <p className={`${ui} text-muted-foreground mt-2`}>
+          {detail.sourceHealth.lastError}
+        </p>
+      ) : null}
     </header>
   );
 };

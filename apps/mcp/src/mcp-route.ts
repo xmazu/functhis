@@ -1,5 +1,6 @@
 import type { AuditableLogger } from 'evlog';
 
+import { runWithInboundRequestSignal } from './inbound-request-signal';
 import { createFuncthisMcpHandler } from './mcp';
 import { createProtectedMcpHandler } from './protect';
 
@@ -47,5 +48,9 @@ export const handleProtectedMcpPost = (
       ),
     };
   }
-  return cachedProtectedGate.gate(request, log);
+  if (!cachedProtectedGate) {
+    throw new Error('MCP handler is not initialized');
+  }
+  const { gate } = cachedProtectedGate;
+  return runWithInboundRequestSignal(request.signal, () => gate(request, log));
 };

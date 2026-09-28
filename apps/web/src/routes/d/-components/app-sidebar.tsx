@@ -1,4 +1,5 @@
 import {
+  IconApi,
   IconArrowLeft,
   IconChartBar,
   IconKey,
@@ -24,6 +25,12 @@ const NAV_ITEMS = [
     isActive: (pathname: string) => pathname === '/d' || pathname === '/d/',
     label: 'Packages',
     to: '/d',
+  },
+  {
+    icon: IconApi,
+    isActive: (pathname: string) => pathname === '/d/sources',
+    label: 'Sources',
+    to: '/d/sources',
   },
   {
     icon: IconListSearch,

@@ -150,6 +150,7 @@ export const writeExecutionAnalytics = (
 /* c8 ignore start -- Worker/DB integration is covered by MCP integration tests. */
 export interface DynamicRunResult {
   completedAt: Date;
+  cpuMs: number;
   durationMs: number;
   httpStatus: number;
   requestBytes: number;
@@ -181,6 +182,8 @@ export const runDynamicWorker = async (
     requestBytes: number;
     runInput: unknown;
     runtimeSecrets?: Record<string, string>;
+    hostAllowlist?: readonly string[];
+    signal?: AbortSignal;
     versionId: string;
   }
 ): Promise<DynamicRunResult> => {
@@ -253,6 +256,7 @@ export const runDynamicWorker = async (
           functionSlug,
           packageVersionId: input.versionId,
         },
+        hostAllowlist: input.hostAllowlist,
         secrets: input.runtimeSecrets ?? {},
       },
     }),
@@ -262,6 +266,7 @@ export const runDynamicWorker = async (
       'x-functhis-function-slug': functionSlug,
     },
     method: 'POST',
+    signal: input.signal,
   });
 
   const startedAt = Date.now();
@@ -281,8 +286,12 @@ export const runDynamicWorker = async (
     }
     assertExecuteResponseSize(responseText);
   } catch (error) {
-    status = 'error';
-    httpStatus = 500;
+    const aborted =
+      input.signal?.aborted ||
+      (error instanceof DOMException && error.name === 'AbortError') ||
+      (error instanceof Error && error.name === 'AbortError');
+    status = aborted ? 'cancelled' : 'error';
+    httpStatus = aborted ? 499 : 500;
     if (error instanceof ExecutePayloadTooLargeError) {
       tooLarge = true;
       httpStatus = 413;
@@ -295,9 +304,11 @@ export const runDynamicWorker = async (
     responseBytes = utf8ByteLength(responseText);
   }
 
+  const durationMs = Date.now() - startedAt;
   return {
     completedAt: new Date(),
-    durationMs: Date.now() - startedAt,
+    cpuMs: durationMs,
+    durationMs,
     httpStatus,
     requestBytes: input.requestBytes,
     responseBytes,
@@ -317,7 +328,8 @@ export const finalizeExecute = async (
   functionId: string | undefined,
   executionId: string,
   handle?: string,
-  packageSlug?: string
+  packageSlug?: string,
+  searchId?: string | null
 ): Promise<Response> => {
   writeExecutionAnalytics(bindings, {
     callerUserId: parsed.callerUserId,
@@ -334,13 +346,14 @@ export const finalizeExecute = async (
   await insertExecutionRow(bindings, {
     callerUserId: parsed.callerUserId,
     completedAt: run.completedAt,
-    cpuMs: run.durationMs,
+    cpuMs: run.cpuMs,
     executionId,
     functionId,
     organizationId,
     packageVersionId: parsed.versionId,
     requestBytes: run.requestBytes,
     responseBytes: run.responseBytes,
+    searchId,
     startedAt: run.startedAt,
     status: run.status,
   });

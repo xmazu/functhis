@@ -2,6 +2,7 @@ import './ensure-zod-init';
 import { describe, expect, test } from 'bun:test';
 
 import { createFuncthisMcpHandler } from './mcp';
+import type { McpHandlerDependencies } from './mcp';
 
 const LEGACY_PROTOCOL_VERSIONS = [
   '2024-10-07',
@@ -19,7 +20,8 @@ const stubEnv = {
   MCP_RESOURCE: 'http://localhost:3003',
 } as Env;
 
-const handler = () => createFuncthisMcpHandler(stubEnv, 'user_test');
+const handler = (dependencies?: McpHandlerDependencies) =>
+  createFuncthisMcpHandler(stubEnv, 'user_test', dependencies);
 
 const mcpPost = (body: unknown, extraHeaders: HeadersInit = {}): Request =>
   new Request('http://localhost:3003/mcp', {
@@ -143,5 +145,50 @@ describe('MCP protocol handshake', () => {
     expect(result?.supportedVersions).toEqual(
       expect.arrayContaining([MODERN_PROTOCOL_VERSION])
     );
+  });
+
+  test('serves search and execute tools with structured results', async () => {
+    const response = await handler({
+      dispatch: async () => {
+        await Promise.resolve();
+        return {
+          bodyText: '{"result":"ok"}',
+          ok: true,
+          status: 200,
+          timing: { queueMs: 1, totalMs: 2, upstreamMs: 3 },
+        };
+      },
+      searchFunctions: async () => {
+        await Promise.resolve();
+        return {
+          ambiguous: false,
+          explanation: [],
+          reason: 'ok',
+          results: [],
+          searchId: 'search-1',
+          timing: {
+            graphMs: 1,
+            jevMs: 2,
+            lexicalMs: 3,
+            loadMs: 4,
+            totalMs: 5,
+            vectorMs: 6,
+          },
+        };
+      },
+    }).fetch(
+      mcpPost({
+        id: 3,
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          arguments: { query: 'mail' },
+          name: 'search',
+        },
+      })
+    );
+    expect(response.ok).toBe(true);
+    const message = jsonRpcResult(await parseJsonRpc(response));
+    expect(message).toBeDefined();
   });
 });

@@ -18,6 +18,13 @@ const readContractDescription = (contract: unknown): string | null => {
 
 export interface PackageDetailFunctionView {
   description: string | null;
+  edges: {
+    confidence: number;
+    fromId: string;
+    provenance: string;
+    toId: string;
+    type: string;
+  }[];
   id: string;
   mcpSnippet: string;
   slug: string;
@@ -41,6 +48,12 @@ export interface PackageDetailViewModel {
     updatedAt: Date;
   }[];
   semver: string;
+  sourceHealth: {
+    currentGeneration: number;
+    health: string;
+    lastError: string | null;
+    sourceId: string;
+  } | null;
   visibility: CatalogPackageRow['visibility'];
 }
 
@@ -48,11 +61,13 @@ export const buildPackageDetailViewModel = (input: {
   canWriteSecrets: boolean;
   catalog: CatalogPackageRow;
   executions: PackageDetailViewModel['executions'];
+  functionEdges?: PackageDetailFunctionView['edges'];
   isOwner: boolean;
   mcpResource: string;
   missingSecretNames: string[];
   organizationSlug: string | null;
   secrets: PackageDetailViewModel['secrets'];
+  sourceHealth?: PackageDetailViewModel['sourceHealth'];
 }): PackageDetailViewModel => {
   const { catalog } = input;
   const mcpResource = input.mcpResource.replace(/\/$/u, '');
@@ -66,6 +81,9 @@ export const buildPackageDetailViewModel = (input: {
       });
       return {
         description: readContractDescription(fn.contract),
+        edges: (input.functionEdges ?? []).filter(
+          (edge) => edge.fromId === id || edge.toId === id
+        ),
         id,
         mcpSnippet: `POST ${mcpResource}/mcp\nTool: execute\nArguments: { "id": "${id}", "arguments": {} }`,
         slug: fn.functionSlug,
@@ -87,6 +105,7 @@ export const buildPackageDetailViewModel = (input: {
     publishedAt: catalog.currentVersion.publishedAt,
     secrets: input.secrets,
     semver: catalog.currentVersion.semver,
+    sourceHealth: input.sourceHealth ?? null,
     visibility: catalog.visibility,
   };
 };

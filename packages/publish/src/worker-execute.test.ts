@@ -52,7 +52,7 @@ describe('runDynamicWorker', () => {
       {
         LOADER: {
           get: (id, factory) => {
-            expect(id).toBe('ver_test:2');
+            expect(id).toBe('ver_test:3');
             factoryConfig = factory();
             return {
               getEntrypoint: () => ({

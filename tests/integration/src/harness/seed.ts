@@ -13,6 +13,7 @@ import { eq } from 'drizzle-orm';
 export interface IntegrationPublishAuth {
   accessToken: string;
   handle: string;
+  organizationId: string;
   userId: string;
 }
 
@@ -73,7 +74,12 @@ export const seedIntegrationPublishAuth = async (
     userId: insertedUser.id,
   });
 
-  return { accessToken, handle, userId: insertedUser.id };
+  return {
+    accessToken,
+    handle,
+    organizationId: insertedOrg.id,
+    userId: insertedUser.id,
+  };
 };
 
 export const seedIntegrationOrganization = async (

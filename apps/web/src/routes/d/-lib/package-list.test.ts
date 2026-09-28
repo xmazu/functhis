@@ -20,7 +20,9 @@ const item = (
   callCount: 0,
   functionCount: 1,
   handle: 'acme',
+  health: 'ready',
   shared: false,
+  sourceKind: 'hosted_function',
   visibility: 'private',
   ...overrides,
 });

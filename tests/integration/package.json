@@ -6,7 +6,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "test": "echo 'Use bun run test:integration. This package is not in the unit gate.' && exit 0",
-    "test:integration": "bun test src/db"
+    "test:integration": "bun test src"
   },
   "dependencies": {
     "@functhis/auth": "workspace:*",

@@ -1,5 +1,9 @@
 import type { Database } from '@functhis/db';
-import { execution, packageVersion } from '@functhis/db/schema/catalog';
+import {
+  capabilitySource,
+  execution,
+  packageVersion,
+} from '@functhis/db/schema/catalog';
 import {
   buildPackageAccessContext,
   canAccessPackage,
@@ -13,6 +17,9 @@ import {
   resolveOrgPlan,
   resolveOrganizationSlugById,
 } from '@functhis/publish';
+import { formatFunctionId } from '@functhis/publish/function-id';
+import { loadGraphEdgesForSeeds } from '@functhis/publish/graph-hot';
+import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
 import { createServerFn } from '@tanstack/react-start';
 import { eq, inArray, sql } from 'drizzle-orm';
 
@@ -67,7 +74,31 @@ export const listPackagesForSession = createServerFn({ method: 'GET' })
       database,
       packages.map((pkg) => pkg.id)
     );
-    return withCallCounts(packages, callCounts);
+    const sourceRows =
+      packages.length === 0
+        ? []
+        : await database
+            .select({
+              health: capabilitySource.health,
+              packageId: capabilitySource.packageId,
+            })
+            .from(capabilitySource)
+            .where(
+              inArray(
+                capabilitySource.packageId,
+                packages.map((pkg) => pkg.id)
+              )
+            );
+    const healthByPackage = new Map(
+      sourceRows.flatMap((row) =>
+        row.packageId ? [[row.packageId, row.health]] : []
+      )
+    );
+    return withCallCounts(packages, callCounts).map((pkg) => ({
+      ...pkg,
+      health: healthByPackage.get(pkg.id) ?? 'ready',
+      sourceKind: pkg.sourceKind,
+    }));
   });
 
 export const getPackageDetailForSession = createServerFn({ method: 'GET' })
@@ -119,14 +150,40 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       (name) => !setNames.has(name)
     );
 
+    const [source] = await database
+      .select()
+      .from(capabilitySource)
+      .where(eq(capabilitySource.packageId, catalog.id))
+      .limit(1);
+    const functionIds = catalog.functions.map((fn) =>
+      formatFunctionId({
+        functionSlug: fn.functionSlug,
+        handle: fn.handle,
+        packageSlug: fn.packageSlug,
+      })
+    );
+    const functionEdges = await loadGraphEdgesForSeeds(
+      asHotKvBinding(env.HOT),
+      functionIds
+    );
+
     return buildPackageDetailViewModel({
       canWriteSecrets,
       catalog,
       executions,
+      functionEdges,
       isOwner,
       mcpResource: env.MCP_RESOURCE,
       missingSecretNames,
       organizationSlug,
       secrets: packageSecrets?.secrets ?? [],
+      sourceHealth: source
+        ? {
+            currentGeneration: source.currentGeneration,
+            health: source.health,
+            lastError: source.lastError,
+            sourceId: source.id,
+          }
+        : null,
     });
   });

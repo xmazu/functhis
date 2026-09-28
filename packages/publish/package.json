@@ -70,6 +70,10 @@
       "types": "./src/hot-catalog.ts",
       "default": "./src/hot-catalog.ts"
     },
+    "./hot-keys": {
+      "types": "./src/hot-keys.ts",
+      "default": "./src/hot-keys.ts"
+    },
     "./hot-kv-binding": {
       "types": "./src/hot-kv-binding.ts",
       "default": "./src/hot-kv-binding.ts"
@@ -121,6 +125,102 @@
     "./telemetry-redaction": {
       "types": "./src/telemetry-redaction.ts",
       "default": "./src/telemetry-redaction.ts"
+    },
+    "./search-eval": {
+      "types": "./src/search-eval.ts",
+      "default": "./src/search-eval.ts"
+    },
+    "./search-ranking": {
+      "types": "./src/search-ranking.ts",
+      "default": "./src/search-ranking.ts"
+    },
+    "./search-run": {
+      "types": "./src/search-run.ts",
+      "default": "./src/search-run.ts"
+    },
+    "./search-rank-catalog": {
+      "types": "./src/search-rank-catalog.ts",
+      "default": "./src/search-rank-catalog.ts"
+    },
+    "./embedding": {
+      "types": "./src/embedding.ts",
+      "default": "./src/embedding.ts"
+    },
+    "./search-exact": {
+      "types": "./src/search-exact.ts",
+      "default": "./src/search-exact.ts"
+    },
+    "./search-fusion": {
+      "types": "./src/search-fusion.ts",
+      "default": "./src/search-fusion.ts"
+    },
+    "./search-projection": {
+      "types": "./src/search-projection.ts",
+      "default": "./src/search-projection.ts"
+    },
+    "./search-result": {
+      "types": "./src/search-result.ts",
+      "default": "./src/search-result.ts"
+    },
+    "./search-analytics": {
+      "types": "./src/search-analytics.ts",
+      "default": "./src/search-analytics.ts"
+    },
+    "./capability-graph": {
+      "types": "./src/capability-graph.ts",
+      "default": "./src/capability-graph.ts"
+    },
+    "./graph-hot": {
+      "types": "./src/graph-hot.ts",
+      "default": "./src/graph-hot.ts"
+    },
+    "./catalog-projection": {
+      "types": "./src/catalog-projection.ts",
+      "default": "./src/catalog-projection.ts"
+    },
+    "./catalog-generation": {
+      "types": "./src/catalog-generation.ts",
+      "default": "./src/catalog-generation.ts"
+    },
+    "./ranking-boost-kv": {
+      "types": "./src/ranking-boost-kv.ts",
+      "default": "./src/ranking-boost-kv.ts"
+    },
+    "./vectorize-index": {
+      "types": "./src/vectorize-index.ts",
+      "default": "./src/vectorize-index.ts"
+    },
+    "./vectorize-upsert": {
+      "types": "./src/vectorize-upsert.ts",
+      "default": "./src/vectorize-upsert.ts"
+    },
+    "./idempotency": {
+      "types": "./src/idempotency.ts",
+      "default": "./src/idempotency.ts"
+    },
+    "./idempotency-store": {
+      "types": "./src/idempotency-store.ts",
+      "default": "./src/idempotency-store.ts"
+    },
+    "./host-allowlist": {
+      "types": "./src/host-allowlist.ts",
+      "default": "./src/host-allowlist.ts"
+    },
+    "./openapi-operations": {
+      "types": "./src/openapi-operations.ts",
+      "default": "./src/openapi-operations.ts"
+    },
+    "./openapi-sync": {
+      "types": "./src/openapi-sync.ts",
+      "default": "./src/openapi-sync.ts"
+    },
+    "./remote-mcp-sync": {
+      "types": "./src/remote-mcp-sync.ts",
+      "default": "./src/remote-mcp-sync.ts"
+    },
+    "./remote-mcp-protocol": {
+      "types": "./src/remote-mcp-protocol.ts",
+      "default": "./src/remote-mcp-protocol.ts"
     }
   },
   "scripts": {

@@ -30,11 +30,11 @@ describe('MCP search ranking and rerank', () => {
     });
 
     const hits = await searchFunctionsWithContext(
-      { database: db, hot },
+      { hot },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' }
     );
 
-    expect(hits.map((hit) => hit.id)).toEqual([
+    expect(hits.results.map((hit) => hit.id)).toEqual([
       `@${handle}/tools/fn-00`,
       `@${handle}/tools/fn-01`,
       `@${handle}/tools/fn-02`,
@@ -61,7 +61,7 @@ describe('MCP search ranking and rerank', () => {
 
     const winnerSlug = 'fn-11';
     const hits = await searchFunctionsWithContext(
-      { database: db, hot },
+      { hot },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' },
       {
         rerankScorer: (_query, cards) => {
@@ -74,8 +74,8 @@ describe('MCP search ranking and rerank', () => {
       }
     );
 
-    expect(hits[0]?.id).toBe(`@${handle}/tools/${winnerSlug}`);
-    expect(hits).toHaveLength(12);
+    expect(hits.results[0]?.id).toBe(`@${handle}/tools/${winnerSlug}`);
+    expect(hits.results).toHaveLength(12);
   });
 
   test('mock Jev failure keeps stage-1 lexical order', async () => {
@@ -92,14 +92,14 @@ describe('MCP search ranking and rerank', () => {
     });
 
     const hits = await searchFunctionsWithContext(
-      { database: db, hot },
+      { hot },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' },
       {
         rerankScorer: () => Promise.resolve(null),
       }
     );
 
-    expect(hits[0]?.id).toBe(`@${handle}/tools/fn-00`);
-    expect(hits[1]?.id).toBe(`@${handle}/tools/fn-01`);
+    expect(hits.results[0]?.id).toBe(`@${handle}/tools/fn-00`);
+    expect(hits.results[1]?.id).toBe(`@${handle}/tools/fn-01`);
   });
 });

@@ -10,6 +10,7 @@ import {
   stableBundlePayload,
   utf8ByteLength,
 } from './bundle';
+import { projectCapabilityAfterHotWrite } from './catalog-projection';
 import {
   BUNDLE_KV_PREFIX,
   MAX_ARTIFACT_BYTES,
@@ -37,11 +38,35 @@ import {
   publishStartBodySchema,
 } from './schemas';
 import type { WorkerLoaderBundle } from './schemas';
+import { buildIntentPhrases } from './search-projection';
 import { canPublishPackage } from './secret-access';
 import { parseSecretNamesFromManifestJson } from './secret-names';
 import { bumpSemver, highestSemver } from './semver';
 
 export type { PublishHandlerContext } from './http-context';
+
+const retryHotWrite = async <T>(
+  work: () => Promise<T>,
+  attempt = 0
+): Promise<T> => {
+  try {
+    return await work();
+  } catch (error) {
+    if (attempt >= 2) {
+      throw error instanceof Error ? error : new Error('HOT write failed');
+    }
+    return retryHotWrite(work, attempt + 1);
+  }
+};
+
+const projectHotDocs = async (
+  hot: PublishHandlerContext['hot'],
+  docs: Awaited<ReturnType<typeof syncPackageToHot>>
+): Promise<void> => {
+  await Promise.all(
+    docs.map((doc) => projectCapabilityAfterHotWrite({ doc, hot }))
+  );
+};
 
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, { status });
@@ -386,10 +411,16 @@ export const handlePublishFinalize = async (
 
   const preparedFunctions = parsed.data.contracts.map((fn) => {
     const contractRecord = fn.contract as Record<string, unknown>;
-    const searchText = buildFunctionSearchText({
-      contract: contractRecord,
-      slug: fn.slug,
-    });
+    const searchText = [
+      buildFunctionSearchText({
+        contract: contractRecord,
+        slug: fn.slug,
+      }),
+      ...buildIntentPhrases({
+        contract: contractRecord,
+        slug: fn.slug,
+      }),
+    ].join('\n');
     return { fn, searchText };
   });
 
@@ -468,9 +499,14 @@ export const handlePublishFinalize = async (
   }
 
   try {
-    await syncPackageToHot(ctx.hot, database, packageRow.id);
+    const docs = await retryHotWrite(() =>
+      syncPackageToHot(ctx.hot, database, packageRow.id)
+    );
+    await retryHotWrite(() => projectHotDocs(ctx.hot, docs));
   } catch {
-    // HOT is best-effort; Postgres remains source of truth
+    return new Response('Catalog projection failed; retry finalize', {
+      status: 503,
+    });
   }
 
   return json({
@@ -575,9 +611,14 @@ export const handlePublishRollback = async (
   }
 
   try {
-    await syncPackageToHot(ctx.hot, database, packageRow.id);
+    const docs = await retryHotWrite(() =>
+      syncPackageToHot(ctx.hot, database, packageRow.id)
+    );
+    await retryHotWrite(() => projectHotDocs(ctx.hot, docs));
   } catch {
-    // HOT is best-effort; Postgres remains source of truth
+    return new Response('Catalog projection failed; retry rollback', {
+      status: 503,
+    });
   }
 
   return json({

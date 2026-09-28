@@ -2,9 +2,11 @@ export interface PackageListItem {
   callCount: number;
   functionCount: number;
   handle: string;
+  health: string;
   id: string;
   packageSlug: string;
   shared: boolean;
+  sourceKind: string;
   visibility: string;
 }
 
@@ -41,7 +43,8 @@ export const filterRankedPackages = (
   }
 
   return packages.filter((pkg) => {
-    const haystack = `${pkg.packageSlug} @${pkg.handle}`.toLowerCase();
+    const haystack =
+      `${pkg.packageSlug} @${pkg.handle} ${pkg.sourceKind} ${pkg.health}`.toLowerCase();
     return haystack.includes(needle);
   });
 };

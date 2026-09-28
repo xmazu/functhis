@@ -29,6 +29,13 @@
       "when": 1790533663564,
       "tag": "0003_execution_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790580000000,
+      "tag": "0004_federated_catalog",
+      "breakpoints": true
     }
   ]
 }

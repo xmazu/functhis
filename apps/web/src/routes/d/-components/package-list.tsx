@@ -23,7 +23,7 @@ import type { PackageListItem } from '#/routes/d/-lib/package-list';
 const ui = 'text-[length:var(--app-font-size-ui,12px)]';
 
 const rowGridClassName =
-  'grid h-[var(--app-density-row-height,1.75rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[2rem_minmax(0,1fr)_3.75rem_6rem_5rem] lg:gap-4';
+  'grid h-[var(--app-density-row-height,1.75rem)] grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 lg:grid-cols-[2rem_minmax(0,1fr)_3.75rem_6rem_4.5rem_6rem_5rem] lg:gap-4';
 
 const metricHeaderClassName = 'hidden px-2 text-right lg:block';
 const metricCellClassName = 'px-2 text-right tabular-nums';
@@ -112,6 +112,8 @@ export const PackageList = ({
         <span className="tabular-nums">#</span>
         <span>Package</span>
         <span className={metricHeaderClassName}>Fns</span>
+        <span className={metricHeaderClassName}>Source</span>
+        <span className={metricHeaderClassName}>Health</span>
         <span className={metricHeaderClassName}>Visibility</span>
         <span className={metricHeaderClassName}>Calls</span>
       </div>
@@ -146,6 +148,22 @@ export const PackageList = ({
                   className={cn(metricCellClassNameLg, 'text-muted-foreground')}
                 >
                   {formatFunctionCountLabel(pkg.functionCount)}
+                </span>
+                <span
+                  className={cn(
+                    metricCellClassNameLg,
+                    'text-muted-foreground truncate'
+                  )}
+                >
+                  {pkg.sourceKind.replaceAll('_', ' ')}
+                </span>
+                <span
+                  className={cn(
+                    metricCellClassNameLg,
+                    'text-muted-foreground truncate'
+                  )}
+                >
+                  {pkg.health}
                 </span>
                 <span
                   className={cn(

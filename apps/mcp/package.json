@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./execute-dispatch": "./src/execute-dispatch.ts",
     "./search": "./src/search.ts"
   },
   "scripts": {

@@ -3,6 +3,7 @@ import type { WorkerExecuteBindings } from '@functhis/publish/worker-execute';
 
 interface CloudflareEnv extends WorkerExecuteBindings {
   AI: Ai;
+  CAPABILITY_VECTOR_INDEX?: Vectorize;
   CONSOLE_URL: string;
   FUNCTHIS_SECRETS_KEY?: SecretBinding;
   HOT: KVNamespace;

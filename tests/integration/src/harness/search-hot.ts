@@ -10,8 +10,13 @@ import type { HotFunctionDoc } from '@functhis/publish';
 import type { MemoryHotKv } from './memory-hot-kv';
 
 export interface SeedHotSearchCatalogInput {
-  functions: { functionSlug: string; searchText: string }[];
+  functions: {
+    contract?: Record<string, unknown>;
+    functionSlug: string;
+    searchText: string;
+  }[];
   handle: string;
+  organizationId?: string | null;
   ownerUserId: string;
   packageSlug: string;
 }
@@ -21,7 +26,12 @@ export const seedHotSearchCatalog = async (
   input: SeedHotSearchCatalogInput
 ): Promise<string[]> => {
   const hot = asHotKvBinding(memoryHot);
-  await writeMembershipHot(hot, input.ownerUserId, []);
+  const organizationId = input.organizationId ?? null;
+  await writeMembershipHot(
+    hot,
+    input.ownerUserId,
+    organizationId ? [organizationId] : []
+  );
 
   const docs = input.functions.map((fn) => {
     const id = formatFunctionId({
@@ -32,11 +42,11 @@ export const seedHotSearchCatalog = async (
 
     const doc: HotFunctionDoc = {
       bundleHash: `bundle-${fn.functionSlug}`,
-      contract: { slug: fn.functionSlug },
+      contract: fn.contract ?? { slug: fn.functionSlug },
       functionId: crypto.randomUUID(),
       functionSlug: fn.functionSlug,
       handle: input.handle,
-      organizationId: null,
+      organizationId,
       ownerUserId: input.ownerUserId,
       packageId: crypto.randomUUID(),
       packageSlug: input.packageSlug,

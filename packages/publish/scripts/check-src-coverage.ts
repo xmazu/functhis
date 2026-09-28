@@ -11,6 +11,8 @@ const skippedFiles = new Set([
   'publish-sharing.ts',
   'execution-store.ts',
   'worker-execute.ts',
+  'openapi-sync.ts',
+  'remote-mcp-sync.ts',
 ]);
 const srcDir = path.join(packageRoot, 'src');
 const packageSrcMarker = `packages/${path.basename(packageRoot)}/src/`;
