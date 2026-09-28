@@ -22,6 +22,13 @@ export const SEARCH_EVAL_CORPUS = {
       packageSlug: 'billing',
       searchText: 'invoices/search\nLocate an invoice given a number\nnumber',
     },
+    {
+      functionSlug: 'hello-world',
+      handle: 'acme',
+      id: '@acme/crm/hello-world',
+      packageSlug: 'crm',
+      searchText: 'hello-world\nSay hello to the user\nsay hi',
+    },
   ],
   queries: [
     {
@@ -43,6 +50,11 @@ export const SEARCH_EVAL_CORPUS = {
       kind: 'no-match' as const,
       query: 'quantum flux calibration',
       relevant: [],
+    },
+    {
+      kind: 'zero-overlap' as const,
+      query: 'user wants to say hi',
+      relevant: ['@acme/crm/hello-world'],
     },
   ],
 };

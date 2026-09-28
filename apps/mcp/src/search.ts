@@ -33,6 +33,7 @@ export const searchFunctions = async (
   input: {
     callerUserId: string;
     domain?: SearchDomain;
+    intents?: readonly string[];
     query?: string;
   },
   options?: SearchFunctionsOptions,

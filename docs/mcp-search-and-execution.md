@@ -106,7 +106,7 @@ Embedding failures leave the debt in place for the next minute.
 
 Entry point: the MCP `search` tool → `searchFunctions` (`apps/mcp/src/search.ts`) → `searchFunctionsWithContext` (`packages/publish/src/search-run.ts`).
 
-Input: `query` (optional), `domain` = `mine` (default) | `org` | `library`.
+Input: `query` (optional), `intents` (optional, up to 5 short verb+object phrasings the agent would use to describe the goal), `domain` = `mine` (default) | `org` | `library`. Lexical and vector channels run for the primary `query` plus each intent; the best rank per capability across phrasings is kept. Exact match and graph `alias:` seeds use only the primary `query` (or the first intent when `query` is empty).
 
 ### Step 1: Load candidates and apply ACL
 
@@ -127,20 +127,20 @@ Each channel produces a **rank** (1 = best) per capability id. Channels never co
 
 **Exact channel** (`search-exact.ts`). A doc matches if the trimmed, lowercased query equals its function slug, package slug, handle, or full `@h/p/f` id. Matching docs get ranks 1, 2, … in catalog order.
 
-**Lexical channel** (`search-lexical.ts`, `scoreFunctionDocument`). The document text is `id + handle + packageSlug + functionSlug + searchText`.
+**Lexical channel** (`search-lexical.ts`, `scoreFunctionDocument`). For each search phrasing (`query` + `intents`), the document text is `id + handle + packageSlug + functionSlug + searchText`.
 
 1. Normalize: NFKD, strip diacritics, split camelCase, turn `_ . / : -` into spaces, lowercase.
 2. Query tokens: alphanumeric runs of length ≥ 2, with stopwords removed (`a, an, and, for, from, i, in, into, is, me, my, of, on, or, please, the, to, with`), deduplicated. If that leaves nothing, the raw query is used.
 3. Score = **token coverage** + **phrase boost**:
    - coverage = (query tokens found in the doc) / (query tokens)
    - phrase boost = 0.15 × (adjacent query-token bigrams that appear verbatim in the normalized doc) / (bigrams)
-4. Keep docs with score > 0, sort descending, take the top 25. Rank = position.
+4. Keep docs with score > 0, sort descending, take the top 25. Rank = position. The lexical rank for fusion is the **best** (lowest) rank any phrasing achieved for that id.
 
 **Vector channel** (only when `CAPABILITY_VECTOR_INDEX` is bound).
 
-1. Embed the query with the same Workers AI model, with a 300 ms budget.
+1. Embed each phrasing with the same Workers AI model, with a shared 300 ms budget for the batch.
 2. Query Vectorize with `topK = 100` in each org namespace present in the accessible docs, each with a 300 ms budget.
-3. Merge matches by cosine score, drop ids that are not in the accessible set, drop scores below **0.35**, deduplicate. Rank = position.
+3. Merge matches by cosine score, drop ids that are not in the accessible set, drop scores below **0.35**, deduplicate. Rank = position. As with lexical, the vector rank for fusion is the best rank across phrasings.
 
 Timeouts or errors produce an empty vector channel, not a failed search.
 
@@ -184,7 +184,8 @@ Rows are sorted by `fusedScore` descending, ties broken by id.
 ### Step 7: Selection (`selectFusedHits`)
 
 - Keep nominated rows (exact, lexical, vector, or graph bonus > 0), and take at most 15 (hard limit 25).
-- **No match**: if there is no row, or the top row's `rrfScore < 0.01` and it is not exact rank 1, return `reason: 'no_match'` with no results. The floor is roughly "a single mid-ranked vector hit and nothing else" (`0.8/(60+20) = 0.01`).
+- **No match**: if there is no row, or the top row's `rrfScore < 0.01` and it is not exact rank 1, return `reason: 'no_match'` with no results when the accessible catalog has more than **25** capabilities. The floor is roughly "a single mid-ranked vector hit and nothing else" (`0.8/(60+20) = 0.01`).
+- **Browse**: when selection would be `no_match` but the caller can access **25 or fewer** capabilities, return all of them (up to 15) with `reason: 'browse'` and zero fused scores so the agent can read contracts and pick the right capability (common for early catalogs and paraphrase queries like "user wants to say hi" against a bare `hello-world` slug).
 - **Ambiguous**: `true` when neither of the top two is exact rank 1 and `second.fusedScore / top.fusedScore ≥ 0.85`. The agent should inspect several hits instead of blindly executing the first.
 
 ### Step 8: Jev rerank (`search-ranking.ts`, `apps/mcp/src/search-jev-rerank.ts`)
@@ -214,6 +215,8 @@ The MCP response is:
   "timing": {}
 }
 ```
+
+`reason` is `ok` (ranked hits), `browse` (small catalog, agent should choose), or `no_match` (large catalog, nothing nominated).
 
 `contract` carries `description`, `examples`, `inputSchema`, and `outputSchema`, so the agent can build `execute.arguments` without another call. The result set is trimmed from the bottom until the JSON fits in 24 KiB.
 

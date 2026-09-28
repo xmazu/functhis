@@ -19,11 +19,13 @@ import { scoreFunctionDocument } from './search-lexical';
 import type { SearchCandidateRow } from './search-ranking';
 import { RERANK_POOL_MAX, shouldRerankSearch } from './search-ranking';
 import {
+  SEARCH_BROWSE_MAX,
   SEARCH_DEADLINE_MS,
   SEARCH_DEFAULT_LIMIT,
   SEARCH_GRAPH_BUDGET_MS,
   SEARCH_GRAPH_NEIGHBORS,
   SEARCH_GRAPH_SEED,
+  SEARCH_INTENT_PHRASINGS_MAX,
   SEARCH_JEV_BUDGET_MS,
   SEARCH_LEXICAL_TOP,
   SEARCH_VECTOR_BUDGET_MS,
@@ -50,6 +52,88 @@ const queryTokens = (query: string): string[] =>
     .toLowerCase()
     .split(/[^a-z0-9]+/u)
     .filter((token) => token.length > 1);
+
+export const searchPhrasings = (
+  query: string,
+  intents?: readonly string[]
+): string[] => {
+  const seen = new Set<string>();
+  const phrasings: string[] = [];
+  const push = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    phrasings.push(trimmed);
+  };
+  push(query);
+  for (const intent of intents ?? []) {
+    if (phrasings.length >= SEARCH_INTENT_PHRASINGS_MAX) {
+      break;
+    }
+    push(intent);
+  }
+  return phrasings;
+};
+
+const mergeBestRanks = (
+  rankMaps: readonly Map<string, number>[]
+): Map<string, number> => {
+  const merged = new Map<string, number>();
+  for (const ranks of rankMaps) {
+    for (const [id, rank] of ranks) {
+      const previous = merged.get(id);
+      if (previous === undefined || rank < previous) {
+        merged.set(id, rank);
+      }
+    }
+  }
+  return merged;
+};
+
+const lexicalRankForPhrasing = (
+  phrasing: string,
+  docsById: Map<string, HotFunctionDoc>
+): Map<string, number> => {
+  const scored = [...docsById.entries()]
+    .map(([id, doc]) => ({
+      id,
+      score: scoreFunctionDocument(phrasing, {
+        functionSlug: doc.functionSlug,
+        handle: doc.handle,
+        id,
+        packageSlug: doc.packageSlug,
+        searchText: doc.searchText,
+      }),
+    }))
+    .toSorted((left, right) => right.score - left.score);
+  const ranked = scored
+    .filter((row) => row.score > 0)
+    .slice(0, SEARCH_LEXICAL_TOP);
+  return new Map(ranked.map((row, index) => [row.id, index + 1]));
+};
+
+const lexicalScoresForPrimary = (
+  primaryQuery: string,
+  docsById: Map<string, HotFunctionDoc>
+): { id: string; score: number }[] =>
+  [...docsById.entries()]
+    .map(([id, doc]) => ({
+      id,
+      score: scoreFunctionDocument(primaryQuery, {
+        functionSlug: doc.functionSlug,
+        handle: doc.handle,
+        id,
+        packageSlug: doc.packageSlug,
+        searchText: doc.searchText,
+      }),
+    }))
+    .toSorted((left, right) => right.score - left.score);
 
 const withTimeout = async <T>(
   work: Promise<T>,
@@ -160,6 +244,7 @@ export const searchFunctionsWithContext = async (
   input: {
     callerUserId: string;
     domain?: SearchDomain;
+    intents?: readonly string[];
     query?: string;
   },
   options?: SearchFunctionsOptions
@@ -168,6 +253,10 @@ export const searchFunctionsWithContext = async (
   const timing = emptyTiming();
   const domain = normalizeSearchDomain(input.domain);
   const trimmedQuery = input.query?.trim() ?? '';
+  const hasIntentInput =
+    input.intents?.some((intent) => intent.trim().length > 0) ?? false;
+  const phrasings = searchPhrasings(trimmedQuery, input.intents);
+  const primaryQuery = phrasings[0] ?? '';
   const searchId = crypto.randomUUID();
 
   const loadStarted = Date.now();
@@ -210,7 +299,7 @@ export const searchFunctionsWithContext = async (
     return payload;
   };
 
-  if (trimmedQuery.length === 0) {
+  if (trimmedQuery.length === 0 && !hasIntentInput) {
     const results = docs
       .slice(0, SEARCH_DEFAULT_LIMIT)
       .map((doc) => toHit(doc));
@@ -227,6 +316,15 @@ export const searchFunctionsWithContext = async (
     });
   }
 
+  if (phrasings.length === 0) {
+    return finish({
+      ambiguous: false,
+      explanation: [],
+      reason: 'no_match',
+      results: [],
+    });
+  }
+
   const docsById = new Map(
     docs.map((doc) => [
       formatFunctionId({
@@ -239,7 +337,7 @@ export const searchFunctionsWithContext = async (
   );
 
   const exactIds = docs
-    .filter((doc) => isExactSearchMatch(trimmedQuery, doc))
+    .filter((doc) => isExactSearchMatch(primaryQuery, doc))
     .map((doc) =>
       formatFunctionId({
         functionSlug: doc.functionSlug,
@@ -250,10 +348,10 @@ export const searchFunctionsWithContext = async (
 
   if (
     exactIds.length === 1 &&
-    trimmedQuery.startsWith('@') &&
-    docsById.has(trimmedQuery)
+    primaryQuery.startsWith('@') &&
+    docsById.has(primaryQuery)
   ) {
-    const doc = docsById.get(trimmedQuery);
+    const doc = docsById.get(primaryQuery);
     if (doc) {
       const hit = toHit(doc);
       return finish({
@@ -274,74 +372,71 @@ export const searchFunctionsWithContext = async (
   }
 
   const lexicalStarted = Date.now();
-  const lexicalScored = [...docsById.entries()]
-    .map(([id, doc]) => ({
-      id,
-      score: scoreFunctionDocument(trimmedQuery, {
-        functionSlug: doc.functionSlug,
-        handle: doc.handle,
-        id,
-        packageSlug: doc.packageSlug,
-        searchText: doc.searchText,
-      }),
-    }))
-    .toSorted((left, right) => right.score - left.score);
-  const lexicalRanked = lexicalScored
-    .filter((row) => row.score > 0)
-    .slice(0, SEARCH_LEXICAL_TOP);
-  const lexicalRank = new Map(
-    lexicalRanked.map((row, index) => [row.id, index + 1])
+  const lexicalScored = lexicalScoresForPrimary(primaryQuery, docsById);
+  const lexicalRank = mergeBestRanks(
+    phrasings.map((phrasing) => lexicalRankForPhrasing(phrasing, docsById))
   );
   timing.lexicalMs = Date.now() - lexicalStarted;
 
   const vectorRank = new Map<string, number>();
-  if (context.vectorIndex && context.embedQuery) {
+  const { embedQuery } = context;
+  const { vectorIndex } = context;
+  if (vectorIndex && embedQuery) {
     const vectorStarted = Date.now();
     try {
-      const queryVector = await withTimeout(
-        context.embedQuery(trimmedQuery),
+      const queryVectors = await withTimeout(
+        Promise.all(phrasings.map((phrasing) => embedQuery(phrasing))),
         SEARCH_VECTOR_BUDGET_MS,
-        []
+        phrasings.map(() => [] as number[])
       );
-      if (queryVector.length > 0) {
-        const namespaces = [
-          ...new Set(
-            docs
-              .map((doc) => doc.organizationId)
-              .filter((value): value is string => Boolean(value))
-          ),
-        ];
-        const matches = (
-          await Promise.all(
-            namespaces.map((namespace) =>
-              withTimeout(
-                context.vectorIndex?.query({
-                  limit: SEARCH_VECTOR_TOP_K,
-                  namespace,
-                  vector: queryVector,
-                }) ?? Promise.resolve([]),
-                SEARCH_VECTOR_BUDGET_MS,
-                []
+      const namespaces = [
+        ...new Set(
+          docs
+            .map((doc) => doc.organizationId)
+            .filter((value): value is string => Boolean(value))
+        ),
+      ];
+      const rankMaps = await Promise.all(
+        queryVectors
+          .filter((queryVector) => queryVector.length > 0)
+          .map(async (queryVector) => {
+            const matches = (
+              await Promise.all(
+                namespaces.map((namespace) =>
+                  withTimeout(
+                    vectorIndex.query({
+                      limit: SEARCH_VECTOR_TOP_K,
+                      namespace,
+                      vector: queryVector,
+                    }),
+                    SEARCH_VECTOR_BUDGET_MS,
+                    []
+                  )
+                )
               )
-            )
-          )
-        ).flat();
-        const seen = new Set<string>();
-        let rank = 1;
-        for (const match of matches.toSorted(
-          (left, right) => right.score - left.score
-        )) {
-          if (
-            !docsById.has(match.id) ||
-            seen.has(match.id) ||
-            match.score < SEARCH_VECTOR_MIN_SCORE
-          ) {
-            continue;
-          }
-          seen.add(match.id);
-          vectorRank.set(match.id, rank);
-          rank += 1;
-        }
+            ).flat();
+            const seen = new Set<string>();
+            const ranks = new Map<string, number>();
+            let rank = 1;
+            for (const match of matches.toSorted(
+              (left, right) => right.score - left.score
+            )) {
+              if (
+                !docsById.has(match.id) ||
+                seen.has(match.id) ||
+                match.score < SEARCH_VECTOR_MIN_SCORE
+              ) {
+                continue;
+              }
+              seen.add(match.id);
+              ranks.set(match.id, rank);
+              rank += 1;
+            }
+            return ranks;
+          })
+      );
+      for (const [id, rank] of mergeBestRanks(rankMaps)) {
+        vectorRank.set(id, rank);
       }
     } catch {
       vectorRank.clear();
@@ -368,7 +463,7 @@ export const searchFunctionsWithContext = async (
   try {
     const seeds = [
       ...fused.slice(0, SEARCH_GRAPH_SEED).map((row) => row.id),
-      ...queryTokens(trimmedQuery).map((token) => `alias:${token}`),
+      ...queryTokens(primaryQuery).map((token) => `alias:${token}`),
     ];
     const edges = await withTimeout(
       loadGraphEdgesForSeeds(context.hot, seeds),
@@ -433,6 +528,27 @@ export const searchFunctionsWithContext = async (
   );
 
   const selected = selectFusedHits(fused, SEARCH_DEFAULT_LIMIT);
+  if (
+    selected.reason === 'no_match' &&
+    docs.length > 0 &&
+    docs.length <= SEARCH_BROWSE_MAX
+  ) {
+    const browseResults = docs
+      .slice(0, SEARCH_DEFAULT_LIMIT)
+      .map((doc) => toHit(doc));
+    return finish({
+      ambiguous: false,
+      explanation: browseResults.map((hit) => ({
+        fusedScore: 0,
+        graphBonus: 0,
+        id: hit.id,
+        usageBoost: 0,
+      })),
+      reason: 'browse',
+      results: browseResults,
+    });
+  }
+
   let orderedDocs = selected.selected
     .map((row) => {
       const doc = docsById.get(row.id);
@@ -468,7 +584,7 @@ export const searchFunctionsWithContext = async (
   ) {
     const jevStarted = Date.now();
     const reranked = await withTimeout(
-      applyAiRerankToSorted(trimmedQuery, candidates, options.rerankScorer),
+      applyAiRerankToSorted(primaryQuery, candidates, options.rerankScorer),
       SEARCH_JEV_BUDGET_MS,
       candidates
     );

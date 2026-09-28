@@ -122,7 +122,7 @@ describe('searchFunctionsWithContext', () => {
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
   });
 
-  test('returns no_match when nothing is nominated', async () => {
+  test('returns browse when nothing is nominated and the catalog is small', async () => {
     const hot = memoryHot();
     const userId = 'user-none';
     await seedDoc(hot, {
@@ -134,8 +134,50 @@ describe('searchFunctionsWithContext', () => {
       { hot },
       { callerUserId: userId, query: 'zzzz-unrelated-token' }
     );
+    expect(result.reason).toBe('browse');
+    expect(result.results.map((hit) => hit.id)).toEqual([
+      '@acme/crm/users/search',
+    ]);
+  });
+
+  test('returns no_match for unrelated queries when the catalog is large', async () => {
+    const hot = memoryHot();
+    const userId = 'user-large';
+    /* eslint-disable no-await-in-loop -- mine index append in seedDoc is read-modify-write */
+    for (let index = 0; index < 26; index += 1) {
+      await seedDoc(hot, {
+        functionSlug: `fn-${String(index)}`,
+        ownerUserId: userId,
+        searchText: `fn-${String(index)}\nCapability ${String(index)}`,
+      });
+    }
+    /* eslint-enable no-await-in-loop */
+    const result = await searchFunctionsWithContext(
+      { hot },
+      { callerUserId: userId, query: 'zzzz-unrelated-token' }
+    );
     expect(result.reason).toBe('no_match');
     expect(result.results).toEqual([]);
+  });
+
+  test('nominates via intents when the primary query has no lexical overlap', async () => {
+    const hot = memoryHot();
+    const userId = 'user-intents';
+    await seedDoc(hot, {
+      functionSlug: 'users/search',
+      ownerUserId: userId,
+      searchText: 'users/search\nFind a user by email\nemail',
+    });
+    const result = await searchFunctionsWithContext(
+      { hot },
+      {
+        callerUserId: userId,
+        intents: ['find user by email'],
+        query: 'zzzz-unrelated-token',
+      }
+    );
+    expect(result.reason).toBe('ok');
+    expect(result.results[0]?.id).toBe('@acme/crm/users/search');
   });
 
   test('fast-path returns a single exact function id', async () => {

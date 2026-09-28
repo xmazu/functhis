@@ -1,5 +1,7 @@
 export const SEARCH_DEFAULT_LIMIT = 15;
 export const SEARCH_HARD_LIMIT = 25;
+export const SEARCH_BROWSE_MAX = 25;
+export const SEARCH_INTENT_PHRASINGS_MAX = 5;
 export const SEARCH_PAYLOAD_MAX_BYTES = 24 * 1024;
 export const SEARCH_NO_MATCH_RRF_FLOOR = 0.01;
 export const SEARCH_AMBIGUOUS_RATIO = 0.85;
@@ -74,7 +76,7 @@ export interface SearchExplanationRow {
 export interface SearchResult {
   ambiguous: boolean;
   explanation: SearchExplanationRow[];
-  reason: 'no_match' | 'ok';
+  reason: 'browse' | 'no_match' | 'ok';
   results: SearchHit[];
   searchId: string;
   timing: SearchTiming;

@@ -11,6 +11,7 @@ import type { SearchFunctionsDependencies } from './search';
 
 const searchInputSchema = z.object({
   domain: z.enum(['library', 'mine', 'org']).optional(),
+  intents: z.array(z.string().trim().min(1)).max(5).optional(),
   query: z.string().optional(),
 });
 
@@ -48,7 +49,7 @@ export const createFuncthisMcpHandler = (
         'search',
         {
           description:
-            'Find deployed functions by handle, package slug, function slug, contract text, or semantic similarity. domain: mine (default), org (organization-shared), library (public). Results include contract (description, examples, inputSchema, outputSchema). Use contract.inputSchema to build execute.arguments. Use the returned id with execute. Pass searchId to execute when following a hit.',
+            'Find capabilities for an agent goal. Describe the goal as short verb+object phrases (for example "greet a user", "send welcome email"). Put alternative phrasings in intents (up to 5). domain: mine (default), org (organization-shared), library (public). Results include contract (description, examples, inputSchema, outputSchema). Use contract.inputSchema to build execute.arguments. Use the returned id with execute. Pass searchId to execute when following a hit. reason "browse" means nothing ranked; pick from the listed contracts yourself or ask the user to clarify.',
           inputSchema: searchInputSchema,
         },
         async (input) => {
@@ -59,6 +60,7 @@ export const createFuncthisMcpHandler = (
             {
               callerUserId: userId,
               domain: input.domain,
+              intents: input.intents,
               query: input.query,
             },
             undefined,
