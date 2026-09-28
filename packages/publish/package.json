@@ -170,9 +170,13 @@
       "types": "./src/federation/capability-graph.ts",
       "default": "./src/federation/capability-graph.ts"
     },
-    "./graph-hot": {
-      "types": "./src/federation/graph-hot.ts",
-      "default": "./src/federation/graph-hot.ts"
+    "./federation-index": {
+      "types": "./src/federation/federation-index.ts",
+      "default": "./src/federation/federation-index.ts"
+    },
+    "./federation-hot": {
+      "types": "./src/federation/federation-hot.ts",
+      "default": "./src/federation/federation-hot.ts"
     },
     "./catalog-projection": {
       "types": "./src/federation/catalog-projection.ts",

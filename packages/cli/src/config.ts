@@ -56,10 +56,7 @@ export const parseCliConfig = (value: unknown): CliConfig | null => {
   }
   const stored = value as Record<string, unknown>;
   const accessToken = readStoredString(stored.accessToken);
-  const url =
-    readStoredString(stored.url) ??
-    readStoredString(stored.webUrl) ??
-    readStoredString(stored.consoleUrl);
+  const url = readStoredString(stored.url);
   if (!accessToken || !url) {
     return null;
   }

@@ -9,7 +9,7 @@ export const packageFunctionIdPrefixes = (
 ): string[] =>
   handles.map((handle) => packageFunctionIdPrefix(handle, packageSlug));
 
-/** Drop function ids for a package across org-slug and legacy owner-handle prefixes. */
+/** Drop function ids for a package across all handle prefixes (org slug and owner handle). */
 export const stripPackageFunctionIds = (
   ids: readonly string[],
   handles: readonly string[],

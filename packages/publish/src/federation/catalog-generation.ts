@@ -18,3 +18,12 @@ export const bumpCatalogGeneration = async (
   await hot.put(catalogGenerationHotKey(organizationId), String(next));
   return next;
 };
+
+/** Publish the catalog generation after the federation blob for that generation exists. */
+export const writeCatalogGeneration = async (
+  hot: HotKvBinding,
+  organizationId: string,
+  generation: number
+): Promise<void> => {
+  await hot.put(catalogGenerationHotKey(organizationId), String(generation));
+};

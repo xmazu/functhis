@@ -7,7 +7,7 @@ import {
 } from './search-projection';
 
 describe('buildIntentPhrases', () => {
-  test('pairs description with required parameters', () => {
+  test('pairs description with verb/entity splits and required parameters', () => {
     expect(
       buildIntentPhrases({
         contract: {
@@ -23,10 +23,16 @@ describe('buildIntentPhrases', () => {
         },
         slug: 'users/search',
       })
-    ).toEqual(['Find a user by email email']);
+    ).toEqual([
+      'Find a user by email',
+      'search users by email',
+      'search user by email',
+      'find users by email',
+      'find user by email',
+    ]);
   });
 
-  test('falls back to slug and parameter names without description', () => {
+  test('derives verb/entity phrases without description', () => {
     expect(
       buildIntentPhrases({
         contract: {
@@ -37,7 +43,13 @@ describe('buildIntentPhrases', () => {
         },
         slug: 'users/search',
       })
-    ).toEqual(['users/search email']);
+    ).toEqual([
+      'search users by email',
+      'search user by email',
+      'find users by email',
+      'find user by email',
+      'lookup users by email',
+    ]);
   });
 });
 

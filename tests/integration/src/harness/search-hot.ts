@@ -6,6 +6,7 @@ import {
   writeMembershipHot,
 } from '@functhis/publish';
 import type { HotFunctionDoc } from '@functhis/publish';
+import { projectFederationDocs } from '@functhis/publish/federation-hot';
 
 import type { MemoryHotKv } from './memory-hot-kv';
 
@@ -62,5 +63,9 @@ export const seedHotSearchCatalog = async (
 
   const ids = docs.map(({ id }) => id);
   await memoryHot.put(mineIndexHotKey(input.ownerUserId), JSON.stringify(ids));
+  await projectFederationDocs(
+    hot,
+    docs.map(({ doc }) => doc)
+  );
   return ids;
 };

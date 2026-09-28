@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { reviewedAliasEdge } from '@functhis/publish/capability-graph';
 import { deterministicEmbedding } from '@functhis/publish/embedding';
-import { writeGraphAdjacency } from '@functhis/publish/graph-hot';
+import { projectFederationDocs } from '@functhis/publish/federation-hot';
 import {
   writeHotFunctionDoc,
   writeMembershipHot,
@@ -37,6 +36,7 @@ const memoryHot = (): HotKvBinding & { store: Map<string, string> } => {
 const seedDoc = async (
   hot: HotKvBinding,
   input: {
+    contract?: Record<string, unknown>;
     functionSlug: string;
     organizationId?: string;
     ownerUserId: string;
@@ -45,7 +45,7 @@ const seedDoc = async (
 ): Promise<void> => {
   const doc: HotFunctionDoc = {
     bundleHash: 'bundle',
-    contract: { description: input.searchText },
+    contract: input.contract ?? { description: input.searchText },
     functionId: crypto.randomUUID(),
     functionSlug: input.functionSlug,
     handle: 'acme',
@@ -64,6 +64,7 @@ const seedDoc = async (
   const existingRaw = await hot.get(mineKey);
   const existing = existingRaw ? (JSON.parse(existingRaw) as string[]) : [];
   await hot.put(mineKey, JSON.stringify([...existing, id]));
+  await projectFederationDocs(hot, [doc]);
 };
 
 describe('normalizeSearchDomain', () => {
@@ -108,18 +109,14 @@ describe('searchFunctionsWithContext', () => {
     const hot = memoryHot();
     const userId = 'user-alias';
     await seedDoc(hot, {
+      contract: {
+        description: 'Find a user by email',
+        reviewedAliases: ['customer'],
+      },
       functionSlug: 'users/search',
       ownerUserId: userId,
       searchText: 'users/search\nFind a user by email\nemail',
     });
-    await writeGraphAdjacency(hot, [
-      reviewedAliasEdge({
-        alias: 'customer',
-        capabilityId: '@acme/crm/users/search',
-        generation: 1,
-        organizationId: 'org-1',
-      }),
-    ]);
     const result = await searchFunctionsWithContext(
       { hot },
       { callerUserId: userId, query: 'customer' }
@@ -151,7 +148,7 @@ describe('searchFunctions', () => {
             results: [],
             searchId: 'search',
             timing: {
-              graphMs: 0,
+              indexMs: 0,
               jevMs: 0,
               lexicalMs: 0,
               loadMs: 0,
@@ -190,7 +187,7 @@ describe('searchFunctions', () => {
             results: [],
             searchId: 'search',
             timing: {
-              graphMs: 0,
+              indexMs: 0,
               jevMs: 0,
               lexicalMs: 0,
               loadMs: 0,

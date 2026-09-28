@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -87,19 +87,6 @@ describe('parseCliConfig', () => {
       url: 'http://localhost:3001',
     });
   });
-
-  test('accepts legacy webUrl and consoleUrl', () => {
-    expect(
-      parseCliConfig({
-        accessToken: 'token',
-        consoleUrl: 'http://localhost:3002',
-        webUrl: 'http://localhost:3001',
-      })
-    ).toEqual({
-      accessToken: 'token',
-      url: 'http://localhost:3001',
-    });
-  });
 });
 
 describe('loadConfig / saveConfig', () => {
@@ -117,32 +104,6 @@ describe('loadConfig / saveConfig', () => {
       await saveConfig(sample);
       await expect(loadConfig()).resolves.toEqual(sample);
       expect(resolveConfigPath().startsWith(home)).toBe(true);
-    } finally {
-      process.env.HOME = previousHome;
-      await rm(home, { force: true, recursive: true });
-    }
-  });
-
-  test('loads legacy consoleUrl/webUrl files as url', async () => {
-    const previousHome = process.env.HOME;
-    const home = await mkdtemp(path.join(tmpdir(), 'functhis-legacy-'));
-    process.env.HOME = home;
-    try {
-      const configPath = resolveConfigPath();
-      await mkdir(path.dirname(configPath), { recursive: true });
-      await writeFile(
-        configPath,
-        `${JSON.stringify({
-          accessToken: 'legacy',
-          consoleUrl: 'http://localhost:3002',
-          webUrl: 'http://localhost:3001',
-        })}\n`,
-        'utf-8'
-      );
-      await expect(loadConfig()).resolves.toEqual({
-        accessToken: 'legacy',
-        url: 'http://localhost:3001',
-      });
     } finally {
       process.env.HOME = previousHome;
       await rm(home, { force: true, recursive: true });

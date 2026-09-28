@@ -1,31 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import {
-  buildAuthoritativeEdges,
-  graphNeighborBonus,
-  reviewedAliasEdge,
-  traverseGraphNeighbors,
-} from './capability-graph';
-
-describe('graphNeighborBonus', () => {
-  test('penalizes high-degree nodes', () => {
-    const low = graphNeighborBonus({
-      confidence: 1,
-      degree: 2,
-      hop: 1,
-      sourceReliability: 1,
-      weight: 1,
-    });
-    const high = graphNeighborBonus({
-      confidence: 1,
-      degree: 64,
-      hop: 1,
-      sourceReliability: 1,
-      weight: 1,
-    });
-    expect(low).toBeGreaterThan(high);
-  });
-});
+import { buildAuthoritativeEdges, reviewedAliasEdge } from './capability-graph';
 
 describe('buildAuthoritativeEdges', () => {
   test('links org, package, namespace, action, and parameters', () => {
@@ -51,32 +26,16 @@ describe('buildAuthoritativeEdges', () => {
   });
 });
 
-describe('traverseGraphNeighbors', () => {
-  test('reviewed aliases nominate a neighbor; inferred similar_to does not', () => {
-    const target = '@acme/crm/users/search';
-    const invoices = '@acme/billing/invoices/search';
-    const alias = reviewedAliasEdge({
-      alias: 'customer',
-      capabilityId: target,
+describe('reviewedAliasEdge', () => {
+  test('lowercases the alias node', () => {
+    const edge = reviewedAliasEdge({
+      alias: 'Customer',
+      capabilityId: '@acme/crm/users/search',
       generation: 1,
       organizationId: 'org-1',
     });
-    const similar = {
-      confidence: 0.4,
-      fromId: 'seed',
-      generation: 1,
-      organizationId: 'org-1',
-      provenance: 'inferred' as const,
-      toId: invoices,
-      type: 'similar_to' as const,
-      weight: 1,
-    };
-    const bonus = traverseGraphNeighbors(
-      [alias, similar],
-      ['alias:customer', 'seed'],
-      new Set([target, invoices, 'alias:customer', 'seed'])
-    );
-    expect(bonus.has(target)).toBe(true);
-    expect(bonus.has(invoices)).toBe(false);
+    expect(edge.fromId).toBe('alias:customer');
+    expect(edge.toId).toBe('@acme/crm/users/search');
+    expect(edge.type).toBe('reviewed_alias');
   });
 });

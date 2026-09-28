@@ -26,6 +26,7 @@ import {
   WORKER_COMPATIBILITY_DATE,
 } from '../constants';
 import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
+import { projectFederationDocs } from '../federation/federation-hot';
 import {
   OrgQuotaExceededError,
   insertOrgPackageIfUnderLimit,
@@ -66,6 +67,7 @@ const projectHotDocs = async (
   await Promise.all(
     docs.map((doc) => projectCapabilityAfterHotWrite({ doc, hot }))
   );
+  await projectFederationDocs(hot, docs);
 };
 
 const json = (body: unknown, status = 200): Response =>

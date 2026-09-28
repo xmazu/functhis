@@ -15,24 +15,32 @@ flowchart LR
     M[Remote MCP sync] --> W
     H --> PR[projectCapabilityAfterHotWrite]
     W --> PR
-    PR --> G[(adj:v1 graph edges)]
     PR --> D[(debt:v1 vector debt)]
     D -- cron every minute --> V[(Vectorize)]
+    H --> F1[projectFederationDocs]
+    W --> F1
+    F1 --> F[(fed:v1 federation index)]
   end
   subgraph read [search]
-    Q[query] --> L[load docs + ACL]
-    L --> E[exact] & LX[lexical] & VS[vector]
-    E & LX & VS --> F[RRF fusion]
-    F --> GR[graph bonus] --> U[usage boost] --> S[select] --> J[Jev rerank]
+    Q[query] --> N[normalize and synonym fold]
+    N --> X{exact id or alias}
+    X -->|hit| R[return]
+    X -->|miss| IDX[federation index lookup]
+    IDX --> G["graph spread, 1-2 hops"]
+    G --> F2[fuse with usage boost]
+    F2 --> C{confident?}
+    C -->|yes| R
+    C -->|"no-match or ambiguous"| FB2[full-scan fallback]
+    FB2 --> R
   end
   subgraph exec [execute]
-    X[id + args] --> AC[ACL + validate] --> I[idempotency] --> QU[quota] --> AD{source kind}
+    X2[id + args] --> AC[ACL + validate] --> I[idempotency] --> QU[quota] --> AD{source kind}
     AD --> HW[Dynamic Worker]
     AD --> OA[OpenAPI fetch]
     AD --> RM[remote MCP tools/call]
     AD --> FB[persistSearchSelection]
   end
-  FB --> B[(boost:v1 usage boosts)] --> U
+  FB --> B[(boost:v1 usage boosts)] --> F2
 ```
 
 ## Capabilities and ids
@@ -58,8 +66,9 @@ Search never touches Postgres. It reads only from the `HOT` KV namespace. Keys (
 | `idx:v1:org:{orgId}` | Function ids with `organization` visibility in that org |
 | `idx:v1:library` | Function ids with `library` visibility |
 | `member:v1:{userId}` | `{ organizationIds }` for ACL |
-| `adj:v1:{nodeId}` | Outgoing graph edges from a node |
-| `gen:v1:{orgId}` | Catalog generation counter per org |
+| `gen:v1:{orgId}` | Catalog generation counter per org (also versions the org federation index) |
+| `gen:v1:library` | Generation counter for the library federation index |
+| `fed:v1:{scope}:{generation}` | Serialized federation index for one scope (`{orgId}` or `library`): capability table, exact/alias maps, weighted postings, integer graph adjacency. Previous generations are deleted on rebuild. |
 | `debt:v1:{capabilityId}`, `debt:v1:pending` | Pending vector embeds |
 | `embedfp:v1:{capabilityId}` | Hash of the last embedded text, to skip re-embedding |
 | `boost:v1:{orgId}` | Usage boost map `{ capabilityId: boost }` |
@@ -75,7 +84,7 @@ Execute is different: `resolveHotFunctionDoc` reads `fn:v1:*` first and falls ba
 When a package is published (`http-handlers.ts` finalize), each function gets a `search_text` column built from its contract:
 
 - `buildFunctionSearchText`: slug, `description`, string `examples`, and one line per input/output schema property.
-- `buildIntentPhrases` (`search-projection.ts`): up to five phrases of the form `"<description> <param>"`, using required params first and falling back to all params. With no description it emits `"<slug> <params…>"`.
+- `buildIntentPhrases` (`search/search-projection.ts`): up to five phrases derived only from the contract — the description plus verb/entity splits of the slug (`users/search` → `search users`, `find user`, …) qualified by the first required parameter (`by email`). Verb variants come from a static table (`search → find/lookup/get`, `create → make/add`, …). Nothing is invented beyond what the contract states.
 
 OpenAPI and remote MCP imports build `search_text` with `buildFunctionSearchText` only (description + input schema). They do not add intent phrases.
 
@@ -83,14 +92,21 @@ OpenAPI and remote MCP imports build `search_text` with `buildFunctionSearchText
 
 `syncPackageToHot` writes one `fn:v1:*` doc per function in the package's current version, then rewrites the domain indexes: it strips the package's old ids and appends the new ones to `idx:v1:mine:{owner}`, plus `idx:v1:org:{org}` for `organization` visibility or `idx:v1:library` for `library` visibility. OpenAPI and MCP imports do the same for the mine and org indexes; imported sources are always `organization` visibility.
 
-### 3. Projection (`catalog-projection.ts`)
+### 3. Projection (`federation/catalog-projection.ts`, `federation/federation-hot.ts`)
 
-After each doc is written, `projectCapabilityAfterHotWrite`:
+After each doc is written, `projectCapabilityAfterHotWrite` enqueues **vector debt**: `debt:v1:{id}` with `embedText = "<id>\n<searchText>"` (truncated to 2,000 chars) and a per-capability generation, and adds the id to `debt:v1:pending`.
 
-1. Bumps `gen:v1:{orgId}`.
-2. Writes **authoritative graph edges** (`buildAuthoritativeEdges`): `@handle → @handle/pkg` (`org_owns_package`), `@handle/pkg → capability` (`package_contains`), namespace → capability, capability → `action:<last segment>`, capability → `param:<name>` per input property, capability → `source:<kind>`, and `secret:<name> → capability`.
-3. Writes a `reviewed_alias` edge `alias:<word> → capability` for every string in `contract.reviewedAliases`.
-4. Enqueues **vector debt**: `debt:v1:{id}` with `embedText = "<id>\n<searchText>"` (truncated to 2,000 chars) and a per-capability generation, and adds the id to `debt:v1:pending`.
+Once per batch (publish finalize, OpenAPI sync, remote MCP sync), `projectFederationDocs` rebuilds the **federation index** for every touched scope (each org, plus `library` when a library-visible doc changed):
+
+1. Merges the fresh docs into the scope's previous index (or builds from scratch), writes the blob to `fed:v1:{scope}:{generation+1}`, then bumps the scope generation (`gen:v1:{orgId}` or `gen:v1:library`) so readers never observe a new generation without a blob.
+2. Deletes the previous generation blob, refreshes the isolate-level memo, and retries on generation races (per-scope serialization plus optimistic retry).
+
+The index is one JSON blob per scope and generation:
+
+- **Capability table**: integer-indexed rows with the search hit payload (`id`, `availability`, trimmed `contract`) plus ACL fields (`organizationId`, `ownerUserId`, `visibility`), source reliability, and `searchText` (so later merges re-index untouched rows with full fidelity).
+- **Exact map**: lowercased capability id → row; **alias map**: lowercased reviewed alias → rows (per-scope, so an alias in org A can never match org B).
+- **Postings**: each normalized term and two-word phrase → `[rowIdx, weight]` with `weight = fieldWeight × IDF × sourceReliability`. Terms come from id segments, description, intent phrases, parameter names, reviewed aliases, and `searchText`, all passed through a static synonym fold (`customer/client → user`, `mail → email`, `remove → delete`). Field weights: id 4, alias 3.5, intent 2.5, description 2, param 1.5, text 1.
+- **Graph adjacency**: integer neighbor lists derived from the authoritative edges (`buildAuthoritativeEdges` plus reviewed aliases): capabilities sharing a package, action, parameter, or alias node link to each other (max 8 neighbors). No per-node KV keys.
 
 ### 4. Embedding reconcile (cron)
 
@@ -106,103 +122,39 @@ Embedding failures leave the debt in place for the next minute.
 
 Entry point: the MCP `search` tool → `searchFunctions` (`apps/mcp/src/search.ts`) → `searchFunctionsWithContext` (`packages/publish/src/search/search-run.ts`).
 
-Input: `query` (optional), `intents` (optional, up to 5 short verb+object phrasings the agent would use to describe the goal), `domain` = `mine` (default) | `org` | `library`. Lexical and vector channels run for the primary `query` plus each intent; the best rank per capability across phrasings is kept. Exact match and graph `alias:` seeds use only the primary `query` (or the first intent when `query` is empty).
+Input: `query` (optional), `intents` (optional, up to 5 short verb+object phrasings the agent would use to describe the goal), `domain` = `mine` (default) | `org` | `library`. "Federation" here means this precomputed ranking index, not external API calling (OpenAPI and remote MCP execution is plain HTTP calling in `execute-http.ts`).
 
-### Step 1: Load candidates and apply ACL
+Target: p95 under 10 ms on a warm isolate, under 50 ms cold, measured inside the worker. The hot path does one generation read per scope (zero KV reads when the isolate memo hits) and no embedding calls. When Vectorize is configured, a synonym-only index win with zero lexical overlap on the index top hit defers to the full-scan fallback so semantic recall is unchanged. Optional JEV rerank can still run on a confident index shortlist when `shouldRerankSearch` applies. `timing.indexMs` includes postings lookup and graph spread (there is no separate `graphMs` field).
 
-- Read the domain index: `mine` → `idx:v1:mine:{caller}`; `library` → `idx:v1:library`; `org` → union of `idx:v1:org:{orgId}` for every org in `member:v1:{caller}`.
-- Load every `fn:v1:*` doc for those ids.
-- Filter with `canAccessPackage`: the owner always passes; `organization` visibility passes for members of that org; `private` passes only for the owner. There is no branch for `library` visibility, so today a library package is visible only to its owner (covered by `catalog-access.test.ts`).
+### Step 1: Federation index lookup (`federation/federation-index.ts`)
 
-Every later step only ranks this accessible set. `timing.loadMs` covers this step.
+- Resolve scopes: `mine`/`org` → one scope per org in `member:v1:{caller}`; `library` → the `library` scope.
+- Load each scope's blob (`loadFederationIndex`): return the isolate-memoized index when the generation matches, else one KV read and parse. `timing.indexMs` covers this step.
+- Normalize the query plus each intent (same normalization as the old lexical channel) and fold synonyms. The exact map and alias map are checked against the primary phrasing only.
+- Score postings per phrasing (weights already include field weight × IDF × source reliability), keep the best score per capability across phrasings, spread the graph bonus 1–2 hops over the integer adjacency (hop factors 0.15/0.05, degree-normalized, capped at **0.12**), and add up to 8 graph-only neighbors.
+- Apply ACL without doc reads: `mine` keeps only `ownerUserId === caller`; otherwise `canAccessPackage` on the indexed metadata (owner always passes; `organization` passes for members; `private` only for the owner).
+- **Exact id fast path**: if the query starts with `@` and exactly one accessible hit came from the exact map, verify that single doc from HOT and return it.
 
-### Step 2: Short-circuits
+Index order becomes `lexicalRank` for fusion (alias hits without a rank get `lexicalRank = 1`, as before), usage boosts come from `boost:v1:{orgId}` read at query time (capped at **0.08**), and rows fuse with the same RRF formula (`1/(60+exact) + 1/(60+lexical) + 0.8/(60+vector)`, vector absent on this path). `selectFusedHits` decides `ok` / `no_match` / `ambiguous` exactly as before.
 
-- **Empty query**: return the first 15 docs in index order, `reason: 'ok'` (or `no_match` if none).
-- **Exact id**: if the query starts with `@`, equals an accessible id, and exactly one doc matches exactly, return that single hit.
+- **Confident** (`ok`, not ambiguous): verify the selected ids against HOT (`loadHotFunctionDocsFromKv`, one parallel batch) to drop tombstoned docs, re-check ACL on loaded docs, then return unless vector deferral applies. The explanation carries the extra `indexScore`. Optional JEV rerank may reorder the verified shortlist.
+- **Miss or ambiguous**: fall through to the full-scan fallback below.
 
-### Step 3: Three retrieval channels
+### Step 2: Full-scan fallback (`search/search-fallback.ts`)
 
-Each channel produces a **rank** (1 = best) per capability id. Channels never compare raw scores with each other.
+The pre-index pipeline, unchanged in behavior: load every accessible `fn:v1:*` doc for the domain, full lexical scan per phrasing (token coverage + phrase boost, top 25), optional vector channel (embed each phrasing, Vectorize topK 100 per org namespace, cosine floor 0.35, 300 ms budgets), RRF fusion, usage boosts, browse when a small catalog (≤ 25) would otherwise be `no_match`, and optional JEV rerank (`shouldRerankSearch`: skips exact winners, pools ≤ 8, and clear winners with `second/top < 0.5`; needs 4 s of the 8 s deadline).
 
-**Exact channel** (`search-exact.ts`). A doc matches if the trimmed, lowercased query equals its function slug, package slug, handle, or full `@h/p/f` id. Matching docs get ranks 1, 2, … in catalog order.
+The fallback guarantees recall never regresses: zero-overlap vector matches still nominate, and JEV still reorders genuinely ambiguous shortlists. It runs only when the index cannot answer confidently.
 
-**Lexical channel** (`search-lexical.ts`, `scoreFunctionDocument`). For each search phrasing (`query` + `intents`), the document text is `id + handle + packageSlug + functionSlug + searchText`.
+### Step 3: Jev rerank (`search-ranking.ts`, `apps/mcp/src/search-jev-rerank.ts`)
 
-1. Normalize: NFKD, strip diacritics, split camelCase, turn `_ . / : -` into spaces, lowercase.
-2. Query tokens: alphanumeric runs of length ≥ 2, with stopwords removed (`a, an, and, for, from, i, in, into, is, me, my, of, on, or, please, the, to, with`), deduplicated. If that leaves nothing, the raw query is used.
-3. Score = **token coverage** + **phrase boost**:
-   - coverage = (query tokens found in the doc) / (query tokens)
-   - phrase boost = 0.15 × (adjacent query-token bigrams that appear verbatim in the normalized doc) / (bigrams)
-4. Keep docs with score > 0, sort descending, take the top 25. Rank = position. The lexical rank for fusion is the **best** (lowest) rank any phrasing achieved for that id.
-
-**Vector channel** (only when `CAPABILITY_VECTOR_INDEX` is bound).
-
-1. Embed each phrasing with the same Workers AI model, with a shared 300 ms budget for the batch.
-2. Query Vectorize with `topK = 100` in each org namespace present in the accessible docs, each with a 300 ms budget.
-3. Merge matches by cosine score, drop ids that are not in the accessible set, drop scores below **0.35**, deduplicate. Rank = position. As with lexical, the vector rank for fusion is the best rank across phrasings.
-
-Timeouts or errors produce an empty vector channel, not a failed search.
-
-### Step 4: Reciprocal Rank Fusion (`search-rrf.ts`, `search-fusion.ts`)
-
-Every id nominated by at least one channel gets:
-
-```text
-rrfScore = 1/(60 + exactRank) + 1/(60 + lexicalRank) + 0.8/(60 + vectorRank)
-```
-
-A missing rank contributes 0. `k = 60` flattens the curve so being first in one channel does not dominate being near the top of two. Vector is weighted 0.8 because embeddings are the least precise channel.
-
-Example: a doc that is lexical #1 and vector #3 scores `1/61 + 0.8/63 ≈ 0.0291`. A doc that is only lexical #1 scores `1/61 ≈ 0.0164`.
-
-### Step 5: Graph bonus (`capability-graph.ts`, `graph-hot.ts`)
-
-Seeds are the top 10 fused ids plus `alias:<token>` for each query token (lowercased, split on non-alphanumerics, length > 1). Load `adj:v1:{seed}` for every seed within a 100 ms budget.
-
-`traverseGraphNeighbors` walks outgoing edges (at most 8 per node, at most 2 hops). Only edges whose target is an accessible capability or a seed count. Authoritative edges can nominate new candidates; inferred edges (`similar_to`, `co_used`) only add bonus to nodes the walk already reached. The bonus per edge is:
-
-```text
-weight × confidence × sourceReliability × hopFactor / log2(outDegree + 1)
-hopFactor = 0.15 at hop 1, 0.05 at hop 2
-```
-
-Bonuses sum per target, seeds get none, and the total is capped at **0.12**. Up to 8 graph-only ids are added to the candidate set. A capability reached from an `alias:<token>` seed via `reviewed_alias` also gets `lexicalRank = 1` if it had no lexical rank, so reviewed aliases behave like a top lexical hit.
-
-In practice the main graph signal today is reviewed aliases. Capability → `param:` / `action:` / `source:` edges point at nodes that are not capabilities, so they do not score, and only seed adjacency is loaded from KV, so second-hop edges are never present.
-
-### Step 6: Usage boost (`ranking-boost.ts`)
-
-Read `boost:v1:{orgId}` for every org in the accessible set, merge the maps, and add the boost (capped at **0.08**) for each candidate.
-
-```text
-fusedScore = rrfScore + graphBonus + usageBoost
-```
-
-Rows are sorted by `fusedScore` descending, ties broken by id.
-
-### Step 7: Selection (`selectFusedHits`)
-
-- Keep nominated rows (exact, lexical, vector, or graph bonus > 0), and take at most 15 (hard limit 25).
-- **No match**: if there is no row, or the top row's `rrfScore < 0.01` and it is not exact rank 1, return `reason: 'no_match'` with no results when the accessible catalog has more than **25** capabilities. The floor is roughly "a single mid-ranked vector hit and nothing else" (`0.8/(60+20) = 0.01`).
-- **Browse**: when selection would be `no_match` but the caller can access **25 or fewer** capabilities, return all of them (up to 15) with `reason: 'browse'` and zero fused scores so the agent can read contracts and pick the right capability (common for early catalogs and paraphrase queries like "user wants to say hi" against a bare `hello-world` slug).
-- **Ambiguous**: `true` when neither of the top two is exact rank 1 and `second.fusedScore / top.fusedScore ≥ 0.85`. The agent should inspect several hits instead of blindly executing the first.
-
-### Step 8: Jev rerank (`search-ranking.ts`, `apps/mcp/src/search-jev-rerank.ts`)
-
-`shouldRerankSearch` decides whether an LLM second opinion is worth the latency. It skips when:
-
-- the top hit is an exact match,
-- there are 8 or fewer candidates, or
-- the top is a clear winner: `second.fusedScore / top.fusedScore < 0.5`.
-
-Selection caps candidates at 15, so rerank runs only for 9 to 15 candidates. It also requires at least 4 s left of the 8 s search deadline and a configured scorer.
+Only reachable via the fallback path (see Step 2), never on a confident index hit.
 
 The scorer sends each candidate (id, handle, package and function slug, and the first 160 chars of `searchText`) to OpenRouter's Decisions API with `typesafe/jev-1.13` via AI SDK `experimental_evaluate`, in parallel batches of 8. Each candidate gets a 4-level score question: unrelated, tangential, relevant next hop, best primary match. The top 20 (in practice all 15) are reordered by score, keeping fused order on ties.
 
 It falls back to fused order when there is no `OPENROUTER_API_KEY`, any answer is missing, mean confidence is below 0.45, the call throws, or it exceeds the 4 s budget. `timing.jevMs` records the time spent.
 
-### Step 9: Response and analytics
+### Step 4: Response and analytics
 
 The MCP response is:
 
@@ -300,7 +252,7 @@ All in `packages/publish/src/search/search-result.ts` unless noted.
 | `SEARCH_DEFAULT_LIMIT` / `SEARCH_HARD_LIMIT` | 15 / 25 | Result limits |
 | `SEARCH_PAYLOAD_MAX_BYTES` | 24 KiB | Response trim budget |
 | `SEARCH_DEADLINE_MS` | 8000 | Whole-search budget |
-| `SEARCH_VECTOR_BUDGET_MS` / `SEARCH_GRAPH_BUDGET_MS` / `SEARCH_JEV_BUDGET_MS` | 300 / 100 / 4000 | Per-channel timeouts |
+| `SEARCH_VECTOR_BUDGET_MS` / `SEARCH_JEV_BUDGET_MS` | 300 / 4000 | Fallback channel timeouts |
 | `RERANK_SKIP_POOL_SIZE` / `RERANK_POOL_MAX` (`search-ranking.ts`) | 8 / 20 | Rerank pool bounds |
 | `CLEAR_WINNER_FUSED_RATIO` (`search-ranking.ts`) | 0.5 | Skip rerank below this ratio |
 | `jevSearchMinMeanConfidence` (`search-jev-rerank.ts`) | 0.45 | Discard rerank below this confidence |
@@ -313,7 +265,6 @@ All in `packages/publish/src/search/search-result.ts` unless noted.
 These are current behaviors worth knowing before changing the pipeline:
 
 - **Library domain is owner-only.** `canAccessPackage` denies `library` visibility to non-owners, so `domain: library` returns only the caller's own library packages.
-- **Graph is effectively one hop.** Only seed adjacency is loaded, and nothing writes `similar_to` or `co_used` edges yet.
-- **Adjacency is overwritten per write.** `adj:v1:{fromId}` is replaced on each projection, so two capabilities sharing a reviewed alias (or a package with several functions under `package_contains`) keep only the last writer's edges.
+- **Tombstoned docs linger in the index.** Deletions are verified at query time (top hits are re-read from HOT), so a removed capability can briefly stay in the blob until the next rebuild of its scope.
 - **Pending debt and index lists are read-modify-write in KV.** Concurrent publishes can drop an id from `debt:v1:pending` or a domain index. The next publish of that package repairs it.
 - **Idempotency is claimed before the quota check.** A 429 leaves the key `in_progress` until the 35 s stale window passes.

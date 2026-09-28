@@ -8,7 +8,7 @@ import {
 import type { SearchResult } from './search-result';
 
 const emptyTiming = {
-  graphMs: 0,
+  indexMs: 0,
   jevMs: 0,
   lexicalMs: 0,
   loadMs: 0,

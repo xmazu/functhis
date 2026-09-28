@@ -16,6 +16,7 @@ import { mineIndexHotKey, orgIndexHotKey } from '../catalog/hot-keys';
 import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import { WORKER_COMPATIBILITY_DATE } from '../constants';
 import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
+import { projectFederationDocs } from '../federation/federation-hot';
 import type { HotKvBinding } from '../http/http-context';
 import { buildFunctionSearchText } from '../search/function-search-text';
 import {
@@ -217,6 +218,7 @@ export const importOpenApiSource = async (input: {
   );
 
   const functionIds: string[] = [];
+  const projectedDocs: HotFunctionDoc[] = [];
   for (const operation of operations) {
     const [row] = await input.database
       .select({
@@ -259,6 +261,7 @@ export const importOpenApiSource = async (input: {
     };
     await writeHotFunctionDoc(input.hot, doc);
     await projectCapabilityAfterHotWrite({ doc, hot: input.hot });
+    projectedDocs.push(doc);
     functionIds.push(`@${handle}/${input.slug}/${operation.operationId}`);
   }
 
@@ -275,6 +278,7 @@ export const importOpenApiSource = async (input: {
     mineKey,
     JSON.stringify([...mineStripped, ...functionIds])
   );
+  await projectFederationDocs(input.hot, projectedDocs);
 
   return {
     drifted: false,

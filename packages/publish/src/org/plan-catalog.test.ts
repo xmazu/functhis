@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import { FUNCTHIS_PLANS, normalizePlanId, planLimits } from './plan-catalog';
 
 describe('plan catalog', () => {
-  test('normalizes the legacy pro subscription to developer', () => {
+  test('normalizes pro subscription to developer', () => {
     expect(normalizePlanId('pro')).toBe('developer');
     expect(planLimits('pro')).toEqual(FUNCTHIS_PLANS.developer.limits);
   });

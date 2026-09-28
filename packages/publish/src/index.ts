@@ -250,7 +250,6 @@ export {
   listOrgSharedPackages,
   listOwnerPackages,
   listPackageExecutions,
-  listRecentExecutions,
   type AccessiblePackageListRow,
   type CatalogFunctionRow,
   type CatalogPackageRow,

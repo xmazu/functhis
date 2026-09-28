@@ -68,8 +68,8 @@ export const createFuncthisMcpHandler = (
           );
           log.info({
             domain: input.domain ?? 'mine',
-            graphMs: result.timing.graphMs,
             hitCount: result.results.length,
+            indexMs: result.timing.indexMs,
             jevMs: result.timing.jevMs,
             lexicalMs: result.timing.lexicalMs,
             loadMs: result.timing.loadMs,

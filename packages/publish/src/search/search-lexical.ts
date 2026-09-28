@@ -114,6 +114,25 @@ export const phraseMatchBoost = (
   return (matched / phrases.length) * 0.15;
 };
 
+/**
+ * Static synonym fold for the federation index. Both index build and query
+ * time apply this, so "client" matches "user" without an embedding call.
+ * Keys and values are single normalized tokens.
+ */
+export const FEDERATION_SYNONYMS: Record<string, string> = {
+  buyer: 'user',
+  client: 'user',
+  customer: 'user',
+  mail: 'email',
+  remove: 'delete',
+};
+
+export const foldSearchSynonym = (token: string): string =>
+  FEDERATION_SYNONYMS[token] ?? token;
+
+export const foldSearchSynonyms = (tokens: readonly string[]): string[] =>
+  tokens.map((token) => foldSearchSynonym(token));
+
 export const scoreFunctionDocument = (
   query: string,
   doc: {

@@ -21,6 +21,7 @@ import {
 import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import { WORKER_COMPATIBILITY_DATE } from '../constants';
 import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
+import { projectFederationDocs } from '../federation/federation-hot';
 import type { HotKvBinding } from '../http/http-context';
 import { buildFunctionSearchText } from '../search/function-search-text';
 import {
@@ -262,6 +263,7 @@ export const syncRemoteMcpSource = async (input: {
   }
 
   const functionIds: string[] = [];
+  const projectedDocs: HotFunctionDoc[] = [];
   for (const tool of tools) {
     await input.database
       .insert(pkgFunction)
@@ -339,6 +341,7 @@ export const syncRemoteMcpSource = async (input: {
     };
     await writeHotFunctionDoc(input.hot, doc);
     await projectCapabilityAfterHotWrite({ doc, hot: input.hot });
+    projectedDocs.push(doc);
     functionIds.push(`@${handle}/${input.slug}/${tool.name}`);
   }
 
@@ -362,6 +365,7 @@ export const syncRemoteMcpSource = async (input: {
       ...functionIds,
     ])
   );
+  await projectFederationDocs(input.hot, projectedDocs);
 
   return { health: 'ready', packageId, sourceId };
 };

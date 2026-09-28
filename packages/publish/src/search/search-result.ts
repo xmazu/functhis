@@ -8,7 +8,6 @@ export const SEARCH_AMBIGUOUS_RATIO = 0.85;
 export const SEARCH_DEADLINE_MS = 8000;
 export const SEARCH_JEV_BUDGET_MS = 4000;
 export const SEARCH_VECTOR_BUDGET_MS = 300;
-export const SEARCH_GRAPH_BUDGET_MS = 100;
 export const SEARCH_LEXICAL_TOP = 25;
 export const SEARCH_VECTOR_TOP_K = 100;
 export const SEARCH_VECTOR_MIN_SCORE = 0.35;
@@ -55,7 +54,7 @@ export interface SearchHit {
 }
 
 export interface SearchTiming {
-  graphMs: number;
+  indexMs: number;
   jevMs: number;
   lexicalMs: number;
   loadMs: number;
@@ -68,6 +67,7 @@ export interface SearchExplanationRow {
   fusedScore: number;
   graphBonus: number;
   id: string;
+  indexScore?: number;
   lexicalRank?: number;
   usageBoost: number;
   vectorRank?: number;

@@ -16,7 +16,7 @@ import {
 } from './org-usage';
 
 describe('limitsForPlan', () => {
-  test('returns developer limits for the legacy pro alias', () => {
+  test('returns developer limits for the pro plan alias', () => {
     expect(limitsForPlan('pro').maxPackages).toBeGreaterThan(
       TRIAL_ORG_LIMITS.maxPackages
     );

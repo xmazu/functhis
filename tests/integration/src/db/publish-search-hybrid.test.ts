@@ -6,8 +6,8 @@ import {
   deterministicEmbedding,
   CAPABILITY_VECTOR_KIND,
 } from '@functhis/publish/embedding';
+import { loadFederationEdgesForCapabilities } from '@functhis/publish/federation-hot';
 import { formatFunctionId } from '@functhis/publish/function-id';
-import { loadGraphEdgesForSeeds } from '@functhis/publish/graph-hot';
 import { functionHotKeyFromId } from '@functhis/publish/hot-keys';
 import { MemoryEmbeddingIndex } from '@functhis/publish/vectorize-index';
 import { reconcileSearchIndexDebt } from '@functhis/publish/vectorize-upsert';
@@ -80,8 +80,15 @@ describe('publish projection and hybrid search', () => {
     });
 
     expect(await readCatalogGeneration(hot, organizationId)).toBeGreaterThan(0);
-    const aliasEdges = await loadGraphEdgesForSeeds(hot, ['alias:customer']);
-    expect(aliasEdges[0]?.toId).toBe(capabilityId);
+    const aliasEdges = await loadFederationEdgesForCapabilities(hot, {
+      capabilityIds: [capabilityId],
+      organizationId,
+    });
+    expect(
+      aliasEdges.some(
+        (edge) => edge.type === 'reviewed_alias' && edge.toId === capabilityId
+      )
+    ).toBe(true);
 
     const index = new MemoryEmbeddingIndex();
     expect(

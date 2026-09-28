@@ -4,7 +4,7 @@ import { describe, expect, test } from 'bun:test';
 import { createFuncthisMcpHandler } from './mcp';
 import type { McpHandlerDependencies } from './mcp';
 
-const LEGACY_PROTOCOL_VERSIONS = [
+const PRIOR_MCP_PROTOCOL_VERSIONS = [
   '2024-10-07',
   '2024-11-05',
   '2025-03-26',
@@ -108,7 +108,7 @@ describe('MCP protocol handshake', () => {
     const protocolVersion = jsonRpcResult(message)?.protocolVersion;
     expect(typeof protocolVersion).toBe('string');
     expect(protocolVersion).not.toBe(MODERN_PROTOCOL_VERSION);
-    expect(LEGACY_PROTOCOL_VERSIONS).toContain(protocolVersion);
+    expect(PRIOR_MCP_PROTOCOL_VERSIONS).toContain(protocolVersion);
   });
 
   test('serves modern 2026-07-28 server/discover', async () => {
@@ -167,7 +167,7 @@ describe('MCP protocol handshake', () => {
           results: [],
           searchId: 'search-1',
           timing: {
-            graphMs: 1,
+            indexMs: 1,
             jevMs: 2,
             lexicalMs: 3,
             loadMs: 4,

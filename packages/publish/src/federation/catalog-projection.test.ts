@@ -4,7 +4,8 @@ import type { HotFunctionDoc } from '../catalog/hot-catalog';
 import { readSearchIndexDebt } from '../search/search-index-debt';
 import { readCatalogGeneration } from './catalog-generation';
 import { projectCapabilityAfterHotWrite } from './catalog-projection';
-import { loadGraphEdgesForSeeds } from './graph-hot';
+import { loadFederationIndex, projectFederationDocs } from './federation-hot';
+import { queryFederationIndex } from './federation-index';
 
 const memoryHot = () => {
   const store = new Map<string, string>();
@@ -45,13 +46,32 @@ const doc = (overrides?: Partial<HotFunctionDoc>): HotFunctionDoc => ({
 });
 
 describe('projectCapabilityAfterHotWrite', () => {
-  test('writes adjacency, aliases, generation, and vector debt', async () => {
+  test('enqueues vector debt without touching the catalog generation', async () => {
     const hot = memoryHot();
     await projectCapabilityAfterHotWrite({ doc: doc(), hot });
-    expect(await readCatalogGeneration(hot, 'org-1')).toBe(1);
-    const aliasEdges = await loadGraphEdgesForSeeds(hot, ['alias:customer']);
-    expect(aliasEdges[0]?.toId).toBe('@acme/crm/users/search');
+    expect(await readCatalogGeneration(hot, 'org-1')).toBe(0);
     const debt = await readSearchIndexDebt(hot, '@acme/crm/users/search');
     expect(debt?.organizationId).toBe('org-1');
+  });
+});
+
+describe('projectFederationDocs', () => {
+  test('bumps the generation once per batch and indexes aliases', async () => {
+    const hot = memoryHot();
+    await projectCapabilityAfterHotWrite({ doc: doc(), hot });
+    await projectFederationDocs(hot, [doc(), doc()]);
+    expect(await readCatalogGeneration(hot, 'org-1')).toBe(1);
+    const loaded = await loadFederationIndex(hot, {
+      kind: 'org',
+      organizationId: 'org-1',
+    });
+    expect(loaded?.index.capabilities).toHaveLength(1);
+    if (!loaded) {
+      throw new Error('expected a federation index');
+    }
+    const hits = queryFederationIndex(loaded.index, { query: 'customer' });
+    expect(
+      hits.ranked.map((row) => loaded.index.capabilities[row.capIdx]?.id)
+    ).toEqual(['@acme/crm/users/search']);
   });
 });

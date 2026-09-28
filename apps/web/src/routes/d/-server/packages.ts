@@ -17,8 +17,8 @@ import {
   resolveOrgPlan,
   resolveOrganizationSlugById,
 } from '@functhis/publish';
+import { loadFederationEdgesForCapabilities } from '@functhis/publish/federation-hot';
 import { formatFunctionId } from '@functhis/publish/function-id';
-import { loadGraphEdgesForSeeds } from '@functhis/publish/graph-hot';
 import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
 import { createServerFn } from '@tanstack/react-start';
 import { eq, inArray, sql } from 'drizzle-orm';
@@ -162,9 +162,13 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
         packageSlug: fn.packageSlug,
       })
     );
-    const functionEdges = await loadGraphEdgesForSeeds(
+    const functionEdges = await loadFederationEdgesForCapabilities(
       asHotKvBinding(env.HOT),
-      functionIds
+      {
+        capabilityIds: functionIds,
+        organizationId: catalog.organizationId,
+        secretNames: catalog.currentVersion.secretNames,
+      }
     );
 
     return buildPackageDetailViewModel({

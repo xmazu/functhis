@@ -296,38 +296,3 @@ export const listPackageExecutions = async (
     .orderBy(desc(execution.createdAt))
     .limit(limit);
 };
-
-/** @deprecated Prefer {@link listPackageExecutions} for package-scoped history. */
-export const listRecentExecutions = async (
-  database: Database,
-  ownerUserId: string,
-  packageId?: string,
-  limit = 20
-): Promise<ExecutionSummaryRow[]> => {
-  if (packageId) {
-    return listPackageExecutions(database, packageId, { limit });
-  }
-  const rows = await database
-    .select({
-      cpuMs: execution.cpuMs,
-      createdAt: execution.createdAt,
-      functionSlug: pkgFunction.slug,
-      id: execution.id,
-      requestBytes: execution.requestBytes,
-      responseBytes: execution.responseBytes,
-      searchId: execution.searchId,
-      status: execution.status,
-    })
-    .from(execution)
-    .innerJoin(
-      packageVersion,
-      eq(execution.packageVersionId, packageVersion.id)
-    )
-    .innerJoin(pkg, eq(packageVersion.packageId, pkg.id))
-    .leftJoin(pkgFunction, eq(execution.functionId, pkgFunction.id))
-    .where(eq(pkg.ownerUserId, ownerUserId))
-    .orderBy(desc(execution.createdAt))
-    .limit(limit);
-
-  return rows;
-};
