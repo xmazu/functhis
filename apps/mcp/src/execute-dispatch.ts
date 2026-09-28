@@ -26,11 +26,8 @@ import { persistSearchSelection } from '@functhis/publish/search-analytics';
 import { validateContractInput } from '@functhis/publish/validate-input';
 import type { ContractInputValidationIssue } from '@functhis/publish/validate-input';
 
-import {
-  executeOpenApiAdapter,
-  executeRemoteMcpAdapter,
-} from './execute-federated';
 import { executeHostedAdapter } from './execute-hosted';
+import { callOpenApiOperation, callRemoteMcpTool } from './execute-http';
 import { getInboundRequestSignal } from './inbound-request-signal';
 
 export class FunctionNotFoundError extends Error {
@@ -204,7 +201,7 @@ export const dispatchExecute = async (
   const sourceKind = row.sourceKind ?? 'hosted_function';
   let result: DispatchResult;
   if (sourceKind === 'openapi_operation') {
-    result = await executeOpenApiAdapter(env, {
+    result = await callOpenApiOperation(env, {
       callerUserId,
       doc: row,
       requestBytes,
@@ -213,7 +210,7 @@ export const dispatchExecute = async (
       signal,
     });
   } else if (sourceKind === 'remote_mcp_tool') {
-    result = await executeRemoteMcpAdapter(env, {
+    result = await callRemoteMcpTool(env, {
       callerUserId,
       doc: row,
       requestBytes,

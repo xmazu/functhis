@@ -47,7 +47,7 @@ const srcRows = combinedOutput.split('\n').filter((line) => {
   return (
     filePath.startsWith('src/') ||
     filePath.includes(packageSrcMarker) ||
-    /(?:^|\s)src\/[a-z][\w.-]*\.ts(?:\s|$)/u.test(line)
+    /(?:^|\s)src\/[a-z][\w./-]*\.ts(?:\s|$)/u.test(line)
   );
 });
 

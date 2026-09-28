@@ -5,7 +5,7 @@ How `functhis-mcp` finds a capability for an agent and runs it. This covers the 
 Code lives in two places:
 
 - `apps/mcp/src/` — MCP tool registration (`mcp.ts`), the Worker wiring for search (`search.ts`), the LLM reranker (`search-jev-rerank.ts`), and the execute dispatcher and adapters (`execute-*.ts`).
-- `packages/publish/src/` — shared catalog and ranking library: HOT helpers, ranking channels, fusion, graph, embeddings, analytics, and idempotency. MCP wires Vectorize and Jev on top of `searchFunctionsWithContext`.
+- `packages/publish/src/` (grouped: `search/`, `federation/`, `sources/`, `catalog/`, `execution/`, `secrets/`, `org/`, `telemetry/`, `auth/`, `http/`) — shared catalog and ranking library: HOT helpers, ranking channels, fusion, graph, embeddings, analytics, and idempotency. MCP wires Vectorize and Jev on top of `searchFunctionsWithContext`.
 
 ```mermaid
 flowchart LR
@@ -104,7 +104,7 @@ Embedding failures leave the debt in place for the next minute.
 
 ## `search` algorithm
 
-Entry point: the MCP `search` tool → `searchFunctions` (`apps/mcp/src/search.ts`) → `searchFunctionsWithContext` (`packages/publish/src/search-run.ts`).
+Entry point: the MCP `search` tool → `searchFunctions` (`apps/mcp/src/search.ts`) → `searchFunctionsWithContext` (`packages/publish/src/search/search-run.ts`).
 
 Input: `query` (optional), `intents` (optional, up to 5 short verb+object phrasings the agent would use to describe the goal), `domain` = `mine` (default) | `org` | `library`. Lexical and vector channels run for the primary `query` plus each intent; the best rank per capability across phrasings is kept. Exact match and graph `alias:` seeds use only the primary `query` (or the first intent when `query` is empty).
 
@@ -240,10 +240,10 @@ Input: `id`, `arguments` (object), optional `searchId`, optional `idempotencyKey
 6. **Quota.** `reserveOrgExecution` for the org, 429 if the plan quota is exhausted.
 7. **Adapter by source kind:**
    - **Hosted function** (`execute-hosted.ts`): load the bundle from `BUNDLES` KV by hash, decrypt the package's secrets, insert a `started` execution row, then run the bundle as a Dynamic Worker through `env.LOADER` with a 30 s CPU limit and 50 subrequests. The runtime module enforces the package host allowlist on outbound `fetch`. An Axiom tail worker is attached when configured, with secret values redacted. `finalizeExecute` writes Analytics Engine and the completed execution row, ingests capped telemetry if the plan retains logs, and maps oversize responses (> 1 MiB) to 413. When the package has `strictOutput`, the response is checked against `outputSchema`; the result is advisory and does not fail the call.
-   - **OpenAPI operation** (`execute-federated.ts`): interpolate `{param}` placeholders in the path from arguments, check the host is the spec's server host, attach `Authorization: Bearer <credential>` when a credential secret is configured, and `fetch`. Only `GET` retries once, on 429 or 503. Non-GET bodies are the JSON arguments.
-   - **Remote MCP tool**: POST a JSON-RPC `tools/call` with the tool name and arguments to the source endpoint, with one retry on 429 or 503. Network errors and non-2xx responses invalidate the cached `tools/list` snapshot so the next sync refetches.
+   - **OpenAPI operation** (`execute-http.ts`, `callOpenApiOperation`): interpolate `{param}` placeholders in the path from arguments, check the host is the spec's server host, attach `Authorization: Bearer <credential>` when a credential secret is configured, and `fetch`. Only `GET` retries once, on 429 or 503. Non-GET bodies are the JSON arguments.
+   - **Remote MCP tool** (`execute-http.ts`, `callRemoteMcpTool`): POST a JSON-RPC `tools/call` with the tool name and arguments to the source endpoint, with one retry on 429 or 503. Network errors and non-2xx responses invalidate the cached `tools/list` snapshot so the next sync refetches.
 
-   Federated adapters record started and completed execution rows as well.
+   External HTTP adapters record started and completed execution rows as well. "Federation" in this repo means the precomputed search ranking index, not external API calling.
 
 8. **Cancellation.** The inbound request's `AbortSignal` is carried through `AsyncLocalStorage` (`inbound-request-signal.ts`) into the Worker or `fetch`. A client disconnect returns 499 `cancelled`, and the idempotency key is not completed, so a retry with the same key can run again once the record goes stale.
 9. **Complete idempotency** with the final status and body.
@@ -284,7 +284,7 @@ The `+1 / +2` prior starts every capability at 0.5 expected selection rate, so a
 
 ## Constants
 
-All in `packages/publish/src/search-result.ts` unless noted.
+All in `packages/publish/src/search/search-result.ts` unless noted.
 
 | Constant | Value | Meaning |
 | --- | --- | --- |

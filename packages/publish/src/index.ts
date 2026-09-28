@@ -20,7 +20,7 @@ export {
   queryAxiom,
   readAxiomQueryRecords,
   resolveAxiomBindings,
-} from './axiom';
+} from './telemetry/axiom';
 export {
   buildAxiomLogQuery,
   filterDashboardTelemetryRecords,
@@ -28,12 +28,15 @@ export {
   queryAxiomLogs,
   type AxiomLogQuery,
   type AxiomLogsQueryResult,
-} from './axiom-logs';
-export { redactTelemetry, redactTelemetryJson } from './telemetry-redaction';
+} from './telemetry/axiom-logs';
+export {
+  redactTelemetry,
+  redactTelemetryJson,
+} from './telemetry/telemetry-redaction';
 export {
   StoredBundleLoadError,
   type BundleLoadErrorCode,
-} from './bundle-load-error';
+} from './execution/bundle-load-error';
 export {
   formatFunctionId,
   isValidFunctionSlug,
@@ -54,16 +57,20 @@ export {
   isValidSemver,
   type VersionBump,
 } from './semver';
-export { FUNCTHIS_PLANS, normalizePlanId, planLimits } from './plan-catalog';
+export {
+  FUNCTHIS_PLANS,
+  normalizePlanId,
+  planLimits,
+} from './org/plan-catalog';
 export type {
   FuncthisPlan,
   FuncthisPlanId,
   FuncthisPlanLimits,
-} from './plan-catalog';
+} from './org/plan-catalog';
 export {
   insertExecutionRow,
   insertStartedExecutionRow,
-} from './execution-store';
+} from './execution/execution-store';
 export {
   finalizeExecute,
   loadStoredBundle,
@@ -74,7 +81,7 @@ export {
   type ExecuteBundlesKv,
   type ExecuteWorkerLoader,
   type WorkerExecuteBindings,
-} from './worker-execute';
+} from './execution/worker-execute';
 export {
   BUNDLE_KV_PREFIX,
   EXECUTE_CPU_MS,
@@ -92,17 +99,17 @@ export {
   assertExecuteResponseSize,
   executeRequestByteLength,
   ExecutePayloadTooLargeError,
-} from './quotas';
+} from './org/quotas';
 export {
   validateContractInput,
   type ContractInputValidationIssue,
   type ContractInputValidationResult,
-} from './validate-input';
-export { buildFunctionSearchText } from './function-search-text';
-export { asHotKvBinding } from './hot-kv-binding';
-export { backfillHotCatalog } from './backfill-hot';
-export type { HotFunctionDoc, SearchDomain } from './hot-catalog';
-export type { HotKvBinding } from './http-context';
+} from './execution/validate-input';
+export { buildFunctionSearchText } from './search/function-search-text';
+export { asHotKvBinding } from './catalog/hot-kv-binding';
+export { backfillHotCatalog } from './catalog/backfill-hot';
+export type { HotFunctionDoc, SearchDomain } from './catalog/hot-catalog';
+export type { HotKvBinding } from './http/http-context';
 export {
   buildAccessContextFromHot,
   filterDocsByAccess,
@@ -113,28 +120,28 @@ export {
   syncPackageToHot,
   writeHotFunctionDoc,
   writeMembershipHot,
-} from './hot-catalog';
+} from './catalog/hot-catalog';
 export {
   functionHotKey,
   HOT_JWKS_KEY,
   memberHotKey,
   mineIndexHotKey,
-} from './hot-keys';
+} from './catalog/hot-keys';
 export {
   resolveJwksVerifier,
   verifyAccessTokenWithHotJwks,
   writeJwksHot,
-} from './jwks-hot';
+} from './auth/jwks-hot';
 export {
   lexicalScore,
   normalizeSearchText,
   scoreFunctionDocument,
-} from './search-lexical';
+} from './search/search-lexical';
 export {
   CLI_CLIENT_ID,
   PUBLISH_API_RESOURCE,
   MCP_RESOURCE_PRODUCTION,
-} from './oauth';
+} from './auth/oauth';
 export {
   publishFinalizeBodySchema,
   publishFinalizeResponseSchema,
@@ -170,14 +177,14 @@ export {
   type PublishSharingInput,
   type ExistingPackageSharing,
   type ResolvedPublishSharing,
-} from './publish-sharing';
+} from './catalog/publish-sharing';
 export {
   isMemberOfOrganization,
   listMemberOrganizations,
   resolveOrganizationIdForMember,
   resolveOrganizationSlugById,
   type MemberOrganization,
-} from './org-membership-read';
+} from './org/org-membership-read';
 export {
   assertOrgCanAddPackage,
   countOrgPackages,
@@ -187,19 +194,19 @@ export {
   resolveOrgPlan,
   type OrgPlanId,
   type OrgPlanLimits,
-} from './org-entitlements';
+} from './org/org-entitlements';
 export {
   currentUsagePeriodKey,
   readOrgExecutionCount,
   reserveOrgExecution,
-} from './org-usage';
-export { type PackageVisibility } from './package-visibility';
+} from './org/org-usage';
+export { type PackageVisibility } from './catalog/package-visibility';
 export {
   canPublishPackage,
   canWritePackageSecrets,
   isOrgSecretsAdmin,
   isSecretAdminRole,
-} from './secret-access';
+} from './secrets/secret-access';
 export {
   deleteOrganizationSecret,
   deletePackageSecret,
@@ -213,7 +220,7 @@ export {
   type HostedSecretListItem,
   type HostedSecretListResult,
   type HostedSecretScope,
-} from './hosted-secrets';
+} from './secrets/hosted-secrets';
 export {
   HostedSecretError,
   decryptSecretValue,
@@ -222,19 +229,19 @@ export {
   resolveSecretsKeyBytes,
   SECRETS_KEY_BYTES,
   SECRETS_KEY_VERSION,
-} from './secret-crypto';
+} from './secrets/secret-crypto';
 export {
   isValidSecretName,
   mergeSecretValues,
   parseSecretNamesFromManifestJson,
-} from './secret-names';
+} from './secrets/secret-names';
 export {
   buildPackageAccessContext,
   canAccessPackage,
   listMembershipOrganizationIds,
   type PackageAccessContext,
   type PackageAccessRow,
-} from './catalog-access';
+} from './catalog/catalog-access';
 export {
   canViewPackage,
   getFunctionBySlugs,
@@ -249,9 +256,9 @@ export {
   type CatalogPackageRow,
   type ExecutionSummaryRow,
   type PackageListRow,
-} from './catalog-read';
-export { normalizeOrganizationSlug } from './org-slug';
+} from './catalog/catalog-read';
+export { normalizeOrganizationSlug } from './org/org-slug';
 export {
   safeCallbackURL,
   safeCallbackURLFromRequest,
-} from './safe-callback-url';
+} from './auth/safe-callback-url';

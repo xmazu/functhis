@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import {
-  executeOpenApiAdapter,
-  executeRemoteMcpAdapter,
-} from './execute-federated';
 import { executeHostedAdapter } from './execute-hosted';
+import { callOpenApiOperation, callRemoteMcpTool } from './execute-http';
 
 const env = {} as Env;
 const baseDoc = {
@@ -34,7 +31,7 @@ describe('execute adapters', () => {
   });
 
   test('returns unavailable when OpenAPI metadata is incomplete', async () => {
-    const result = await executeOpenApiAdapter(env, {
+    const result = await callOpenApiOperation(env, {
       callerUserId: null,
       doc: baseDoc,
       requestBytes: 10,
@@ -45,7 +42,7 @@ describe('execute adapters', () => {
   });
 
   test('returns unavailable when remote MCP metadata is incomplete', async () => {
-    const result = await executeRemoteMcpAdapter(env, {
+    const result = await callRemoteMcpTool(env, {
       callerUserId: null,
       doc: baseDoc,
       requestBytes: 10,

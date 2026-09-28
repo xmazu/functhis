@@ -7,12 +7,12 @@
       "default": "./src/index.ts"
     },
     "./oauth": {
-      "types": "./src/oauth.ts",
-      "default": "./src/oauth.ts"
+      "types": "./src/auth/oauth.ts",
+      "default": "./src/auth/oauth.ts"
     },
     "./oauth-resource": {
-      "types": "./src/oauth-resource.ts",
-      "default": "./src/oauth-resource.ts"
+      "types": "./src/auth/oauth-resource.ts",
+      "default": "./src/auth/oauth-resource.ts"
     },
     "./schemas": {
       "types": "./src/schemas.ts",
@@ -39,188 +39,188 @@
       "default": "./src/semver.ts"
     },
     "./validate-input": {
-      "types": "./src/validate-input.ts",
-      "default": "./src/validate-input.ts"
+      "types": "./src/execution/validate-input.ts",
+      "default": "./src/execution/validate-input.ts"
     },
     "./package-visibility": {
-      "types": "./src/package-visibility.ts",
-      "default": "./src/package-visibility.ts"
+      "types": "./src/catalog/package-visibility.ts",
+      "default": "./src/catalog/package-visibility.ts"
     },
     "./org-slug": {
-      "types": "./src/org-slug.ts",
-      "default": "./src/org-slug.ts"
+      "types": "./src/org/org-slug.ts",
+      "default": "./src/org/org-slug.ts"
     },
     "./safe-callback-url": {
-      "types": "./src/safe-callback-url.ts",
-      "default": "./src/safe-callback-url.ts"
+      "types": "./src/auth/safe-callback-url.ts",
+      "default": "./src/auth/safe-callback-url.ts"
     },
     "./http": {
-      "types": "./src/http-handlers.ts",
-      "default": "./src/http-handlers.ts"
+      "types": "./src/http/http-handlers.ts",
+      "default": "./src/http/http-handlers.ts"
     },
     "./bundle-load-error": {
-      "types": "./src/bundle-load-error.ts",
-      "default": "./src/bundle-load-error.ts"
+      "types": "./src/execution/bundle-load-error.ts",
+      "default": "./src/execution/bundle-load-error.ts"
     },
     "./catalog-access": {
-      "types": "./src/catalog-access.ts",
-      "default": "./src/catalog-access.ts"
+      "types": "./src/catalog/catalog-access.ts",
+      "default": "./src/catalog/catalog-access.ts"
     },
     "./hot-catalog": {
-      "types": "./src/hot-catalog.ts",
-      "default": "./src/hot-catalog.ts"
+      "types": "./src/catalog/hot-catalog.ts",
+      "default": "./src/catalog/hot-catalog.ts"
     },
     "./hot-keys": {
-      "types": "./src/hot-keys.ts",
-      "default": "./src/hot-keys.ts"
+      "types": "./src/catalog/hot-keys.ts",
+      "default": "./src/catalog/hot-keys.ts"
     },
     "./hot-kv-binding": {
-      "types": "./src/hot-kv-binding.ts",
-      "default": "./src/hot-kv-binding.ts"
+      "types": "./src/catalog/hot-kv-binding.ts",
+      "default": "./src/catalog/hot-kv-binding.ts"
     },
     "./http-context": {
-      "types": "./src/http-context.ts",
-      "default": "./src/http-context.ts"
+      "types": "./src/http/http-context.ts",
+      "default": "./src/http/http-context.ts"
     },
     "./jwks-hot": {
-      "types": "./src/jwks-hot.ts",
-      "default": "./src/jwks-hot.ts"
+      "types": "./src/auth/jwks-hot.ts",
+      "default": "./src/auth/jwks-hot.ts"
     },
     "./org-entitlements": {
-      "types": "./src/org-entitlements.ts",
-      "default": "./src/org-entitlements.ts"
+      "types": "./src/org/org-entitlements.ts",
+      "default": "./src/org/org-entitlements.ts"
     },
     "./org-usage": {
-      "types": "./src/org-usage.ts",
-      "default": "./src/org-usage.ts"
+      "types": "./src/org/org-usage.ts",
+      "default": "./src/org/org-usage.ts"
     },
     "./quotas": {
-      "types": "./src/quotas.ts",
-      "default": "./src/quotas.ts"
+      "types": "./src/org/quotas.ts",
+      "default": "./src/org/quotas.ts"
     },
     "./search-lexical": {
-      "types": "./src/search-lexical.ts",
-      "default": "./src/search-lexical.ts"
+      "types": "./src/search/search-lexical.ts",
+      "default": "./src/search/search-lexical.ts"
     },
     "./hosted-secrets": {
-      "types": "./src/hosted-secrets.ts",
-      "default": "./src/hosted-secrets.ts"
+      "types": "./src/secrets/hosted-secrets.ts",
+      "default": "./src/secrets/hosted-secrets.ts"
     },
     "./secret-crypto": {
-      "types": "./src/secret-crypto.ts",
-      "default": "./src/secret-crypto.ts"
+      "types": "./src/secrets/secret-crypto.ts",
+      "default": "./src/secrets/secret-crypto.ts"
     },
     "./worker-execute": {
-      "types": "./src/worker-execute.ts",
-      "default": "./src/worker-execute.ts"
+      "types": "./src/execution/worker-execute.ts",
+      "default": "./src/execution/worker-execute.ts"
     },
     "./execution-store": {
-      "types": "./src/execution-store.ts",
-      "default": "./src/execution-store.ts"
+      "types": "./src/execution/execution-store.ts",
+      "default": "./src/execution/execution-store.ts"
     },
     "./axiom": {
-      "types": "./src/axiom.ts",
-      "default": "./src/axiom.ts"
+      "types": "./src/telemetry/axiom.ts",
+      "default": "./src/telemetry/axiom.ts"
     },
     "./telemetry-redaction": {
-      "types": "./src/telemetry-redaction.ts",
-      "default": "./src/telemetry-redaction.ts"
+      "types": "./src/telemetry/telemetry-redaction.ts",
+      "default": "./src/telemetry/telemetry-redaction.ts"
     },
     "./search-eval": {
-      "types": "./src/search-eval.ts",
-      "default": "./src/search-eval.ts"
+      "types": "./src/search/search-eval.ts",
+      "default": "./src/search/search-eval.ts"
     },
     "./search-ranking": {
-      "types": "./src/search-ranking.ts",
-      "default": "./src/search-ranking.ts"
+      "types": "./src/search/search-ranking.ts",
+      "default": "./src/search/search-ranking.ts"
     },
     "./search-run": {
-      "types": "./src/search-run.ts",
-      "default": "./src/search-run.ts"
+      "types": "./src/search/search-run.ts",
+      "default": "./src/search/search-run.ts"
     },
     "./search-rank-catalog": {
-      "types": "./src/search-rank-catalog.ts",
-      "default": "./src/search-rank-catalog.ts"
+      "types": "./src/search/search-rank-catalog.ts",
+      "default": "./src/search/search-rank-catalog.ts"
     },
     "./embedding": {
-      "types": "./src/embedding.ts",
-      "default": "./src/embedding.ts"
+      "types": "./src/search/embedding.ts",
+      "default": "./src/search/embedding.ts"
     },
     "./search-exact": {
-      "types": "./src/search-exact.ts",
-      "default": "./src/search-exact.ts"
+      "types": "./src/search/search-exact.ts",
+      "default": "./src/search/search-exact.ts"
     },
     "./search-fusion": {
-      "types": "./src/search-fusion.ts",
-      "default": "./src/search-fusion.ts"
+      "types": "./src/search/search-fusion.ts",
+      "default": "./src/search/search-fusion.ts"
     },
     "./search-projection": {
-      "types": "./src/search-projection.ts",
-      "default": "./src/search-projection.ts"
+      "types": "./src/search/search-projection.ts",
+      "default": "./src/search/search-projection.ts"
     },
     "./search-result": {
-      "types": "./src/search-result.ts",
-      "default": "./src/search-result.ts"
+      "types": "./src/search/search-result.ts",
+      "default": "./src/search/search-result.ts"
     },
     "./search-analytics": {
-      "types": "./src/search-analytics.ts",
-      "default": "./src/search-analytics.ts"
+      "types": "./src/search/search-analytics.ts",
+      "default": "./src/search/search-analytics.ts"
     },
     "./capability-graph": {
-      "types": "./src/capability-graph.ts",
-      "default": "./src/capability-graph.ts"
+      "types": "./src/federation/capability-graph.ts",
+      "default": "./src/federation/capability-graph.ts"
     },
     "./graph-hot": {
-      "types": "./src/graph-hot.ts",
-      "default": "./src/graph-hot.ts"
+      "types": "./src/federation/graph-hot.ts",
+      "default": "./src/federation/graph-hot.ts"
     },
     "./catalog-projection": {
-      "types": "./src/catalog-projection.ts",
-      "default": "./src/catalog-projection.ts"
+      "types": "./src/federation/catalog-projection.ts",
+      "default": "./src/federation/catalog-projection.ts"
     },
     "./catalog-generation": {
-      "types": "./src/catalog-generation.ts",
-      "default": "./src/catalog-generation.ts"
+      "types": "./src/federation/catalog-generation.ts",
+      "default": "./src/federation/catalog-generation.ts"
     },
     "./ranking-boost-kv": {
-      "types": "./src/ranking-boost-kv.ts",
-      "default": "./src/ranking-boost-kv.ts"
+      "types": "./src/search/ranking-boost-kv.ts",
+      "default": "./src/search/ranking-boost-kv.ts"
     },
     "./vectorize-index": {
-      "types": "./src/vectorize-index.ts",
-      "default": "./src/vectorize-index.ts"
+      "types": "./src/search/vectorize-index.ts",
+      "default": "./src/search/vectorize-index.ts"
     },
     "./vectorize-upsert": {
-      "types": "./src/vectorize-upsert.ts",
-      "default": "./src/vectorize-upsert.ts"
+      "types": "./src/search/vectorize-upsert.ts",
+      "default": "./src/search/vectorize-upsert.ts"
     },
     "./idempotency": {
-      "types": "./src/idempotency.ts",
-      "default": "./src/idempotency.ts"
+      "types": "./src/execution/idempotency.ts",
+      "default": "./src/execution/idempotency.ts"
     },
     "./idempotency-store": {
-      "types": "./src/idempotency-store.ts",
-      "default": "./src/idempotency-store.ts"
+      "types": "./src/execution/idempotency-store.ts",
+      "default": "./src/execution/idempotency-store.ts"
     },
     "./host-allowlist": {
-      "types": "./src/host-allowlist.ts",
-      "default": "./src/host-allowlist.ts"
+      "types": "./src/sources/host-allowlist.ts",
+      "default": "./src/sources/host-allowlist.ts"
     },
     "./openapi-operations": {
-      "types": "./src/openapi-operations.ts",
-      "default": "./src/openapi-operations.ts"
+      "types": "./src/sources/openapi-operations.ts",
+      "default": "./src/sources/openapi-operations.ts"
     },
     "./openapi-sync": {
-      "types": "./src/openapi-sync.ts",
-      "default": "./src/openapi-sync.ts"
+      "types": "./src/sources/openapi-sync.ts",
+      "default": "./src/sources/openapi-sync.ts"
     },
     "./remote-mcp-sync": {
-      "types": "./src/remote-mcp-sync.ts",
-      "default": "./src/remote-mcp-sync.ts"
+      "types": "./src/sources/remote-mcp-sync.ts",
+      "default": "./src/sources/remote-mcp-sync.ts"
     },
     "./remote-mcp-protocol": {
-      "types": "./src/remote-mcp-protocol.ts",
-      "default": "./src/remote-mcp-protocol.ts"
+      "types": "./src/sources/remote-mcp-protocol.ts",
+      "default": "./src/sources/remote-mcp-protocol.ts"
     }
   },
   "scripts": {

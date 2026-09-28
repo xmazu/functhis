@@ -41,7 +41,7 @@ In-process Node, **direct TCP** Postgres (`127.0.0.1:5432/integration`).
 | `src/harness/seed.ts` | Integration user + CLI deploy bearer token |
 | `src/harness/memory-kv.ts` | In-memory `BUNDLES.put` stub |
 | `src/harness/mcp-env.ts` | `Env` stub for `dispatchExecute` (Hyperdrive URL + memory HOT) |
-| `src/harness/fetch-stub.ts` | Stub `globalThis.fetch` for federated execute |
+| `src/harness/fetch-stub.ts` | Stub `globalThis.fetch` for external HTTP execute |
 | `src/db/*.test.ts` | Fast Postgres composition chunks |
 | `src/search/*.test.ts` | Frozen search eval corpus (offline ranking) |
 
