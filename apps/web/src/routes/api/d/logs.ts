@@ -59,6 +59,8 @@ export const Route = createFileRoute('/api/d/logs')({
               Math.max(Number(url.searchParams.get('size') ?? 50), 1),
               MAX_PAGE_SIZE
             ),
+            sortDirection:
+              url.searchParams.get('sortDirection') === 'asc' ? 'asc' : 'desc',
             startTime: parseDate(url.searchParams.get('startTime')),
           }
         );

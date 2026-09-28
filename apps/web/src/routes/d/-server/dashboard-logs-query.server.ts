@@ -49,6 +49,7 @@ export interface DashboardLogsQueryInput {
   message?: string;
   packageSlug?: string;
   size?: number;
+  sortDirection?: 'asc' | 'desc';
   startTime?: string;
 }
 
@@ -128,6 +129,7 @@ export const fetchDashboardLogs = async (
       message: input.message,
       organizationId,
       packageSlug: input.packageSlug,
+      sortDirection: input.sortDirection,
       startTime,
     }
   );
@@ -169,8 +171,12 @@ export const fetchDashboardLogs = async (
     timestamp: String(record.timestamp ?? record._time ?? ''),
     versionId: String(record.versionId ?? record.ft_version_id ?? ''),
   }));
-  const last = data.at(-1)?.timestamp ?? null;
+  const lastAxiom = axiomResult.records.at(-1);
+  const lastTimestamp = lastAxiom
+    ? String(lastAxiom.timestamp ?? lastAxiom._time ?? '')
+    : '';
   const first = data[0]?.timestamp ?? null;
+  const fetchedFullPage = axiomResult.records.length === limit;
 
   return {
     data,
@@ -179,7 +185,8 @@ export const fetchDashboardLogs = async (
       facets: {},
       totalRowCount: data.length,
     },
-    nextCursor: data.length === records.length ? last : null,
+    nextCursor:
+      fetchedFullPage && lastTimestamp.length > 0 ? lastTimestamp : null,
     prevCursor: first,
   };
 };

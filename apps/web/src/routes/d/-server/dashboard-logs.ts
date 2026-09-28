@@ -16,6 +16,7 @@ const listInputSchema = z.object({
   message: z.string().optional(),
   packageSlug: z.string().optional(),
   size: z.number().int().min(1).max(MAX_PAGE_SIZE).optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
   startTime: z.string().optional(),
 });
 

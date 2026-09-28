@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   aplJsonFieldSearch,
+  aplJsonFieldSearchAny,
   aplSearch,
   filterDashboardTelemetryRecords,
   filterTelemetryRecordsByPackages,
@@ -76,7 +77,12 @@ describe('buildAxiomLogQuery', () => {
     expect(query).toContain('search "org-1"');
     expect(query).not.toContain('"type":"log"');
     expect(query).toContain('search "\\"handle\\":\\"acme\\""');
-    expect(query).toContain('search "\\"level\\":\\"error\\""');
+    expect(query).toContain(
+      'search "\\"level\\":\\"error\\"" or "\\"level\\":\\"warn\\""'
+    );
+    expect(query).not.toContain(
+      'search "\\"level\\":\\"error\\"" | search "\\"level\\":\\"warn\\""'
+    );
     expect(query).toContain('search "failed"');
     expect(query).toContain('_time < datetime(');
     expect(query).toContain('sort by _time desc');
@@ -93,6 +99,17 @@ describe('buildAxiomLogQuery', () => {
 
     expect(query).toContain('search "execution-1"');
     expect(query).toContain('limit 1');
+  });
+
+  test('sorts oldest first and pages forward from the cursor', () => {
+    const query = buildAxiomLogQuery({
+      cursor: '2026-09-28T00:00:00.000Z',
+      organizationId: 'org-1',
+      sortDirection: 'asc',
+    });
+
+    expect(query).toContain('_time > datetime(');
+    expect(query).toContain('sort by _time asc');
   });
 });
 
@@ -119,6 +136,13 @@ describe('axiom apl helpers', () => {
     expect(aplJsonFieldSearch('handle', 'acme')).toBe(
       'search "\\"handle\\":\\"acme\\""'
     );
+    expect(aplJsonFieldSearchAny('level', ['error', 'warn', 'error'])).toBe(
+      'search "\\"level\\":\\"error\\"" or "\\"level\\":\\"warn\\""'
+    );
+    expect(aplJsonFieldSearchAny('level', ['error'])).toBe(
+      'search "\\"level\\":\\"error\\""'
+    );
+    expect(aplJsonFieldSearchAny('level', ['', '  '])).toBeNull();
   });
 
   test('classifies telemetry records', () => {

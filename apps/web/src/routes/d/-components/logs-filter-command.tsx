@@ -2,6 +2,7 @@
 'use client';
 
 import { IconSearch, IconX } from '@tabler/icons-react';
+import { formatDistanceToNow } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react';
 
@@ -15,6 +16,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '#/components/ui/command';
+import { Kbd } from '#/components/ui/kbd';
 import { Separator } from '#/components/ui/separator';
 import { Spinner } from '#/components/ui/spinner';
 import { cn } from '#/lib/utils';
@@ -45,10 +47,8 @@ const boxClassName = cn(
   'h-8 w-full justify-start gap-2 px-2.5 font-normal shadow-none'
 );
 
-const Kbd = ({ children }: { children: ReactNode }): ReactElement => (
-  <kbd className="bg-muted rounded border px-1 font-sans text-[10px]">
-    {children}
-  </kbd>
+const HintKbd = ({ children }: { children: ReactNode }): ReactElement => (
+  <Kbd>{children}</Kbd>
 );
 
 const readHistory = (): SearchHistoryItem[] => {
@@ -119,7 +119,6 @@ export const LogsFilterCommand = ({
   onFiltersChange,
 }: LogsFilterCommandProps): ReactElement => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const isSerializingRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
   const [inputValue, setInputValue] = useState(() =>
@@ -127,32 +126,44 @@ export const LogsFilterCommand = ({
   );
   const [lastSearches, setLastSearches] = useState<SearchHistoryItem[]>([]);
 
-  useEffect(() => {
-    if (isSerializingRef.current) {
-      isSerializingRef.current = false;
-      return;
-    }
-    if (currentWord !== '' && open) {
-      return;
-    }
-    if (currentWord !== '' && !open) {
-      setCurrentWord('');
-    }
-    if (inputValue.trim() === '' && !open) {
-      return;
-    }
-
-    const next = parseLogsFilterInput(inputValue);
+  const commitFilters = (value = inputValue): void => {
+    const next = parseLogsFilterInput(value);
     if (!logsFiltersEqual(next, filters)) {
       onFiltersChange(next);
     }
-  }, [currentWord, filters, inputValue, onFiltersChange, open]);
+  };
+
+  const rememberSearch = (search: string): void => {
+    const trimmed = search.trim();
+    if (!trimmed) {
+      return;
+    }
+    const timestamp = Date.now();
+    const next = [...lastSearches];
+    const existingIndex = next.findIndex((item) => item.search === trimmed);
+    if (existingIndex === -1) {
+      next.push({ search: trimmed, timestamp });
+    } else {
+      const existing = next[existingIndex];
+      if (existing) {
+        existing.timestamp = timestamp;
+      }
+    }
+    setLastSearches(next);
+    writeHistory(next);
+  };
+
+  const closeEditor = (): void => {
+    setOpen(false);
+    rememberSearch(inputValue);
+    commitFilters();
+  };
 
   useEffect(() => {
-    if (!open) {
-      isSerializingRef.current = true;
-      setInputValue(serializeLogsFilters(filters));
+    if (open) {
+      return;
     }
+    setInputValue(serializeLogsFilters(filters));
   }, [filters, open]);
 
   useEffect(() => {
@@ -179,39 +190,17 @@ export const LogsFilterCommand = ({
     }
   }, [open]);
 
-  const rememberSearch = (search: string): void => {
-    const trimmed = search.trim();
-    if (!trimmed) {
-      return;
-    }
-    const timestamp = Date.now();
-    const next = [...lastSearches];
-    const existingIndex = next.findIndex((item) => item.search === trimmed);
-    if (existingIndex === -1) {
-      next.push({ search: trimmed, timestamp });
-    } else {
-      const existing = next[existingIndex];
-      if (existing) {
-        existing.timestamp = timestamp;
-      }
-    }
-    setLastSearches(next);
-    writeHistory(next);
-  };
-
-  const openEditor = (): void => {
-    setOpen(true);
-  };
-
   return (
-    <div>
+    <div className="min-w-0 flex-1">
       <button
         className={cn(
           boxClassName,
           'text-muted-foreground',
           open ? 'hidden' : 'visible'
         )}
-        onClick={openEditor}
+        onClick={() => {
+          setOpen(true);
+        }}
         type="button"
       >
         {isLoading ? (
@@ -227,8 +216,8 @@ export const LogsFilterCommand = ({
           )}
         </span>
         <span className="text-muted-foreground ml-auto inline-flex items-center gap-0.5">
-          <Kbd>⌘</Kbd>
-          <Kbd>K</Kbd>
+          <HintKbd>⌘</HintKbd>
+          <HintKbd>K</HintKbd>
         </span>
       </button>
       <Command
@@ -250,8 +239,7 @@ export const LogsFilterCommand = ({
           <CommandInput
             className="text-foreground"
             onBlur={() => {
-              setOpen(false);
-              rememberSearch(inputValue);
+              closeEditor();
             }}
             onInput={(event) => {
               const caretPosition = event.currentTarget.selectionStart ?? -1;
@@ -260,6 +248,12 @@ export const LogsFilterCommand = ({
             }}
             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === 'Escape') {
+                inputRef.current?.blur();
+                return;
+              }
+              if (event.key === 'Enter' && currentWord.trim() === '') {
+                event.preventDefault();
+                closeEditor();
                 inputRef.current?.blur();
               }
             }}
@@ -361,6 +355,11 @@ export const LogsFilterCommand = ({
                       value={`suggestion:${item.search}`}
                     >
                       {item.search}
+                      <span className="text-muted-foreground/80 ml-auto truncate">
+                        {formatDistanceToNow(item.timestamp, {
+                          addSuffix: true,
+                        })}
+                      </span>
                       <button
                         className="hover:bg-background ml-auto hidden p-0.5 group-aria-selected:block"
                         onClick={(event) => {
@@ -388,23 +387,23 @@ export const LogsFilterCommand = ({
             <div className="bg-muted/30 text-muted-foreground flex flex-wrap justify-between gap-3 border-t px-2 py-1.5 text-[length:var(--app-font-size-ui,12px)]">
               <div className="flex flex-wrap gap-3">
                 <span>
-                  Use <Kbd>↑</Kbd> <Kbd>↓</Kbd> to navigate
+                  Use <HintKbd>↑</HintKbd> <HintKbd>↓</HintKbd> to navigate
                 </span>
                 <span>
-                  <Kbd>Enter</Kbd> to query
+                  <HintKbd>Enter</HintKbd> to query
                 </span>
                 <span>
-                  <Kbd>Esc</Kbd> to close
+                  <HintKbd>Esc</HintKbd> to close
                 </span>
                 <Separator
                   className="data-[orientation=vertical]:h-3"
                   orientation="vertical"
                 />
                 <span>
-                  Union: <Kbd>level:error,warn</Kbd>
+                  Union: <HintKbd>level:error,warn</HintKbd>
                 </span>
                 <span>
-                  Spaces: <Kbd>message:&quot;a b&quot;</Kbd>
+                  Spaces: <HintKbd>message:&quot;a b&quot;</HintKbd>
                 </span>
               </div>
               {lastSearches.length > 0 ? (

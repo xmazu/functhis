@@ -4,12 +4,18 @@ import {
   readAxiomQueryRecords,
   resolveAxiomBindings,
 } from './axiom';
-import { aplJsonFieldSearch, aplSearch } from './axiom-apl';
+import {
+  aplJsonFieldSearch,
+  aplJsonFieldSearchAny,
+  aplSearch,
+} from './axiom-apl';
 
 export type AxiomLogsQueryResult =
   | { kind: 'not_configured' }
   | { kind: 'query_failed' }
   | { kind: 'ok'; records: Record<string, unknown>[] };
+
+export type AxiomLogSortDirection = 'asc' | 'desc';
 
 export interface AxiomLogQuery {
   cursor?: string;
@@ -23,6 +29,7 @@ export interface AxiomLogQuery {
   organizationId: string;
   packages?: readonly { handle: string; packageSlug: string }[];
   packageSlug?: string;
+  sortDirection?: AxiomLogSortDirection;
   startTime?: Date;
 }
 
@@ -30,6 +37,8 @@ const quote = (value: string): string => JSON.stringify(value);
 
 export const buildAxiomLogQuery = (input: AxiomLogQuery): string => {
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
+  const sortDirection: AxiomLogSortDirection =
+    input.sortDirection === 'asc' ? 'asc' : 'desc';
   const steps = [aplSearch(input.organizationId)];
 
   if (input.executionId) {
@@ -42,10 +51,11 @@ export const buildAxiomLogQuery = (input: AxiomLogQuery): string => {
   if (input.packageSlug) {
     steps.push(aplJsonFieldSearch('packageSlug', input.packageSlug));
   }
-  if (input.level && input.level.length > 0) {
-    for (const level of input.level) {
-      steps.push(aplJsonFieldSearch('level', level));
-    }
+  const levelClause = input.level
+    ? aplJsonFieldSearchAny('level', input.level)
+    : null;
+  if (levelClause) {
+    steps.push(levelClause);
   }
   if (input.functionSlug) {
     steps.push(aplJsonFieldSearch('functionSlug', input.functionSlug));
@@ -56,13 +66,14 @@ export const buildAxiomLogQuery = (input: AxiomLogQuery): string => {
 
   const filters: string[] = [];
   if (input.cursor) {
-    filters.push(`_time < datetime(${quote(input.cursor)})`);
+    const operator = sortDirection === 'asc' ? '>' : '<';
+    filters.push(`_time ${operator} datetime(${quote(input.cursor)})`);
   }
 
   const filterClause =
     filters.length > 0 ? ` | where ${filters.join(' and ')}` : '';
 
-  return `${steps.join(' | ')}${filterClause} | sort by _time desc | limit ${limit}`;
+  return `${steps.join(' | ')}${filterClause} | sort by _time ${sortDirection} | limit ${limit}`;
 };
 
 export {

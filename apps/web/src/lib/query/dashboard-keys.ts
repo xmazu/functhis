@@ -7,6 +7,14 @@ export const dashboardKeys = {
       packageSlug,
       executionId,
     ] as const,
+  logs: (input: {
+    endTime?: string;
+    level?: string;
+    message?: string;
+    packageSlug?: string;
+    sortDirection: 'asc' | 'desc';
+    startTime?: string;
+  }) => ['dashboard', 'logs', input] as const,
   orgSecrets: (organizationId: string) =>
     ['dashboard', 'org-secrets', organizationId] as const,
   orgUsage: (organizationId: string) =>

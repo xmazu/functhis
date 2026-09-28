@@ -1,29 +1,29 @@
 import { IconRefresh } from '@tabler/icons-react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import type { SortingState } from '@tanstack/react-table';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { Button } from '#/components/ui/button';
+import { TooltipProvider } from '#/components/ui/tooltip';
 import { messageFromUnknown } from '#/lib/errors/dashboard';
-import { cn } from '#/lib/utils';
+import { dashboardKeys } from '#/lib/query/dashboard-keys';
 import { LogDetailsSheet } from '#/routes/d/-components/log-details-sheet';
+import { LogsDataTable } from '#/routes/d/-components/logs-data-table';
+import { LogsDatePicker } from '#/routes/d/-components/logs-date-picker';
+import type { LogsDateRange } from '#/routes/d/-components/logs-date-picker';
 import { LogsFilterCommand } from '#/routes/d/-components/logs-filter-command';
 import type { LogsFilterValues } from '#/routes/d/-lib/logs-filter-parser';
+import type { LogsTableRow } from '#/routes/d/-lib/logs-table-row';
 import {
   getDashboardLogExecutionForSession,
   listDashboardLogsForSession,
 } from '#/routes/d/-server/dashboard-logs';
+import type { DashboardLogsListResult } from '#/routes/d/-server/dashboard-logs-query.server';
 
-interface LogRow {
-  executionId: string;
-  functionSlug: string;
-  handle: string;
-  level: string;
-  message: string;
-  packageSlug: string;
-  timestamp: string;
-  versionId: string;
-}
+const ui =
+  'text-[length:var(--app-font-size-ui,12px)] leading-[var(--app-density-line-height,1.25)]';
 
 interface ExecutionPayload {
   input: string | null;
@@ -31,64 +31,65 @@ interface ExecutionPayload {
   status: string | null;
 }
 
-const levelClassName = (level: string): string => {
-  if (level === 'error') {
-    return 'text-destructive';
-  }
-  if (level === 'warn' || level === 'warning') {
-    return 'text-warning';
-  }
-  return 'text-muted-foreground';
+const DEFAULT_SORTING: SortingState = [{ desc: true, id: 'timestamp' }];
+
+const sortDirectionFromState = (sorting: SortingState): 'asc' | 'desc' => {
+  const timestampSort = sorting.find((entry) => entry.id === 'timestamp');
+  return timestampSort?.desc === false ? 'asc' : 'desc';
 };
 
 const LogsPage = (): ReactElement => {
-  const [rows, setRows] = useState<LogRow[]>([]);
   const [filters, setFilters] = useState<LogsFilterValues>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<LogRow | null>(null);
+  const [dateRange, setDateRange] = useState<LogsDateRange>({});
+  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
+  const [selected, setSelected] = useState<LogsTableRow | null>(null);
   const [payload, setPayload] = useState<ExecutionPayload | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  const fetchLogs = useCallback(
-    async ({
-      append,
-      cursor,
-    }: {
-      append: boolean;
-      cursor?: string;
-    }): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await listDashboardLogsForSession({
-          data: {
-            cursor,
-            level: filters.level?.trim() || undefined,
-            message: filters.message?.trim() || undefined,
-            packageSlug: filters.package?.trim() || undefined,
-            size: 50,
-          },
-        });
-        setRows((current) =>
-          append ? [...current, ...result.data] : result.data
-        );
-        setNextCursor(result.nextCursor);
-        setLoading(false);
-      } catch (caughtError) {
-        setError(messageFromUnknown(caughtError));
-        setLoading(false);
-      }
-    },
-    [filters]
+  const sortDirection = sortDirectionFromState(sorting);
+  const queryKey = dashboardKeys.logs({
+    endTime: dateRange.endTime,
+    level: filters.level,
+    message: filters.message,
+    packageSlug: filters.package,
+    sortDirection,
+    startTime: dateRange.startTime,
+  });
+
+  const logsQuery = useInfiniteQuery({
+    getNextPageParam: (lastPage: DashboardLogsListResult) =>
+      lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }): Promise<DashboardLogsListResult> =>
+      listDashboardLogsForSession({
+        data: {
+          cursor: pageParam,
+          endTime: dateRange.endTime,
+          level: filters.level?.trim() || undefined,
+          message: filters.message?.trim() || undefined,
+          packageSlug: filters.package?.trim() || undefined,
+          size: 50,
+          sortDirection,
+          startTime: dateRange.startTime,
+        },
+      }) as Promise<DashboardLogsListResult>,
+    queryKey,
+  });
+
+  const rows = useMemo(
+    () => logsQuery.data?.pages.flatMap((page) => page.data) ?? [],
+    [logsQuery.data]
   );
 
-  useEffect(() => {
-    const run = async (): Promise<void> => {
-      await fetchLogs({ append: false });
-    };
-    void run();
-  }, [fetchLogs]);
+  const error = logsQuery.error ? messageFromUnknown(logsQuery.error) : null;
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = logsQuery;
+
+  const onLoadMore = useCallback(() => {
+    if (isFetchingNextPage || !hasNextPage) {
+      return;
+    }
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
     const run = async (): Promise<void> => {
@@ -108,116 +109,72 @@ const LogsPage = (): ReactElement => {
     void run();
   }, [selected]);
 
+  const selectedRowId = selected
+    ? `${selected.executionId}-${selected.timestamp}`
+    : null;
+
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="mx-auto flex w-full max-w-[1400px] min-w-0 flex-1 flex-col gap-4 p-4 md:p-6">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-medium">Logs</h1>
-            <p className="text-muted-foreground text-sm">
-              Search console output across your packages.
-            </p>
+    <TooltipProvider>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1400px] flex-1 flex-col gap-3 p-4 md:p-6">
+          <header className="flex shrink-0 flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className={`${ui} font-medium`}>Logs</h1>
+              <p className={`${ui} text-muted-foreground`}>
+                Search console output across your packages.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                void logsQuery.refetch();
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <IconRefresh data-icon="inline-start" />
+              Refresh
+            </Button>
+          </header>
+
+          <div className="flex shrink-0 items-start gap-2">
+            <LogsFilterCommand
+              filters={filters}
+              isLoading={logsQuery.isFetching}
+              onFiltersChange={setFilters}
+            />
+            <LogsDatePicker onChange={setDateRange} value={dateRange} />
           </div>
-          <Button
-            onClick={async () => {
-              await fetchLogs({ append: false });
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <IconRefresh data-icon="inline-start" />
-            Refresh
-          </Button>
-        </header>
 
-        <LogsFilterCommand
-          filters={filters}
-          isLoading={loading}
-          onFiltersChange={setFilters}
-        />
-
-        {error ? (
-          <div className="border-destructive/30 bg-destructive/5 text-destructive rounded-md border p-4 text-sm">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="bg-card min-h-0 overflow-auto rounded-md border">
-          <table className="w-full min-w-[900px] text-left text-xs">
-            <thead className="bg-card text-muted-foreground sticky top-0 z-10 border-b">
-              <tr>
-                <th className="w-44 px-3 py-2 font-medium">Timestamp</th>
-                <th className="w-20 px-3 py-2 font-medium">Level</th>
-                <th className="w-56 px-3 py-2 font-medium">Package</th>
-                <th className="w-56 px-3 py-2 font-medium">Function</th>
-                <th className="px-3 py-2 font-medium">Message</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((row, index) => (
-                <tr
-                  className="hover:bg-muted/50 cursor-pointer"
-                  key={`${row.executionId}-${row.timestamp}-${index}`}
-                  onClick={() => setSelected(row)}
-                >
-                  <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
-                    {new Date(row.timestamp).toLocaleString()}
-                  </td>
-                  <td
-                    className={cn(
-                      'px-3 py-2 font-medium',
-                      levelClassName(row.level)
-                    )}
-                  >
-                    {row.level}
-                  </td>
-                  <td className="px-3 py-2">
-                    @{row.handle}/{row.packageSlug}
-                  </td>
-                  <td className="px-3 py-2 font-mono">{row.functionSlug}</td>
-                  <td className="max-w-[520px] truncate px-3 py-2">
-                    {row.message}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!loading && rows.length === 0 ? (
-            <div className="text-muted-foreground p-10 text-center text-sm">
-              No logs match the current filters.
+          {error ? (
+            <div className="border-destructive/30 bg-destructive/5 text-destructive rounded-md border p-4">
+              {error}
             </div>
           ) : null}
-          {loading ? (
-            <div className="text-muted-foreground p-4 text-center text-sm">
-              Loading logs...
-            </div>
-          ) : null}
+
+          <LogsDataTable
+            data={rows}
+            hasNextPage={Boolean(hasNextPage)}
+            isFetching={isFetchingNextPage}
+            isLoading={logsQuery.isLoading}
+            onLoadMore={onLoadMore}
+            onRowClick={setSelected}
+            onSortingChange={setSorting}
+            selectedRowId={selectedRowId}
+            sorting={sorting}
+          />
         </div>
 
-        {nextCursor ? (
-          <Button
-            className="self-center"
-            disabled={loading}
-            onClick={async () => {
-              await fetchLogs({ append: true, cursor: nextCursor });
-            }}
-            variant="outline"
-          >
-            Load older logs
-          </Button>
-        ) : null}
-      </div>
-
-      <LogDetailsSheet
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelected(null);
-          }
-        }}
-        payload={payload}
-        selected={selected}
-      />
-    </main>
+        <LogDetailsSheet
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelected(null);
+            }
+          }}
+          payload={payload}
+          selected={selected}
+        />
+      </main>
+    </TooltipProvider>
   );
 };
 

@@ -23,6 +23,31 @@ export const aplSearch = (term: string): string => `search ${quote(term)}`;
 export const aplJsonFieldSearch = (field: string, value: string): string =>
   aplSearch(`${JSON.stringify(field)}:${JSON.stringify(value)}`);
 
+export const aplJsonFieldSearchAny = (
+  field: string,
+  values: readonly string[]
+): string | null => {
+  const unique: string[] = [];
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || unique.includes(trimmed)) {
+      continue;
+    }
+    unique.push(trimmed);
+  }
+  if (unique.length === 0) {
+    return null;
+  }
+  if (unique.length === 1) {
+    const [only] = unique;
+    return only ? aplJsonFieldSearch(field, only) : null;
+  }
+  const terms = unique.map((value) =>
+    quote(`${JSON.stringify(field)}:${JSON.stringify(value)}`)
+  );
+  return `search ${terms.join(' or ')}`;
+};
+
 export const telemetryEventType = (
   record: Record<string, unknown>
 ): string | null => {
