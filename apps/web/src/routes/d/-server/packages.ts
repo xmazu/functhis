@@ -23,6 +23,13 @@ import { getDb } from '#/services';
 
 import { buildPackageDetailViewModel } from './package-detail-view-model';
 
+const retentionCutoffForPlan = (logRetentionDays: number): Date | undefined => {
+  if (logRetentionDays === 0) {
+    return undefined;
+  }
+  return new Date(Date.now() - logRetentionDays * 86_400_000);
+};
+
 const countCallsByPackageIds = async (
   database: Database,
   packageIds: string[]
@@ -92,18 +99,13 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
     const isOwner = catalog.ownerUserId === userId;
     const plan = await resolveOrgPlan(database, catalog.organizationId);
     const { logRetentionDays } = limitsForPlan(plan);
-    const retentionCutoff =
-      logRetentionDays === 0
-        ? undefined
-        : new Date(Date.now() - logRetentionDays * 86_400_000);
+    const retentionCutoff = retentionCutoffForPlan(logRetentionDays);
     const [executions, packageSecrets, orgSecrets, canWriteSecrets] =
       await Promise.all([
-        logRetentionDays === 0
-          ? Promise.resolve([])
-          : listPackageExecutions(database, catalog.id, {
-              limit: 20,
-              retentionCutoff,
-            }),
+        listPackageExecutions(database, catalog.id, {
+          limit: 20,
+          retentionCutoff,
+        }),
         listPackageSecrets(database, userId, catalog),
         listOrganizationSecrets(database, userId, catalog.organizationId),
         canWritePackageSecrets(database, userId, catalog),

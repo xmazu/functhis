@@ -16,7 +16,7 @@ describe('plan catalog', () => {
   test('keeps pricing retention aligned with plan limits', () => {
     expect(FUNCTHIS_PLANS.developer.limits.logRetentionDays).toBe(7);
     expect(FUNCTHIS_PLANS.team.limits.logRetentionDays).toBe(30);
-    expect(FUNCTHIS_PLANS.trial.limits.logRetentionDays).toBe(0);
+    expect(FUNCTHIS_PLANS.trial.limits.logRetentionDays).toBe(3);
   });
 
   test('keeps package, execution, and Stripe price limits explicit', () => {

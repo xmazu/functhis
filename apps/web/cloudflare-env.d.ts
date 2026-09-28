@@ -2,6 +2,8 @@ interface CloudflareEnv {
   ANALYTICS_ENGINE_READ_TOKEN?: string;
   AXIOM_API_TOKEN?: string;
   AXIOM_DATASET?: string;
+  AXIOM_EDGE?: string;
+  AXIOM_EDGE_URL?: string;
   ARTIFACTS: R2Bucket;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;

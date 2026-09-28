@@ -1,3 +1,4 @@
+import { createDb } from '@functhis/db';
 import type { DatabaseConfig, SecretBinding } from '@functhis/db';
 import {
   createRuntimeModuleSource,
@@ -9,6 +10,7 @@ import {
   AXIOM_MAX_INPUT_BYTES,
   AXIOM_MAX_OUTPUT_BYTES,
   buildExecutionEvent,
+  buildExecutionLifecycleLogs,
   capTelemetryValue,
   ingestAxiomEvents,
   resolveAxiomBindings,
@@ -28,6 +30,7 @@ import {
   WORKER_COMPATIBILITY_DATE,
 } from './constants';
 import { insertExecutionRow } from './execution-store';
+import { limitsForPlan, resolveOrgPlan } from './org-entitlements';
 import {
   assertExecuteResponseSize,
   ExecutePayloadTooLargeError,
@@ -88,9 +91,18 @@ export type WorkerExecuteBindings = DatabaseConfig & {
   ANALYTICS: ExecuteAnalyticsBinding;
   AXIOM_API_TOKEN?: SecretBinding;
   AXIOM_DATASET?: string;
+  AXIOM_EDGE?: string;
+  AXIOM_EDGE_URL?: string;
   BUNDLES: ExecuteBundlesKv;
+  FUNCTHIS_SKIP_AXIOM_TAIL?: string;
   LOADER: ExecuteWorkerLoader;
 };
+
+export const shouldSkipAxiomTail = (
+  bindings: Pick<WorkerExecuteBindings, 'FUNCTHIS_SKIP_AXIOM_TAIL'>
+): boolean =>
+  bindings.FUNCTHIS_SKIP_AXIOM_TAIL === 'true' ||
+  bindings.FUNCTHIS_SKIP_AXIOM_TAIL === '1';
 
 export const loadStoredBundle = async (
   bindings: Pick<WorkerExecuteBindings, 'BUNDLES'>,
@@ -151,13 +163,21 @@ export interface DynamicRunResult {
 export const runDynamicWorker = async (
   bindings: Pick<
     WorkerExecuteBindings,
-    'AXIOM_API_TOKEN' | 'AXIOM_DATASET' | 'LOADER'
+    | 'AXIOM_API_TOKEN'
+    | 'AXIOM_DATASET'
+    | 'AXIOM_EDGE'
+    | 'AXIOM_EDGE_URL'
+    | 'FUNCTHIS_SKIP_AXIOM_TAIL'
+    | 'LOADER'
   >,
   input: {
     bundle: WorkerLoaderBundleShape;
     callerUserId?: string | null;
     executionId: string;
     functionSlug?: string;
+    handle?: string;
+    organizationId?: string;
+    packageSlug?: string;
     requestBytes: number;
     runInput: unknown;
     runtimeSecrets?: Record<string, string>;
@@ -170,6 +190,7 @@ export const runDynamicWorker = async (
   };
   const functionSlug = input.functionSlug ?? '';
   const axiom = await resolveAxiomBindings(bindings);
+  const attachAxiomTail = axiom !== null && !shouldSkipAxiomTail(bindings);
 
   const worker = bindings.LOADER.get(
     dynamicWorkerLoaderId(input.versionId),
@@ -183,7 +204,7 @@ export const runDynamicWorker = async (
         ...input.bundle.modules,
         [RUNTIME_MODULE_ID]: createRuntimeModuleSource(),
       }),
-      tails: axiom
+      tails: attachAxiomTail
         ? [
             bindings.LOADER.get(`axiom-tail:${input.versionId}`, () => ({
               compatibilityDate: WORKER_COMPATIBILITY_DATE,
@@ -191,9 +212,14 @@ export const runDynamicWorker = async (
               env: {
                 AXIOM_API_TOKEN: axiom.token,
                 AXIOM_DATASET: axiom.dataset,
+                AXIOM_EDGE: bindings.AXIOM_EDGE ?? '',
+                HANDLE: input.handle ?? '',
+                ORGANIZATION_ID: input.organizationId ?? '',
+                PACKAGE_SLUG: input.packageSlug ?? '',
                 REDACTION_SECRETS: JSON.stringify(
                   Object.values(input.runtimeSecrets ?? {})
                 ),
+                VERSION_ID: input.versionId,
               },
               limits,
               mainModule: AXIOM_TAIL_MODULE_ID,
@@ -233,6 +259,7 @@ export const runDynamicWorker = async (
     headers: {
       'content-type': 'application/json',
       'x-functhis-execution-id': input.executionId,
+      'x-functhis-function-slug': functionSlug,
     },
     method: 'POST',
   });
@@ -288,7 +315,9 @@ export const finalizeExecute = async (
   run: DynamicRunResult,
   organizationId: string,
   functionId: string | undefined,
-  executionId: string
+  executionId: string,
+  handle?: string,
+  packageSlug?: string
 ): Promise<Response> => {
   writeExecutionAnalytics(bindings, {
     callerUserId: parsed.callerUserId,
@@ -323,18 +352,45 @@ export const finalizeExecute = async (
       return run.responseText;
     }
   })();
-  void ingestAxiomEvents(bindings, [
-    buildExecutionEvent({
+
+  let logRetentionDays = 0;
+  try {
+    const database = await createDb(bindings);
+    const plan = await resolveOrgPlan(database, organizationId);
+    ({ logRetentionDays } = limitsForPlan(plan));
+  } catch {
+    // Best-effort plan lookup; execution response must still return.
+  }
+  if (logRetentionDays > 0) {
+    const executionEvent = buildExecutionEvent({
       executionId,
       functionSlug: parsed.functionSlug,
+      handle,
       input: capTelemetryValue(parsed.input, AXIOM_MAX_INPUT_BYTES),
       organizationId,
       output: capTelemetryValue(output, AXIOM_MAX_OUTPUT_BYTES),
+      packageSlug,
       secretValues: parsed.secretValues,
       status: run.status,
       versionId: parsed.versionId,
-    }),
-  ]);
+    });
+    await ingestAxiomEvents(bindings, [
+      executionEvent,
+      ...buildExecutionLifecycleLogs({
+        completedAt: run.completedAt.toISOString(),
+        executionId,
+        functionSlug: parsed.functionSlug,
+        handle,
+        input: executionEvent.input,
+        organizationId,
+        output: executionEvent.output,
+        packageSlug,
+        startedAt: run.startedAt.toISOString(),
+        status: run.status,
+        versionId: parsed.versionId,
+      }),
+    ]);
+  }
 
   if (run.tooLarge) {
     return Response.json({ error: 'too_large' }, { status: 413 });

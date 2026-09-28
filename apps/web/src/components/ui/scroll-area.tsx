@@ -34,6 +34,7 @@ export const ScrollArea = ({
   fill = false,
   clampContentMinWidth = true,
   overscrollContain = false,
+  viewportClassName,
   ...props
 }: ScrollAreaPrimitive.Root.Props & {
   scrollFade?: boolean;
@@ -41,6 +42,7 @@ export const ScrollArea = ({
   fill?: boolean;
   clampContentMinWidth?: boolean;
   overscrollContain?: boolean;
+  viewportClassName?: string;
 }): React.ReactElement => (
   <ScrollAreaPrimitive.Root
     className={cn('size-full min-h-0', className)}
@@ -48,13 +50,14 @@ export const ScrollArea = ({
   >
     <ScrollAreaPrimitive.Viewport
       className={cn(
-        'focus-visible:ring-ring focus-visible:ring-offset-background h-full rounded-[inherit] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+        'h-full rounded-[inherit] outline-none focus-visible:ring-0',
         overscrollContain &&
           'data-has-overflow-x:overscroll-x-contain data-has-overflow-y:overscroll-y-contain',
         scrollFade &&
           'mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] [--fade-size:1.5rem]',
         scrollbarGutter &&
-          'data-has-overflow-x:pb-2.5 data-has-overflow-y:pe-2.5'
+          'data-has-overflow-x:pb-2.5 data-has-overflow-y:pe-2.5',
+        viewportClassName
       )}
       data-slot="scroll-area-viewport"
     >

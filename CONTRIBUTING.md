@@ -15,7 +15,8 @@ How to run the platform locally, run tests, and try the example packages (includ
 bun install
 docker compose up -d
 cp packages/db/.env.example packages/db/.env   # if missing
-# apps/web/.env — BETTER_AUTH_* + GitHub OAuth (see README)
+cp apps/web/.env.example apps/web/.env   # if missing
+cp apps/mcp/.env.example apps/mcp/.env   # if missing
 bun run db:migrate:local
 ```
 

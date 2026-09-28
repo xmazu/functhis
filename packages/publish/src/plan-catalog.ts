@@ -51,7 +51,7 @@ export const FUNCTHIS_PLANS: Record<FuncthisPlanId, FuncthisPlan> = {
   trial: {
     description: 'Try the complete hosted workflow before you commit.',
     limits: {
-      logRetentionDays: 0,
+      logRetentionDays: 3,
       maxExecutionsPerMonth: 5000,
       maxPackages: 3,
     },

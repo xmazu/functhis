@@ -21,6 +21,14 @@ export {
   readAxiomQueryRecords,
   resolveAxiomBindings,
 } from './axiom';
+export {
+  buildAxiomLogQuery,
+  filterDashboardTelemetryRecords,
+  filterTelemetryRecordsByPackages,
+  queryAxiomLogs,
+  type AxiomLogQuery,
+  type AxiomLogsQueryResult,
+} from './axiom-logs';
 export { redactTelemetry, redactTelemetryJson } from './telemetry-redaction';
 export {
   StoredBundleLoadError,

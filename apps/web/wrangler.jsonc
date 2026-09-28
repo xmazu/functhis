@@ -34,6 +34,7 @@
   ],
   "vars": {
     "AXIOM_DATASET": "functhis_executions",
+    "AXIOM_EDGE": "eu-central-1.aws.edge.axiom.co",
     "CLOUDFLARE_ACCOUNT_ID": "",
     "NODE_ENV": "development",
     "BETTER_AUTH_URL": "http://localhost:3001",
@@ -126,6 +127,7 @@
       ],
       "vars": {
         "AXIOM_DATASET": "functhis_executions",
+        "AXIOM_EDGE": "eu-central-1.aws.edge.axiom.co",
         "CLOUDFLARE_ACCOUNT_ID": "",
         "NODE_ENV": "production",
         "BETTER_AUTH_URL": "https://functhis.now",

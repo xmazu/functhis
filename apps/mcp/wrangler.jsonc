@@ -7,7 +7,9 @@
   "workers_dev": false,
   "vars": {
     "AXIOM_DATASET": "functhis_executions",
+    "AXIOM_EDGE": "eu-central-1.aws.edge.axiom.co",
     "CONSOLE_URL": "http://localhost:3001",
+    "FUNCTHIS_SKIP_AXIOM_TAIL": "true",
     "MCP_RESOURCE": "http://localhost:3003",
   },
   "observability": {
@@ -56,6 +58,7 @@
       },
       "vars": {
         "AXIOM_DATASET": "functhis_executions",
+        "AXIOM_EDGE": "eu-central-1.aws.edge.axiom.co",
         "CONSOLE_URL": "https://functhis.now",
         "MCP_RESOURCE": "https://mcp.functhis.now",
       },

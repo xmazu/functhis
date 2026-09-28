@@ -48,9 +48,16 @@ DATABASE_URL=postgres://functhis:functhis@localhost:5432/functhis
 
 `bun run dev` reads this file and wires the Worker `HYPERDRIVE` binding to the same URL locally. Hyperdrive service itself is **not** used on your machine.
 
-### 3. App secrets
+### 3. Worker secrets (`.env` for both apps)
 
-**`apps/web/.env`** - OAuth + site (see [`apps/web/.env.schema`](apps/web/.env.schema)):
+Wrangler loads `.env` next to each app's `wrangler.jsonc`. Leave `.dev.vars` out of both app directories: when that file is present, Wrangler uses it and skips `.env`.
+
+```bash
+cp apps/web/.env.example apps/web/.env
+cp apps/mcp/.env.example apps/mcp/.env
+```
+
+Fill in both gitignored files. Generate the two random secrets in `apps/web/.env`, then copy `FUNCTHIS_SECRETS_KEY` and `AXIOM_API_TOKEN` into `apps/mcp/.env`:
 
 ```bash
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
@@ -59,20 +66,12 @@ BETTER_AUTH_URL=http://localhost:3001
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 TRUSTED_ORIGINS=http://localhost:3001,http://localhost:3003
-```
-
-Copy the same `FUNCTHIS_SECRETS_KEY` into `apps/mcp/.dev.vars` so hosted `secret()` injection works locally.
-
-For local detailed telemetry, add the Axiom dataset and token to **`apps/mcp/.dev.vars`** (ingest on execute) and **`apps/web/.dev.vars`** (dashboard execution payloads and logs):
-
-```bash
 AXIOM_API_TOKEN=...
-AXIOM_DATASET=functhis_executions
 ```
 
-`AXIOM_API_TOKEN` is secret-only; `AXIOM_DATASET` is the Wrangler variable. Without both values on the worker that needs them, execution still works but detailed payloads and logs are unavailable in that surface.
+`FUNCTHIS_SECRETS_KEY` must match in both files so MCP can decrypt secrets stored by the web app. `AXIOM_API_TOKEN` is the secret; `AXIOM_DATASET` stays in each `wrangler.jsonc` `vars` block. Without the token on the worker that needs it, execution still works, and detailed payloads and logs stay unavailable on that surface. [Varlock](apps/web/.env.schema) reads `apps/web/.env`. Restart `bun run dev` after editing either file.
 
-Detailed telemetry is correlated with Postgres and Workers Analytics Engine by one shared `executionId`. Axiom stores sanitized payloads only: input/output are capped at 32 KiB each, with at most 200 log records of 2 KiB each. Configure Axiom dataset retention to match the plan: trial 0 days, Developer 7 days, Team 30 days, and Enterprise by contract. A scheduled MCP cron cleanup is reserved for API-backed cleanup if dataset policy changes.
+Detailed telemetry is correlated with Postgres and Workers Analytics Engine by one shared `executionId`. Axiom stores sanitized payloads only: input/output are capped at 32 KiB each, with at most 200 log records of 2 KiB each. Configure Axiom dataset retention to match the plan: trial 3 days, Developer 7 days, Team 30 days, and Enterprise by contract. A scheduled MCP cron cleanup is reserved for API-backed cleanup if dataset policy changes.
 
 After editing any `.env.schema`, regenerate types:
 
@@ -207,13 +206,13 @@ import { Button } from '#/components/ui/button';
 
 ## Environment Configuration
 
-Each app owns its environment schema in `.env.schema`. Varlock generates `src/env.ts` on `bun install` and via `bun run env:generate`. Commit schemas; keep secrets in ignored `.env` files.
+Web and `packages/db` declare schemas in `.env.schema`. Varlock generates `src/env.ts` on `bun install` and via `bun run env:generate`. Both Workers keep local secrets in their own ignored `.env` file, next to `wrangler.jsonc`. Do not add a `.dev.vars` file beside either Worker.
 
 | Package | `.env` path | Purpose |
 | --- | --- | --- |
 | `packages/db` | `packages/db/.env` | `DATABASE_URL` - migrations + local dev DB |
-| `apps/web` | `apps/web/.env` | Better Auth + GitHub OAuth |
-| `apps/mcp` | `apps/mcp/.dev.vars` | Axiom token for detailed telemetry and local hosted secrets |
+| `apps/web` | `apps/web/.env` | Web Worker secrets (Wrangler + Varlock) |
+| `apps/mcp` | `apps/mcp/.env` | MCP Worker secrets |
 
 Worker bindings (`HYPERDRIVE`, etc.) come from Wrangler, not Varlock. Local dev reads `packages/db/.env` automatically via `scripts/run-with-local-database-url.ts` - no manual `CLOUDFLARE_HYPERDRIVE_*` export.
 
@@ -255,7 +254,7 @@ bun run deploy:production
 
 Organization Usage reads the `functhis_executions` Workers Analytics Engine dataset. Set `CLOUDFLARE_ACCOUNT_ID` and the web Worker's `ANALYTICS_ENGINE_READ_TOKEN` secret in production. The token needs the Cloudflare Account Analytics Read permission. Local usage remains unavailable unless both values are configured; execution quota enforcement continues to use Postgres. When deploying web, export `CLOUDFLARE_ACCOUNT_ID` (same value as Terraform `account_id`) so `bun run deploy:web:production` passes it to Wrangler via `--var`.
 
-Detailed execution telemetry uses `AXIOM_API_TOKEN` and `AXIOM_DATASET` on **`functhis-mcp`** (ingest) and **`functhis-web`** (owner execution detail queries). Configure the same dataset retention policy as the pricing window: trial 0 days, Developer 7 days, Team 30 days, and Enterprise by contract. Input/output telemetry is capped at 32 KiB each; Tail Worker logs are capped at 200 records and 2 KiB per record (`AXIOM_MAX_LOGS` / `AXIOM_MAX_LOG_BYTES` in `packages/publish/src/axiom.ts`). Cleanup is a scheduled operations task: Axiom dataset retention is the current enforcement mechanism, and the MCP scheduled hook is reserved for an idempotent API cleanup job if that policy changes.
+Detailed execution telemetry uses `AXIOM_API_TOKEN` and `AXIOM_DATASET` on **`functhis-mcp`** (ingest) and **`functhis-web`** (owner execution detail queries). Configure the same dataset retention policy as the pricing window: trial 3 days, Developer 7 days, Team 30 days, and Enterprise by contract. Input/output telemetry is capped at 32 KiB each; Tail Worker logs are capped at 200 records and 2 KiB per record (`AXIOM_MAX_LOGS` / `AXIOM_MAX_LOG_BYTES` in `packages/publish/src/axiom.ts`). Cleanup is a scheduled operations task: Axiom dataset retention is the current enforcement mechanism, and the MCP scheduled hook is reserved for an idempotent API cleanup job if that policy changes.
 
 Stripe price environment names are `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`. Enterprise is contract-priced and does not use a Stripe price environment variable.
 

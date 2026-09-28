@@ -2,6 +2,7 @@ import {
   IconArrowLeft,
   IconChartBar,
   IconKey,
+  IconListSearch,
   IconPackage,
   IconSettings,
 } from '@tabler/icons-react';
@@ -23,6 +24,12 @@ const NAV_ITEMS = [
     isActive: (pathname: string) => pathname === '/d' || pathname === '/d/',
     label: 'Packages',
     to: '/d',
+  },
+  {
+    icon: IconListSearch,
+    isActive: (pathname: string) => pathname === '/d/logs',
+    label: 'Logs',
+    to: '/d/logs',
   },
   {
     icon: IconSettings,

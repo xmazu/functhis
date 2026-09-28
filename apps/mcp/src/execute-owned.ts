@@ -188,6 +188,9 @@ export const executeOwnedFunction = async (
     callerUserId,
     executionId,
     functionSlug: parsedId.functionSlug,
+    handle: parsedId.handle,
+    organizationId: row.organizationId,
+    packageSlug: parsedId.packageSlug,
     requestBytes,
     runInput,
     runtimeSecrets,
@@ -209,7 +212,9 @@ export const executeOwnedFunction = async (
     run,
     row.organizationId,
     row.functionId,
-    executionId
+    executionId,
+    parsedId.handle,
+    parsedId.packageSlug
   );
 
   const responseText = await httpResponse.text();

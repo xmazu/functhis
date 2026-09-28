@@ -48,15 +48,37 @@ export default {
         if (!executionId) continue;
         records.push({
           executionId,
+          ft_event_type: 'log',
+          ft_execution_id: executionId,
+          ft_function_slug:
+            headers['x-functhis-function-slug'] ||
+            headers['X-Functhis-Function-Slug'] ||
+            '',
+          ft_handle: env.HANDLE || '',
+          ft_org_id: env.ORGANIZATION_ID || '',
+          ft_package_slug: env.PACKAGE_SLUG || '',
+          ft_version_id: env.VERSION_ID || '',
+          functionSlug:
+            headers['x-functhis-function-slug'] ||
+            headers['X-Functhis-Function-Slug'] ||
+            '',
+          handle: env.HANDLE || '',
           level: log.level || 'log',
           message,
+          organizationId: env.ORGANIZATION_ID || '',
+          packageSlug: env.PACKAGE_SLUG || '',
           timestamp: log.timestamp || new Date().toISOString(),
           type: 'log',
+          versionId: env.VERSION_ID || '',
         });
       }
     }
     if (records.length === 0) return;
-    const response = await fetch('https://api.axiom.co/v1/datasets/' + encodeURIComponent(env.AXIOM_DATASET) + '/ingest', {
+    const edge = (env.AXIOM_EDGE || '').replace(/^https?:\\/\\//, '').replace(/\\/$/, '');
+    const ingestUrl = edge
+      ? 'https://' + edge + '/v1/ingest/' + encodeURIComponent(env.AXIOM_DATASET)
+      : 'https://api.axiom.co/v1/datasets/' + encodeURIComponent(env.AXIOM_DATASET) + '/ingest';
+    const response = await fetch(ingestUrl, {
       method: 'POST',
       headers: { authorization: 'Bearer ' + env.AXIOM_API_TOKEN, 'content-type': 'application/json' },
       body: JSON.stringify(records),

@@ -123,8 +123,10 @@ const loadExecutionPayload = async (
     {
       AXIOM_API_TOKEN: env.AXIOM_API_TOKEN,
       AXIOM_DATASET: env.AXIOM_DATASET,
+      AXIOM_EDGE: env.AXIOM_EDGE,
+      AXIOM_EDGE_URL: env.AXIOM_EDGE_URL,
     },
-    `where executionId == ${JSON.stringify(executionId)} and organizationId == ${JSON.stringify(organizationId)} | sort by timestamp asc`,
+    `search ${JSON.stringify(executionId)} | search ${JSON.stringify(organizationId)} | sort by _time asc`,
     logRetentionDays
   );
   if (result === null) {
@@ -173,15 +175,6 @@ export const listExecutionsForSession = createServerFn({ method: 'GET' })
         authorized.catalog.organizationId
       );
       const { logRetentionDays } = limitsForPlan(plan);
-      if (logRetentionDays === 0) {
-        return {
-          available: true,
-          executions: [],
-          handle: authorized.catalog.handle,
-          packageSlug: authorized.catalog.packageSlug,
-        };
-      }
-
       const rows = await listPackageExecutions(
         authorized.database,
         authorized.catalog.id,

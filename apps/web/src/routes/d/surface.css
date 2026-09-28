@@ -108,6 +108,33 @@
     transparent
   );
   --seam-line: color-mix(in srgb, white 5%, transparent);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @theme inline {
@@ -169,7 +196,8 @@
 
 @layer base {
   [data-surface='dashboard'] *,
-  [data-surface='auth'] * {
+  [data-surface='auth'] *,
+  [data-surface='dashboard-overlay'] * {
     @apply border-border outline-ring/30;
   }
 
@@ -185,10 +213,16 @@
 
   [data-surface='dashboard-overlay'] {
     @apply text-foreground;
+    background: var(--background);
     font-family: var(--font-ui-family);
     font-size: var(--app-font-size-ui);
     letter-spacing: normal;
     line-height: var(--app-density-line-height);
+  }
+
+  [data-surface='dashboard-overlay'] [data-slot='scroll-area-viewport'] {
+    @apply rounded-none shadow-none outline-none focus-visible:ring-0;
+    --tw-ring-offset-width: 0;
   }
 }
 

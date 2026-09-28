@@ -323,13 +323,16 @@ describe('finalizeExecute', () => {
     }),
   };
 
+  const bindings = {
+    ANALYTICS: { writeDataPoint: () => {} },
+    BUNDLES: { get: () => Promise.resolve(null) },
+    HYPERDRIVE: { connectionString: 'postgres://invalid' },
+    LOADER: loader,
+  } as never;
+
   test('returns the worker response and swallows execution-row failures', async () => {
     const response = await finalizeExecute(
-      {
-        ANALYTICS: { writeDataPoint: () => {} },
-        BUNDLES: { get: () => Promise.resolve(null) },
-        LOADER: loader,
-      } as never,
+      bindings,
       {
         bundleHash: 'abcdefgh',
         functionSlug: 'hello',
@@ -356,11 +359,7 @@ describe('finalizeExecute', () => {
 
   test('returns 413 when the run was too large', async () => {
     const response = await finalizeExecute(
-      {
-        ANALYTICS: { writeDataPoint: () => {} },
-        BUNDLES: { get: () => Promise.resolve(null) },
-        LOADER: loader,
-      } as never,
+      bindings,
       {
         bundleHash: 'abcdefgh',
         versionId: 'ver_1',
