@@ -18,10 +18,9 @@ import {
   mineIndexHotKey,
   orgIndexHotKey,
 } from '../catalog/hot-keys';
+import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
 import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import { WORKER_COMPATIBILITY_DATE } from '../constants';
-import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
-import { projectFederationDocs } from '../federation/federation-hot';
 import type { HotKvBinding } from '../http/http-context';
 import { buildFunctionSearchText } from '../search/function-search-text';
 import {
@@ -340,7 +339,6 @@ export const syncRemoteMcpSource = async (input: {
       visibility: 'organization',
     };
     await writeHotFunctionDoc(input.hot, doc);
-    await projectCapabilityAfterHotWrite({ doc, hot: input.hot });
     projectedDocs.push(doc);
     functionIds.push(`@${handle}/${input.slug}/${tool.name}`);
   }
@@ -365,7 +363,7 @@ export const syncRemoteMcpSource = async (input: {
       ...functionIds,
     ])
   );
-  await projectFederationDocs(input.hot, projectedDocs);
+  await projectHotDocsForSearch(input.hot, projectedDocs);
 
   return { health: 'ready', packageId, sourceId };
 };

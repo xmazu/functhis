@@ -17,9 +17,6 @@ import {
   resolveOrgPlan,
   resolveOrganizationSlugById,
 } from '@functhis/publish';
-import { loadFederationEdgesForCapabilities } from '@functhis/publish/federation-hot';
-import { formatFunctionId } from '@functhis/publish/function-id';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
 import { createServerFn } from '@tanstack/react-start';
 import { eq, inArray, sql } from 'drizzle-orm';
 
@@ -155,27 +152,11 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       .from(capabilitySource)
       .where(eq(capabilitySource.packageId, catalog.id))
       .limit(1);
-    const functionIds = catalog.functions.map((fn) =>
-      formatFunctionId({
-        functionSlug: fn.functionSlug,
-        handle: fn.handle,
-        packageSlug: fn.packageSlug,
-      })
-    );
-    const functionEdges = await loadFederationEdgesForCapabilities(
-      asHotKvBinding(env.HOT),
-      {
-        capabilityIds: functionIds,
-        organizationId: catalog.organizationId,
-        secretNames: catalog.currentVersion.secretNames,
-      }
-    );
 
     return buildPackageDetailViewModel({
       canWriteSecrets,
       catalog,
       executions,
-      functionEdges,
       isOwner,
       mcpResource: env.MCP_RESOURCE,
       missingSecretNames,

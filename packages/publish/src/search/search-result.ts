@@ -7,37 +7,19 @@ export const SEARCH_NO_MATCH_RRF_FLOOR = 0.01;
 export const SEARCH_AMBIGUOUS_RATIO = 0.85;
 export const SEARCH_DEADLINE_MS = 8000;
 export const SEARCH_JEV_BUDGET_MS = 4000;
-export const SEARCH_VECTOR_BUDGET_MS = 300;
+export const SEARCH_VECTOR_BUDGET_MS = 1500;
 export const SEARCH_LEXICAL_TOP = 25;
 export const SEARCH_VECTOR_TOP_K = 100;
 export const SEARCH_VECTOR_MIN_SCORE = 0.35;
-export const SEARCH_GRAPH_SEED = 10;
-export const SEARCH_GRAPH_NEIGHBORS = 8;
-export const VECTOR_RRF_WEIGHT = 0.8;
-export const GRAPH_BONUS_CAP = 0.12;
-export const USAGE_BOOST_CAP = 0.08;
+/** Max org Vectorize namespaces queried per search (library multi-tenant cap). */
+export const SEARCH_VECTOR_MAX_NAMESPACES = 8;
+export const VECTOR_RRF_WEIGHT = 1;
 
 export type CapabilityAvailability = 'degraded' | 'ready' | 'unavailable';
 export type CapabilitySourceKind =
   | 'hosted_function'
   | 'openapi_operation'
   | 'remote_mcp_tool';
-
-export const sourceReliability = (
-  kind: CapabilitySourceKind,
-  availability: CapabilityAvailability
-): number => {
-  if (availability === 'degraded') {
-    return 0.5;
-  }
-  if (kind === 'hosted_function') {
-    return 1;
-  }
-  if (kind === 'openapi_operation') {
-    return 0.95;
-  }
-  return 0.9;
-};
 
 export type JsonValue =
   | JsonValue[]
@@ -54,7 +36,6 @@ export interface SearchHit {
 }
 
 export interface SearchTiming {
-  indexMs: number;
   jevMs: number;
   lexicalMs: number;
   loadMs: number;
@@ -65,11 +46,8 @@ export interface SearchTiming {
 export interface SearchExplanationRow {
   exactRank?: number;
   fusedScore: number;
-  graphBonus: number;
   id: string;
-  indexScore?: number;
   lexicalRank?: number;
-  usageBoost: number;
   vectorRank?: number;
 }
 

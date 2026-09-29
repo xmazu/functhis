@@ -119,7 +119,8 @@ describe('OpenAPI import through execute and analytics', () => {
 
     const search = await searchFunctionsWithContext(
       {
-        embedQuery: (text) => Promise.resolve(deterministicEmbedding(text)),
+        embedQueries: (texts) =>
+          Promise.all(texts.map((text) => deterministicEmbedding(text))),
         hot,
         vectorIndex: index,
       },

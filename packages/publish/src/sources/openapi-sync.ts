@@ -13,10 +13,9 @@ import { writeHotFunctionDoc } from '../catalog/hot-catalog';
 import type { HotFunctionDoc } from '../catalog/hot-catalog';
 import { stripPackageFunctionIds } from '../catalog/hot-index';
 import { mineIndexHotKey, orgIndexHotKey } from '../catalog/hot-keys';
+import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
 import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import { WORKER_COMPATIBILITY_DATE } from '../constants';
-import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
-import { projectFederationDocs } from '../federation/federation-hot';
 import type { HotKvBinding } from '../http/http-context';
 import { buildFunctionSearchText } from '../search/function-search-text';
 import {
@@ -260,7 +259,6 @@ export const importOpenApiSource = async (input: {
       visibility: 'organization',
     };
     await writeHotFunctionDoc(input.hot, doc);
-    await projectCapabilityAfterHotWrite({ doc, hot: input.hot });
     projectedDocs.push(doc);
     functionIds.push(`@${handle}/${input.slug}/${operation.operationId}`);
   }
@@ -278,7 +276,7 @@ export const importOpenApiSource = async (input: {
     mineKey,
     JSON.stringify([...mineStripped, ...functionIds])
   );
-  await projectFederationDocs(input.hot, projectedDocs);
+  await projectHotDocsForSearch(input.hot, projectedDocs);
 
   return {
     drifted: false,

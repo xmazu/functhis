@@ -1,9 +1,5 @@
 /**
- * Stage-2 Jev Score rerank for MCP search.
- *
- * Batches Score questions and evaluates them with OpenRouter's Decisions API
- * (`typesafe/jev-1.13`) through Vercel AI SDK 7 `experimental_evaluate` and
- * `@openrouter/ai-sdk-provider`'s `evaluationModel`.
+ * Stage-2 Jev Score rerank for catalog search.
  *
  * @see https://openrouter.ai/docs/guides/community/jev-tutorial
  */
@@ -24,9 +20,6 @@ export const jevSearchMinMeanConfidence = 0.45;
 const whitespacePattern = /\s+/gu;
 
 const FUNCTHIS_OPENROUTER_APP_URL = 'https://functhis.now';
-
-const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const questionKey = (index: number): string => `c${String(index)}`;
 
@@ -112,7 +105,7 @@ const buildJevState = (query: string, cards: SearchRerankCard[]) => ({
     id: card.id,
     index,
     packageSlug: card.packageSlug,
-    summary: card.searchText
+    summary: card.summary
       .replaceAll(whitespacePattern, ' ')
       .trim()
       .slice(0, 160),
@@ -223,13 +216,7 @@ export const createJevSearchRerankScorer = (
       }
 
       return scores;
-    } catch (error) {
-      console.warn(
-        JSON.stringify({
-          error: getErrorMessage(error),
-          message: 'OpenRouter Jev search rerank failed; using lexical order',
-        })
-      );
+    } catch {
       return null;
     }
   };

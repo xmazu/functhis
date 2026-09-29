@@ -167,7 +167,6 @@ describe('MCP protocol handshake', () => {
           results: [],
           searchId: 'search-1',
           timing: {
-            indexMs: 1,
             jevMs: 2,
             lexicalMs: 3,
             loadMs: 4,

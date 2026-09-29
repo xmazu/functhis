@@ -30,25 +30,6 @@ export const PackageFunctionsList = ({
                   {fn.description}
                 </p>
               ) : null}
-              {fn.edges.length > 0 ? (
-                <ul className={`${ui} text-muted-foreground mt-2 space-y-1`}>
-                  {fn.edges.map((edge) => (
-                    <li
-                      className={
-                        edge.provenance === 'inferred'
-                          ? 'opacity-60'
-                          : undefined
-                      }
-                      key={`${edge.fromId}:${edge.type}:${edge.toId}`}
-                    >
-                      {edge.type} · {edge.fromId} → {edge.toId}
-                      {edge.provenance === 'inferred'
-                        ? ` · ${edge.confidence.toFixed(2)}`
-                        : ''}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
             </div>
           </li>
         ))}

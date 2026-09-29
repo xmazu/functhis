@@ -130,7 +130,7 @@ export const buildEmbeddingInput = (input: {
   projectionText: string;
 }): string => truncateEmbeddingInput(`${input.id}\n${input.projectionText}`);
 
-/** Query plus intent phrasings for lexical, vector, and federation lookup. */
+/** Query plus intent phrasings for lexical and vector channels. */
 export const searchPhrasings = (
   query: string,
   intents?: readonly string[]

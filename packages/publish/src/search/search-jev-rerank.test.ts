@@ -39,14 +39,14 @@ const sampleCards: SearchRerankCard[] = [
     handle: 'alice',
     id: '@alice/tools/a',
     packageSlug: 'tools',
-    searchText: 'export pdf a',
+    summary: 'export pdf a',
   },
   {
     functionSlug: 'b',
     handle: 'alice',
     id: '@alice/tools/b',
     packageSlug: 'tools',
-    searchText: 'export pdf b',
+    summary: 'export pdf b',
   },
 ];
 
@@ -129,7 +129,7 @@ describe('runJevEvaluateBatch', () => {
         handle: 'alice',
         id: '@alice/tools/export-pdf',
         packageSlug: 'tools',
-        searchText: 'Export PDF',
+        summary: 'Export PDF',
       },
     ];
 

@@ -3,10 +3,9 @@ import { describe, expect, test } from 'bun:test';
 import { searchFunctionsWithContext } from '@functhis/mcp/search';
 import { readCatalogGeneration } from '@functhis/publish/catalog-generation';
 import {
-  deterministicEmbedding,
   CAPABILITY_VECTOR_KIND,
+  deterministicEmbedding,
 } from '@functhis/publish/embedding';
-import { loadFederationEdgesForCapabilities } from '@functhis/publish/federation-hot';
 import { formatFunctionId } from '@functhis/publish/function-id';
 import { functionHotKeyFromId } from '@functhis/publish/hot-keys';
 import { MemoryEmbeddingIndex } from '@functhis/publish/vectorize-index';
@@ -30,7 +29,7 @@ const manyExportFunctions = (count: number) =>
   }));
 
 describe('publish projection and hybrid search', () => {
-  test('finalize projects catalog generation, graph aliases, and vector debt', async () => {
+  test('finalize projects catalog generation and vector debt', async () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
@@ -61,7 +60,6 @@ describe('publish projection and hybrid search', () => {
               properties: { email: { type: 'string' } },
               type: 'object',
             },
-            reviewedAliases: ['customer'],
           },
           exportName: 'default',
           path: 'lookup.ts',
@@ -80,15 +78,6 @@ describe('publish projection and hybrid search', () => {
     });
 
     expect(await readCatalogGeneration(hot, organizationId)).toBeGreaterThan(0);
-    const aliasEdges = await loadFederationEdgesForCapabilities(hot, {
-      capabilityIds: [capabilityId],
-      organizationId,
-    });
-    expect(
-      aliasEdges.some(
-        (edge) => edge.type === 'reviewed_alias' && edge.toId === capabilityId
-      )
-    ).toBe(true);
 
     const index = new MemoryEmbeddingIndex();
     expect(
@@ -120,7 +109,8 @@ describe('publish projection and hybrid search', () => {
 
     const vector = await searchFunctionsWithContext(
       {
-        embedQuery: (text) => Promise.resolve(deterministicEmbedding(text)),
+        embedQueries: (texts) =>
+          Promise.all(texts.map((text) => deterministicEmbedding(text))),
         hot,
         vectorIndex: index,
       },
@@ -129,11 +119,11 @@ describe('publish projection and hybrid search', () => {
     );
     expect(vector.results[0]?.id).toBe(capabilityId);
 
-    const alias = await searchFunctionsWithContext(
+    const synonym = await searchFunctionsWithContext(
       { hot },
-      { callerUserId: userId, query: 'customer' }
+      { callerUserId: userId, query: 'find customer by email' }
     );
-    expect(alias.results[0]?.id).toBe(capabilityId);
+    expect(synonym.results[0]?.id).toBe(capabilityId);
 
     const hotDoc = await memoryHot.get(functionHotKeyFromId(capabilityId));
     expect(hotDoc).toContain('"sourceKind":"hosted_function"');

@@ -138,9 +138,13 @@
       "types": "./src/search/search-run.ts",
       "default": "./src/search/search-run.ts"
     },
-    "./search-rank-catalog": {
-      "types": "./src/search/search-rank-catalog.ts",
-      "default": "./src/search/search-rank-catalog.ts"
+    "./search-rerank": {
+      "types": "./src/search/search-rerank.ts",
+      "default": "./src/search/search-rerank.ts"
+    },
+    "./search-jev-rerank": {
+      "types": "./src/search/search-jev-rerank.ts",
+      "default": "./src/search/search-jev-rerank.ts"
     },
     "./embedding": {
       "types": "./src/search/embedding.ts",
@@ -166,29 +170,13 @@
       "types": "./src/search/search-analytics.ts",
       "default": "./src/search/search-analytics.ts"
     },
-    "./capability-graph": {
-      "types": "./src/federation/capability-graph.ts",
-      "default": "./src/federation/capability-graph.ts"
-    },
-    "./federation-index": {
-      "types": "./src/federation/federation-index.ts",
-      "default": "./src/federation/federation-index.ts"
-    },
-    "./federation-hot": {
-      "types": "./src/federation/federation-hot.ts",
-      "default": "./src/federation/federation-hot.ts"
-    },
-    "./catalog-projection": {
-      "types": "./src/federation/catalog-projection.ts",
-      "default": "./src/federation/catalog-projection.ts"
-    },
     "./catalog-generation": {
-      "types": "./src/federation/catalog-generation.ts",
-      "default": "./src/federation/catalog-generation.ts"
+      "types": "./src/catalog/catalog-generation.ts",
+      "default": "./src/catalog/catalog-generation.ts"
     },
-    "./ranking-boost-kv": {
-      "types": "./src/search/ranking-boost-kv.ts",
-      "default": "./src/search/ranking-boost-kv.ts"
+    "./hot-search-projection": {
+      "types": "./src/catalog/hot-search-projection.ts",
+      "default": "./src/catalog/hot-search-projection.ts"
     },
     "./vectorize-index": {
       "types": "./src/search/vectorize-index.ts",
@@ -234,6 +222,8 @@
   "dependencies": {
     "@functhis/db": "workspace:*",
     "@functhis/runtime": "workspace:*",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
+    "ai": "^7",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.1.0",
     "zod": "catalog:"

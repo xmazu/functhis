@@ -50,6 +50,7 @@
     "example:hello:deploy": "bun packages/cli/src/cli.ts publish --slug hello-world --project-root examples/hello-world --url http://localhost:3001",
     "example:monorepo:dev": "bun packages/cli/src/cli.ts dev --slug greet --project-root examples/monorepo/packages/demo-functions",
     "example:monorepo:deploy": "bun packages/cli/src/cli.ts publish --slug demo-functions --project-root examples/monorepo/packages/demo-functions --url http://localhost:3001",
+    "eval:search:live": "bun tests/integration/scripts/search-eval-live.ts",
     "ultracite:staged": "sh .husky/ultracite-staged",
     "knip": "knip",
     "changelog": "git-cliff --unreleased",

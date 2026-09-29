@@ -18,13 +18,6 @@ const readContractDescription = (contract: unknown): string | null => {
 
 export interface PackageDetailFunctionView {
   description: string | null;
-  edges: {
-    confidence: number;
-    fromId: string;
-    provenance: string;
-    toId: string;
-    type: string;
-  }[];
   id: string;
   mcpSnippet: string;
   slug: string;
@@ -61,7 +54,6 @@ export const buildPackageDetailViewModel = (input: {
   canWriteSecrets: boolean;
   catalog: CatalogPackageRow;
   executions: PackageDetailViewModel['executions'];
-  functionEdges?: PackageDetailFunctionView['edges'];
   isOwner: boolean;
   mcpResource: string;
   missingSecretNames: string[];
@@ -81,9 +73,6 @@ export const buildPackageDetailViewModel = (input: {
       });
       return {
         description: readContractDescription(fn.contract),
-        edges: (input.functionEdges ?? []).filter(
-          (edge) => edge.fromId === id || edge.toId === id
-        ),
         id,
         mcpSnippet: `POST ${mcpResource}/mcp\nTool: execute\nArguments: { "id": "${id}", "arguments": {} }`,
         slug: fn.functionSlug,

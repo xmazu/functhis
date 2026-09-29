@@ -1,5 +1,5 @@
-import { catalogGenerationHotKey } from '../catalog/hot-keys';
 import type { HotKvBinding } from '../http/http-context';
+import { catalogGenerationHotKey } from './hot-keys';
 
 export const readCatalogGeneration = async (
   hot: HotKvBinding,
@@ -19,7 +19,6 @@ export const bumpCatalogGeneration = async (
   return next;
 };
 
-/** Publish the catalog generation after the federation blob for that generation exists. */
 export const writeCatalogGeneration = async (
   hot: HotKvBinding,
   organizationId: string,

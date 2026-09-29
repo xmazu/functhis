@@ -15,4 +15,21 @@ describe('isExactSearchMatch', () => {
     expect(isExactSearchMatch('@acme/crm/users/search', row)).toBe(true);
     expect(isExactSearchMatch('email', row)).toBe(false);
   });
+
+  test('detects exact handle and package slug alone', () => {
+    expect(
+      isExactSearchMatch('hello', {
+        functionSlug: 'hello',
+        handle: 'alice',
+        packageSlug: 'pkg',
+      })
+    ).toBe(true);
+    expect(
+      isExactSearchMatch('pkg', {
+        functionSlug: 'hello',
+        handle: 'alice',
+        packageSlug: 'pkg',
+      })
+    ).toBe(true);
+  });
 });

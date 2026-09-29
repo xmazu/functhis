@@ -32,8 +32,6 @@
         "@functhis/db": "workspace:*",
         "@functhis/publish": "workspace:*",
         "@modelcontextprotocol/server": "2.0.0",
-        "@openrouter/ai-sdk-provider": "^3.1.0",
-        "ai": "^7",
         "evlog": "^2.28.1",
         "jose": "^6.1.0",
         "zod": "catalog:",
@@ -201,6 +199,8 @@
       "dependencies": {
         "@functhis/db": "workspace:*",
         "@functhis/runtime": "workspace:*",
+        "@openrouter/ai-sdk-provider": "^3.1.0",
+        "ai": "^7",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
         "zod": "catalog:",

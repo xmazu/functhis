@@ -99,13 +99,14 @@ export const embedTexts = async (
       text: [...batch],
     });
     const data = response.data ?? [];
-    for (const [index, text] of batch.entries()) {
+    for (const [index, _text] of batch.entries()) {
       const vector = data[index];
-      rows.push(
-        vector && vector.length === CAPABILITY_EMBEDDING_DIMENSIONS
-          ? vector
-          : deterministicEmbedding(text)
-      );
+      if (!vector || vector.length !== CAPABILITY_EMBEDDING_DIMENSIONS) {
+        throw new Error(
+          `Workers AI returned invalid embedding for batch index ${String(index)}`
+        );
+      }
+      rows.push(vector);
     }
   }
   return rows;

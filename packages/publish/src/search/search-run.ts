@@ -1,18 +1,16 @@
+import { readCatalogGeneration } from '../catalog/catalog-generation';
 import type { SearchDomain } from '../catalog/hot-catalog';
-import { readCatalogGeneration } from '../federation/catalog-generation';
-import { storeSearchEventHot } from './search-analytics';
 import {
-  indexSearchShouldDeferToFallback,
-  loadFallbackDocs,
-  refineIndexOutcomeWithJev,
-  runSearchFallback,
-  toHit,
-} from './search-fallback';
+  resolveSearchEventOrganizationId,
+  storeSearchEventHot,
+} from './search-analytics';
+import { loadSearchDocs } from './search-catalog-load';
+import { runCatalogSearch } from './search-catalog-pipeline';
 import type {
   SearchFunctionsContext,
   SearchFunctionsOptions,
-} from './search-fallback';
-import { runIndexSearch } from './search-index-path';
+} from './search-context';
+import { toHit } from './search-hits';
 import { searchPhrasings } from './search-projection';
 import {
   SEARCH_DEFAULT_LIMIT,
@@ -25,15 +23,13 @@ export type { SearchHit, SearchResult } from './search-result';
 export type {
   SearchFunctionsContext,
   SearchFunctionsOptions,
-  SearchRerankCard,
-  SearchRerankScorer,
-} from './search-fallback';
+} from './search-context';
+export type { SearchRerankCard, SearchRerankScorer } from './search-rerank';
 
 export const normalizeSearchDomain = (domain?: SearchDomain): SearchDomain =>
   domain ?? 'mine';
 
 const emptyTiming = (): SearchTiming => ({
-  indexMs: 0,
   jevMs: 0,
   lexicalMs: 0,
   loadMs: 0,
@@ -47,54 +43,21 @@ const runEmptyQuerySearch = async (
   callerUserId: string,
   timing: SearchTiming
 ): Promise<{
-  organizationId: string | null;
+  analyticsOrganizationId: string | null;
   results: ReturnType<typeof toHit>[];
 }> => {
   const loadStarted = Date.now();
-  const loaded = await loadFallbackDocs(hot, domain, callerUserId);
+  const loaded = await loadSearchDocs(hot, domain, callerUserId);
   timing.loadMs = Date.now() - loadStarted;
   return {
-    organizationId: loaded.docs[0]?.organizationId ?? null,
+    analyticsOrganizationId: resolveSearchEventOrganizationId(
+      domain,
+      loaded.docs,
+      loaded.accessContext.organizationIds
+    ),
     results: loaded.docs
       .slice(0, SEARCH_DEFAULT_LIMIT)
       .map((doc) => toHit(doc)),
-  };
-};
-
-const runFallbackSearch = async (
-  context: SearchFunctionsContext,
-  domain: SearchDomain,
-  callerUserId: string,
-  query: {
-    phrasings: string[];
-    primaryQuery: string;
-    started: number;
-    timing: SearchTiming;
-  },
-  options?: SearchFunctionsOptions
-): Promise<{
-  organizationId: string | null;
-  outcome: Awaited<ReturnType<typeof runSearchFallback>>;
-}> => {
-  const loadStarted = Date.now();
-  const loaded = await loadFallbackDocs(context.hot, domain, callerUserId);
-  query.timing.loadMs = Date.now() - loadStarted;
-  const outcome = await runSearchFallback(
-    context,
-    {
-      callerUserId,
-      docs: loaded.docs,
-      docsById: loaded.docsById,
-      phrasings: query.phrasings,
-      primaryQuery: query.primaryQuery,
-      started: query.started,
-      timing: query.timing,
-    },
-    options
-  );
-  return {
-    organizationId: loaded.docs[0]?.organizationId ?? null,
-    outcome,
   };
 };
 
@@ -154,23 +117,22 @@ export const searchFunctionsWithContext = async (
       input.callerUserId,
       timing
     );
-    analyticsOrganizationId = empty.organizationId;
-    if (analyticsOrganizationId) {
+    const { analyticsOrganizationId: emptyAnalyticsOrgId, results } = empty;
+    analyticsOrganizationId = emptyAnalyticsOrgId;
+    if (emptyAnalyticsOrgId) {
       analyticsGeneration = await readCatalogGeneration(
         hot,
-        analyticsOrganizationId
+        emptyAnalyticsOrgId
       );
     }
     return finish({
       ambiguous: false,
-      explanation: empty.results.map((hit) => ({
+      explanation: results.map((hit) => ({
         fusedScore: 0,
-        graphBonus: 0,
         id: hit.id,
-        usageBoost: 0,
       })),
-      reason: empty.results.length === 0 ? 'no_match' : 'ok',
-      results: empty.results,
+      reason: results.length === 0 ? 'no_match' : 'ok',
+      results,
     });
   }
 
@@ -183,56 +145,32 @@ export const searchFunctionsWithContext = async (
     });
   }
 
-  const indexStarted = Date.now();
-  try {
-    const indexed = await runIndexSearch(hot, domain, input.callerUserId, {
-      intents: input.intents,
-      primaryQuery,
-      query: trimmedQuery,
-    });
-    timing.indexMs = Date.now() - indexStarted;
-    if (indexed) {
-      const indexTopId = indexed.result.results[0]?.id;
-      const deferToFallback =
-        indexTopId &&
-        (await indexSearchShouldDeferToFallback(context, {
-          callerUserId: input.callerUserId,
-          domain,
-          indexTopId,
-          phrasings,
-          primaryQuery,
-          timing,
-        }));
-      if (!deferToFallback) {
-        const refined = await refineIndexOutcomeWithJev(context, options, {
-          outcome: indexed.result,
-          primaryQuery,
-          started,
-          timing,
-        });
-        analyticsOrganizationId = indexed.organizationId;
-        analyticsGeneration = indexed.generation;
-        return finish(refined);
-      }
-    }
-  } catch (error) {
-    timing.indexMs = Date.now() - indexStarted;
-    context.onIndexSearchError?.(error);
-  }
-
-  const fallback = await runFallbackSearch(
+  const loadStarted = Date.now();
+  const loaded = await loadSearchDocs(hot, domain, input.callerUserId);
+  timing.loadMs = Date.now() - loadStarted;
+  const outcome = await runCatalogSearch(
     context,
-    domain,
-    input.callerUserId,
-    { phrasings, primaryQuery, started, timing },
+    {
+      callerUserId: input.callerUserId,
+      docs: loaded.docs,
+      docsById: loaded.docsById,
+      phrasings,
+      primaryQuery,
+      started,
+      timing,
+    },
     options
   );
-  analyticsOrganizationId = fallback.organizationId;
+  analyticsOrganizationId = resolveSearchEventOrganizationId(
+    domain,
+    loaded.docs,
+    loaded.accessContext.organizationIds
+  );
   if (analyticsOrganizationId) {
     analyticsGeneration = await readCatalogGeneration(
       hot,
       analyticsOrganizationId
     );
   }
-  return finish(fallback.outcome);
+  return finish(outcome);
 };

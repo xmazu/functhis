@@ -6,10 +6,6 @@ import {
   writeMembershipHot,
 } from '../catalog/hot-catalog';
 import { mineIndexHotKey } from '../catalog/hot-keys';
-import {
-  clearFederationIndexMemo,
-  projectFederationDocs,
-} from '../federation/federation-hot';
 import type { HotKvBinding } from '../http/http-context';
 import { deterministicEmbedding } from './embedding';
 import {
@@ -33,6 +29,9 @@ const memoryHot = (): HotKvBinding & { store: Map<string, string> } => {
     store,
   };
 };
+
+const embedQueries = (texts: readonly string[]) =>
+  Promise.all(texts.map((text) => deterministicEmbedding(text)));
 
 const seedDoc = async (
   hot: HotKvBinding,
@@ -65,8 +64,6 @@ const seedDoc = async (
   const existingRaw = await hot.get(mineKey);
   const existing = existingRaw ? (JSON.parse(existingRaw) as string[]) : [];
   await hot.put(mineKey, JSON.stringify([...existing, id]));
-  clearFederationIndexMemo();
-  await projectFederationDocs(hot, [doc]);
 };
 
 describe('normalizeSearchDomain', () => {
@@ -77,13 +74,29 @@ describe('normalizeSearchDomain', () => {
 });
 
 describe('searchFunctionsWithContext', () => {
-  test('nominates via federation index synonym folding', async () => {
+  test('nominates via synonym folding on the lexical channel', async () => {
     const hot = memoryHot();
     const userId = 'user-vector';
     await seedDoc(hot, {
       functionSlug: 'users/search',
       ownerUserId: userId,
       searchText: 'users/search\nFind a user by email\nemail',
+    });
+    const result = await searchFunctionsWithContext(
+      { hot },
+      { callerUserId: userId, query: 'find the client by mail' }
+    );
+    expect(result.results[0]?.id).toBe('@acme/crm/users/search');
+    expect(result.reason).toBe('ok');
+  });
+
+  test('nominates via the vector channel when lexical overlap is zero', async () => {
+    const hot = memoryHot();
+    const userId = 'user-vector';
+    await seedDoc(hot, {
+      functionSlug: 'users/search',
+      ownerUserId: userId,
+      searchText: 'qqq zzz jjj',
     });
     const index = new MemoryEmbeddingIndex();
     await index.upsert([
@@ -96,7 +109,7 @@ describe('searchFunctionsWithContext', () => {
     ]);
     const result = await searchFunctionsWithContext(
       {
-        embedQuery: (text) => Promise.resolve(deterministicEmbedding(text)),
+        embedQueries,
         hot,
         vectorIndex: index,
       },
@@ -105,25 +118,6 @@ describe('searchFunctionsWithContext', () => {
     );
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
     expect(result.reason).toBe('ok');
-  });
-
-  test('reviewed alias nominates the aliased capability', async () => {
-    const hot = memoryHot();
-    const userId = 'user-alias';
-    await seedDoc(hot, {
-      contract: {
-        description: 'Find a user by email',
-        reviewedAliases: ['customer'],
-      },
-      functionSlug: 'users/search',
-      ownerUserId: userId,
-      searchText: 'users/search\nFind a user by email\nemail',
-    });
-    const result = await searchFunctionsWithContext(
-      { hot },
-      { callerUserId: userId, query: 'customer' }
-    );
-    expect(result.results[0]?.id).toBe('@acme/crm/users/search');
   });
 
   test('returns browse when nothing is nominated and the catalog is small', async () => {
@@ -184,7 +178,7 @@ describe('searchFunctionsWithContext', () => {
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
   });
 
-  test('fast-path returns a single exact function id', async () => {
+  test('returns a single exact function id first', async () => {
     const hot = memoryHot();
     const userId = 'user-exact';
     await seedDoc(hot, {
@@ -217,114 +211,7 @@ describe('searchFunctionsWithContext', () => {
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
   });
 
-  test('defers a synonym-only index win when vector top-1 differs', async () => {
-    const hot = memoryHot();
-    const userId = 'user-defer';
-    await seedDoc(hot, {
-      contract: {
-        description: 'Find a user by email',
-        inputSchema: {
-          properties: { email: { type: 'string' } },
-          type: 'object',
-        },
-      },
-      functionSlug: 'users/search',
-      ownerUserId: userId,
-      searchText: 'qqq zzz jjj',
-    });
-    const ticketDoc: HotFunctionDoc = {
-      bundleHash: 'bundle',
-      contract: { description: 'qqq zzz jjj' },
-      functionId: crypto.randomUUID(),
-      functionSlug: 'tickets/list',
-      handle: 'acme',
-      organizationId: 'org-1',
-      ownerUserId: userId,
-      packageId: 'pkg-1',
-      packageSlug: 'crm',
-      searchText: 'qqq zzz jjj',
-      versionId: 'ver-1',
-      visibility: 'private',
-    };
-    await writeHotFunctionDoc(hot, ticketDoc);
-    const mineKey = mineIndexHotKey(userId);
-    const existingRaw = await hot.get(mineKey);
-    const existing = existingRaw ? (JSON.parse(existingRaw) as string[]) : [];
-    await hot.put(
-      mineKey,
-      JSON.stringify([...existing, '@acme/crm/tickets/list'])
-    );
-    clearFederationIndexMemo();
-    await projectFederationDocs(hot, [ticketDoc]);
-    const index = new MemoryEmbeddingIndex();
-    await index.upsert([
-      {
-        id: '@acme/crm/tickets/list',
-        metadata: { kind: 'hosted_function', organizationId: 'org-1' },
-        namespace: 'org-1',
-        values: deterministicEmbedding('find the client by mail'),
-      },
-    ]);
-    const result = await searchFunctionsWithContext(
-      {
-        embedQuery: (text) => Promise.resolve(deterministicEmbedding(text)),
-        hot,
-        vectorIndex: index,
-      },
-      { callerUserId: userId, query: 'find the client by mail' },
-      { rerankScorer: () => Promise.resolve(null) }
-    );
-    expect(result.results[0]?.id).toBe('@acme/crm/tickets/list');
-    expect(result.reason).toBe('ok');
-  });
-
-  test('falls back to the vector channel when no index was built', async () => {
-    const hot = memoryHot();
-    const userId = 'user-novindex';
-    const doc: HotFunctionDoc = {
-      bundleHash: 'bundle',
-      contract: { description: 'qqq zzz jjj' },
-      functionId: crypto.randomUUID(),
-      functionSlug: 'users/search',
-      handle: 'acme',
-      organizationId: 'org-1',
-      ownerUserId: userId,
-      packageId: 'pkg-1',
-      packageSlug: 'crm',
-      searchText: 'qqq zzz jjj',
-      versionId: 'ver-1',
-      visibility: 'private',
-    };
-    await writeHotFunctionDoc(hot, doc);
-    await writeMembershipHot(hot, userId, ['org-1']);
-    await hot.put(
-      mineIndexHotKey(userId),
-      JSON.stringify(['@acme/crm/users/search'])
-    );
-    clearFederationIndexMemo();
-    const index = new MemoryEmbeddingIndex();
-    await index.upsert([
-      {
-        id: '@acme/crm/users/search',
-        metadata: { kind: 'hosted_function', organizationId: 'org-1' },
-        namespace: 'org-1',
-        values: deterministicEmbedding('find the client by mail'),
-      },
-    ]);
-    const result = await searchFunctionsWithContext(
-      {
-        embedQuery: (text) => Promise.resolve(deterministicEmbedding(text)),
-        hot,
-        vectorIndex: index,
-      },
-      { callerUserId: userId, query: 'find the client by mail' },
-      { rerankScorer: () => Promise.resolve(null) }
-    );
-    expect(result.results[0]?.id).toBe('@acme/crm/users/search');
-    expect(result.reason).toBe('ok');
-  });
-
-  test('drops tombstoned index entries and falls back', async () => {
+  test('drops tombstoned docs from results', async () => {
     const hot = memoryHot();
     const userId = 'user-tomb';
     await seedDoc(hot, {
@@ -342,7 +229,7 @@ describe('searchFunctionsWithContext', () => {
     ).toBe(false);
   });
 
-  test('falls back for callers with no memberships', async () => {
+  test('returns no_match for callers with no memberships', async () => {
     const hot = memoryHot();
     const result = await searchFunctionsWithContext(
       { hot },
@@ -350,28 +237,5 @@ describe('searchFunctionsWithContext', () => {
     );
     expect(result.reason).toBe('no_match');
     expect(result.results).toEqual([]);
-  });
-
-  test('ambiguous index matches fall back to full-scan order', async () => {
-    const hot = memoryHot();
-    const userId = 'user-amb';
-    await seedDoc(hot, {
-      functionSlug: 'aaa-first',
-      ownerUserId: userId,
-      searchText: 'export pdf document generation',
-    });
-    await seedDoc(hot, {
-      functionSlug: 'zzz-second',
-      ownerUserId: userId,
-      searchText: 'export pdf document generation',
-    });
-    const result = await searchFunctionsWithContext(
-      { hot },
-      { callerUserId: userId, query: 'export pdf' }
-    );
-    expect(result.results.map((hit) => hit.id)).toEqual([
-      '@acme/crm/aaa-first',
-      '@acme/crm/zzz-second',
-    ]);
   });
 });

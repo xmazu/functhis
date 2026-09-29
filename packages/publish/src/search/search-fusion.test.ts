@@ -14,15 +14,6 @@ describe('fuseSearchCandidates', () => {
     expect(fused.map((row) => row.id)).toContain('@acme/crm/users/search');
   });
 
-  test('graph bonus cannot pass the no-match floor alone', () => {
-    const fused = fuseSearchCandidates([
-      { graphBonus: 0.12, id: '@acme/billing/invoices/search' },
-    ]);
-    const selected = selectFusedHits(fused);
-    expect(selected.reason).toBe('no_match');
-    expect(selected.selected).toEqual([]);
-  });
-
   test('exact rank 1 skips no-match even with a tiny rrf score', () => {
     const fused = fuseSearchCandidates([
       { exactRank: 1, id: '@acme/crm/users/search' },

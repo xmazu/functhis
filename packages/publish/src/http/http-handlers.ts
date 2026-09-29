@@ -11,6 +11,7 @@ import {
   utf8ByteLength,
 } from '../bundle';
 import { syncPackageToHot } from '../catalog/hot-catalog';
+import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
 import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import {
   resolvePublishSharingForPublishStart,
@@ -25,8 +26,6 @@ import {
   MAX_SOURCE_MANIFEST_FILES,
   WORKER_COMPATIBILITY_DATE,
 } from '../constants';
-import { projectCapabilityAfterHotWrite } from '../federation/catalog-projection';
-import { projectFederationDocs } from '../federation/federation-hot';
 import {
   OrgQuotaExceededError,
   insertOrgPackageIfUnderLimit,
@@ -58,16 +57,6 @@ const retryHotWrite = async <T>(
     }
     return retryHotWrite(work, attempt + 1);
   }
-};
-
-const projectHotDocs = async (
-  hot: PublishHandlerContext['hot'],
-  docs: Awaited<ReturnType<typeof syncPackageToHot>>
-): Promise<void> => {
-  await Promise.all(
-    docs.map((doc) => projectCapabilityAfterHotWrite({ doc, hot }))
-  );
-  await projectFederationDocs(hot, docs);
 };
 
 const json = (body: unknown, status = 200): Response =>
@@ -504,7 +493,7 @@ export const handlePublishFinalize = async (
     const docs = await retryHotWrite(() =>
       syncPackageToHot(ctx.hot, database, packageRow.id)
     );
-    await retryHotWrite(() => projectHotDocs(ctx.hot, docs));
+    await retryHotWrite(() => projectHotDocsForSearch(ctx.hot, docs));
   } catch {
     return new Response('Catalog projection failed; retry finalize', {
       status: 503,
@@ -616,7 +605,7 @@ export const handlePublishRollback = async (
     const docs = await retryHotWrite(() =>
       syncPackageToHot(ctx.hot, database, packageRow.id)
     );
-    await retryHotWrite(() => projectHotDocs(ctx.hot, docs));
+    await retryHotWrite(() => projectHotDocsForSearch(ctx.hot, docs));
   } catch {
     return new Response('Catalog projection failed; retry rollback', {
       status: 503,

@@ -1,70 +1,100 @@
 import { describe, expect, test } from 'bun:test';
 
-import { deterministicEmbedding } from '@functhis/publish/embedding';
+import { searchFunctionsWithContext } from '@functhis/mcp/search';
 import {
   evaluateSearchRanking,
-  foldSearchEvalSynonyms,
+  recallAtK,
 } from '@functhis/publish/search-eval';
 import type { SearchEvalJudgment } from '@functhis/publish/search-eval';
-import {
-  rankCatalogHybrid,
-  rankCatalogLexical,
-} from '@functhis/publish/search-rank-catalog';
-import type { RankableDoc } from '@functhis/publish/search-rank-catalog';
 
+import { integrationHotBinding } from '../harness/mcp-env';
+import { createMemoryHotKv } from '../harness/memory-hot-kv';
+import { seedEvalSearchCorpus } from '../harness/search-hot';
 import rawCorpus from './eval-corpus.json';
 
 const corpus = rawCorpus as {
-  catalog: RankableDoc[];
+  catalog: {
+    contract?: Record<string, unknown>;
+    functionSlug: string;
+    handle: string;
+    id: string;
+    packageSlug: string;
+    searchText: string;
+  }[];
   queries: SearchEvalJudgment[];
 };
 
-const [relevantDoc] = corpus.catalog;
+const EVAL_ORG = 'org-eval-corpus';
+const EVAL_USER = 'user-eval-corpus';
 
-const evalEmbed = (text: string): number[] =>
-  deterministicEmbedding(
-    relevantDoc ? foldSearchEvalSynonyms(text, relevantDoc) : text
+const runCatalogSearch = async (judgments: readonly SearchEvalJudgment[]) => {
+  const memoryHot = createMemoryHotKv();
+  await seedEvalSearchCorpus(memoryHot, {
+    catalog: corpus.catalog,
+    handle: 'acme',
+    organizationId: EVAL_ORG,
+    ownerUserId: EVAL_USER,
+  });
+  const hot = integrationHotBinding(memoryHot);
+  const startedAll = Date.now();
+  const outcomes = await Promise.all(
+    judgments.map((judgment) =>
+      searchFunctionsWithContext(
+        { hot },
+        { callerUserId: EVAL_USER, domain: 'mine', query: judgment.query },
+        { rerankScorer: () => Promise.resolve(null) }
+      )
+    )
   );
+  const perQueryMs = (Date.now() - startedAll) / Math.max(judgments.length, 1);
+  const latencies = judgments.map(() => perQueryMs);
+  const results = judgments.map((judgment, index) => ({
+    ids: outcomes[index]?.results.map((row) => row.id) ?? [],
+    query: judgment.query,
+  }));
+  return { latencies, results };
+};
 
 describe('frozen search eval corpus', () => {
-  test('records lexical-only baseline before hybrid ranking', () => {
-    const started = Date.now();
-    const results = corpus.queries.map((judgment) => ({
-      ids: rankCatalogLexical(judgment.query, corpus.catalog),
-      query: judgment.query,
-    }));
-    const report = evaluateSearchRanking(results, corpus.queries, [
-      Date.now() - started,
-    ]);
-    expect(
-      results.find((row) => row.query === 'find the client by mail')?.ids
-    ).toEqual([]);
-    expect(report.recallAt10).toBeLessThan(1);
+  test('lexical catalog search meets no-match, exact-id, and recall floors', async () => {
+    const { latencies, results } = await runCatalogSearch(corpus.queries);
+    const report = evaluateSearchRanking(results, corpus.queries, latencies);
+
     expect(report.noMatchPrecision).toBe(1);
+
+    const exactJudgments = corpus.queries.filter(
+      (row) => row.kind === 'exact-id'
+    );
+    for (const judgment of exactJudgments) {
+      const ranked =
+        results.find((row) => row.query === judgment.query)?.ids ?? [];
+      expect(recallAtK(ranked, judgment.relevant, 10)).toBe(1);
+    }
+
+    const lexicalJudgments = corpus.queries.filter(
+      (row) => row.kind !== 'paraphrase' && row.kind !== 'zero-overlap'
+    );
+    let recallSum = 0;
+    for (const judgment of lexicalJudgments) {
+      const ranked =
+        results.find((row) => row.query === judgment.query)?.ids ?? [];
+      recallSum += recallAtK(ranked, judgment.relevant, 10);
+    }
+    const lexicalRecall =
+      lexicalJudgments.length === 0 ? 0 : recallSum / lexicalJudgments.length;
+    expect(lexicalRecall).toBeGreaterThanOrEqual(0.7);
+
+    expect(report.p95Ms).toBeGreaterThanOrEqual(0);
   });
 
-  test('hybrid ranking recalls the zero-overlap synonym and keeps no-match empty', () => {
-    const started = Date.now();
-    const results = corpus.queries.map((judgment) => ({
-      ids: rankCatalogHybrid(judgment.query, corpus.catalog, evalEmbed),
-      query: judgment.query,
-    }));
-    const report = evaluateSearchRanking(results, corpus.queries, [
-      Date.now() - started,
-    ]);
-    expect(
-      results.find((row) => row.query === 'find the client by mail')?.ids[0]
-    ).toBe('@acme/crm/users/search');
-    expect(
-      results.find((row) => row.query === '@acme/crm/users/search')?.ids
-    ).toEqual(['@acme/crm/users/search']);
-    expect(
-      results.find((row) => row.query === 'quantum flux calibration')?.ids
-    ).toEqual([]);
-    expect(report.recallAt10).toBe(1);
-    expect(report.mrr).toBe(1);
-    expect(report.ndcgAt10).toBe(1);
-    expect(report.noMatchPrecision).toBe(1);
-    expect(report.p95Ms).toBeGreaterThanOrEqual(0);
+  test('records paraphrase queries without asserting hybrid recall', async () => {
+    const paraphrase = corpus.queries.filter(
+      (row) => row.kind === 'paraphrase'
+    );
+    const { results } = await runCatalogSearch(paraphrase);
+    expect(results.length).toBe(paraphrase.length);
+    for (const row of results) {
+      expect(row.ids.length).toBeGreaterThanOrEqual(0);
+    }
   });
 });

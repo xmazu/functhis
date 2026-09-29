@@ -1,10 +1,8 @@
 import {
-  GRAPH_BONUS_CAP,
   SEARCH_AMBIGUOUS_RATIO,
   SEARCH_DEFAULT_LIMIT,
   SEARCH_HARD_LIMIT,
   SEARCH_NO_MATCH_RRF_FLOOR,
-  USAGE_BOOST_CAP,
   VECTOR_RRF_WEIGHT,
 } from './search-result';
 import type { SearchExplanationRow } from './search-result';
@@ -12,10 +10,8 @@ import { reciprocalRankContribution } from './search-rrf';
 
 export interface FusionCandidate {
   exactRank?: number;
-  graphBonus?: number;
   id: string;
   lexicalRank?: number;
-  usageBoost?: number;
   vectorRank?: number;
 }
 
@@ -26,6 +22,21 @@ export interface FusionRow extends SearchExplanationRow {
 
 const firstRank = (rank: number | undefined): boolean => rank === 1;
 
+export const mergeBestRankMaps = (
+  rankMaps: readonly Map<string, number>[]
+): Map<string, number> => {
+  const merged = new Map<string, number>();
+  for (const ranks of rankMaps) {
+    for (const [id, rank] of ranks) {
+      const previous = merged.get(id);
+      if (previous === undefined || rank < previous) {
+        merged.set(id, rank);
+      }
+    }
+  }
+  return merged;
+};
+
 export const fuseSearchCandidates = (
   candidates: readonly FusionCandidate[]
 ): FusionRow[] => {
@@ -34,22 +45,17 @@ export const fuseSearchCandidates = (
       reciprocalRankContribution(candidate.exactRank, 1) +
       reciprocalRankContribution(candidate.lexicalRank, 1) +
       reciprocalRankContribution(candidate.vectorRank, VECTOR_RRF_WEIGHT);
-    const graphBonus = Math.min(GRAPH_BONUS_CAP, candidate.graphBonus ?? 0);
-    const usageBoost = Math.min(USAGE_BOOST_CAP, candidate.usageBoost ?? 0);
     const nominated =
       candidate.exactRank !== undefined ||
       candidate.lexicalRank !== undefined ||
-      candidate.vectorRank !== undefined ||
-      graphBonus > 0;
+      candidate.vectorRank !== undefined;
     return {
       exactRank: candidate.exactRank,
-      fusedScore: rrfScore + graphBonus + usageBoost,
-      graphBonus,
+      fusedScore: rrfScore,
       id: candidate.id,
       lexicalRank: candidate.lexicalRank,
       nominated,
       rrfScore,
-      usageBoost,
       vectorRank: candidate.vectorRank,
     };
   });

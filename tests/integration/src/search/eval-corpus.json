@@ -3,30 +3,409 @@
     {
       "functionSlug": "users/search",
       "handle": "acme",
-      "id": "@acme/crm/users/search",
       "packageSlug": "crm",
-      "searchText": "users/search\nResolve a workspace user from an email address\nemail"
+      "id": "@acme/crm/users/search",
+      "searchText": "users search resolve workspace user email address",
+      "contract": {
+        "description": "Resolve a user from email"
+      }
     },
     {
       "functionSlug": "users/list",
       "handle": "acme",
-      "id": "@acme/crm/users/list",
       "packageSlug": "crm",
-      "searchText": "users/list\nList users in the workspace"
+      "id": "@acme/crm/users/list",
+      "searchText": "users list workspace members",
+      "contract": {
+        "description": "List workspace users"
+      }
+    },
+    {
+      "functionSlug": "users/create",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/users/create",
+      "searchText": "users create invite member",
+      "contract": {
+        "description": "Create a user"
+      }
+    },
+    {
+      "functionSlug": "users/delete",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/users/delete",
+      "searchText": "users delete remove member",
+      "contract": {
+        "description": "Remove a user"
+      }
+    },
+    {
+      "functionSlug": "users/update",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/users/update",
+      "searchText": "users update profile",
+      "contract": {
+        "description": "Update user profile"
+      }
+    },
+    {
+      "functionSlug": "contacts/search",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/contacts/search",
+      "searchText": "contacts search find person",
+      "contract": {
+        "description": "Search contacts"
+      }
+    },
+    {
+      "functionSlug": "contacts/list",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/contacts/list",
+      "searchText": "contacts list directory",
+      "contract": {
+        "description": "List contacts"
+      }
+    },
+    {
+      "functionSlug": "deals/create",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/deals/create",
+      "searchText": "deals create opportunity",
+      "contract": {
+        "description": "Create a deal"
+      }
+    },
+    {
+      "functionSlug": "deals/list",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/deals/list",
+      "searchText": "deals list pipeline",
+      "contract": {
+        "description": "List deals"
+      }
+    },
+    {
+      "functionSlug": "accounts/search",
+      "handle": "acme",
+      "packageSlug": "crm",
+      "id": "@acme/crm/accounts/search",
+      "searchText": "accounts search company",
+      "contract": {
+        "description": "Search accounts"
+      }
     },
     {
       "functionSlug": "invoices/search",
       "handle": "acme",
-      "id": "@acme/billing/invoices/search",
       "packageSlug": "billing",
-      "searchText": "invoices/search\nLocate an invoice given a number\nnumber"
+      "id": "@acme/billing/invoices/search",
+      "searchText": "invoices search locate number",
+      "contract": {
+        "description": "Find invoice by number"
+      }
+    },
+    {
+      "functionSlug": "invoices/list",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/invoices/list",
+      "searchText": "invoices list billing",
+      "contract": {
+        "description": "List invoices"
+      }
+    },
+    {
+      "functionSlug": "invoices/create",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/invoices/create",
+      "searchText": "invoices create draft",
+      "contract": {
+        "description": "Create invoice"
+      }
+    },
+    {
+      "functionSlug": "payments/capture",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/payments/capture",
+      "searchText": "payments capture charge card",
+      "contract": {
+        "description": "Capture payment"
+      }
+    },
+    {
+      "functionSlug": "payments/refund",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/payments/refund",
+      "searchText": "payments refund credit",
+      "contract": {
+        "description": "Refund payment"
+      }
+    },
+    {
+      "functionSlug": "subscriptions/list",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/subscriptions/list",
+      "searchText": "subscriptions list plans",
+      "contract": {
+        "description": "List subscriptions"
+      }
+    },
+    {
+      "functionSlug": "subscriptions/cancel",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/subscriptions/cancel",
+      "searchText": "subscriptions cancel terminate",
+      "contract": {
+        "description": "Cancel subscription"
+      }
+    },
+    {
+      "functionSlug": "usage/report",
+      "handle": "acme",
+      "packageSlug": "billing",
+      "id": "@acme/billing/usage/report",
+      "searchText": "usage report meter consumption",
+      "contract": {
+        "description": "Usage report"
+      }
+    },
+    {
+      "functionSlug": "tickets/create",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/tickets/create",
+      "searchText": "tickets create open case",
+      "contract": {
+        "description": "Open support ticket"
+      }
+    },
+    {
+      "functionSlug": "tickets/list",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/tickets/list",
+      "searchText": "tickets list queue",
+      "contract": {
+        "description": "List tickets"
+      }
+    },
+    {
+      "functionSlug": "tickets/search",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/tickets/search",
+      "searchText": "tickets search find case",
+      "contract": {
+        "description": "Search tickets"
+      }
+    },
+    {
+      "functionSlug": "tickets/close",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/tickets/close",
+      "searchText": "tickets close resolve case",
+      "contract": {
+        "description": "Close ticket"
+      }
+    },
+    {
+      "functionSlug": "comments/add",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/comments/add",
+      "searchText": "comments add note ticket",
+      "contract": {
+        "description": "Add ticket comment"
+      }
+    },
+    {
+      "functionSlug": "sla/check",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/sla/check",
+      "searchText": "sla check breach deadline",
+      "contract": {
+        "description": "Check SLA"
+      }
+    },
+    {
+      "functionSlug": "escalations/create",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/escalations/create",
+      "searchText": "escalations create priority",
+      "contract": {
+        "description": "Escalate ticket"
+      }
+    },
+    {
+      "functionSlug": "macros/list",
+      "handle": "acme",
+      "packageSlug": "support",
+      "id": "@acme/support/macros/list",
+      "searchText": "macros list canned responses",
+      "contract": {
+        "description": "List macros"
+      }
+    },
+    {
+      "functionSlug": "export/pdf",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/export/pdf",
+      "searchText": "export pdf document generation",
+      "contract": {
+        "description": "Export PDF"
+      }
+    },
+    {
+      "functionSlug": "export/csv",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/export/csv",
+      "searchText": "export csv spreadsheet download",
+      "contract": {
+        "description": "Export CSV"
+      }
+    },
+    {
+      "functionSlug": "import/csv",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/import/csv",
+      "searchText": "import csv upload spreadsheet",
+      "contract": {
+        "description": "Import CSV"
+      }
+    },
+    {
+      "functionSlug": "webhooks/register",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/webhooks/register",
+      "searchText": "webhooks register callback url",
+      "contract": {
+        "description": "Register webhook"
+      }
+    },
+    {
+      "functionSlug": "secrets/set",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/secrets/set",
+      "searchText": "secrets set store credential",
+      "contract": {
+        "description": "Set secret"
+      }
+    },
+    {
+      "functionSlug": "secrets/list",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/secrets/list",
+      "searchText": "secrets list vault",
+      "contract": {
+        "description": "List secrets"
+      }
+    },
+    {
+      "functionSlug": "health/check",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/health/check",
+      "searchText": "health check status ping",
+      "contract": {
+        "description": "Health check"
+      }
+    },
+    {
+      "functionSlug": "ping",
+      "handle": "acme",
+      "packageSlug": "tools",
+      "id": "@acme/tools/ping",
+      "searchText": "ping echo alive",
+      "contract": {
+        "description": "Ping"
+      }
     }
   ],
   "queries": [
     {
-      "kind": "synonym",
-      "query": "find the customer by email",
+      "kind": "direct-overlap",
+      "query": "search users by email",
       "relevant": ["@acme/crm/users/search"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "list workspace users",
+      "relevant": ["@acme/crm/users/list"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "create invoice draft",
+      "relevant": ["@acme/billing/invoices/create"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "capture card payment",
+      "relevant": ["@acme/billing/payments/capture"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "open support ticket",
+      "relevant": ["@acme/support/tickets/create"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "export pdf document",
+      "relevant": ["@acme/tools/export/pdf"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "register webhook callback",
+      "relevant": ["@acme/tools/webhooks/register"]
+    },
+    {
+      "kind": "direct-overlap",
+      "query": "list subscriptions",
+      "relevant": ["@acme/billing/subscriptions/list"]
+    },
+    {
+      "kind": "synonym",
+      "query": "find customer by email",
+      "relevant": ["@acme/crm/users/search"]
+    },
+    {
+      "kind": "synonym",
+      "query": "remove a user",
+      "relevant": ["@acme/crm/users/delete"]
+    },
+    {
+      "kind": "synonym",
+      "query": "terminate subscription",
+      "relevant": ["@acme/billing/subscriptions/cancel"]
+    },
+    {
+      "kind": "synonym",
+      "query": "resolve support case",
+      "relevant": ["@acme/support/tickets/close"]
+    },
+    {
+      "kind": "synonym",
+      "query": "store credential secret",
+      "relevant": ["@acme/tools/secrets/set"]
     },
     {
       "kind": "zero-overlap",
@@ -34,13 +413,68 @@
       "relevant": ["@acme/crm/users/search"]
     },
     {
+      "kind": "zero-overlap",
+      "query": "who owes us money invoice",
+      "relevant": ["@acme/billing/invoices/search"]
+    },
+    {
+      "kind": "zero-overlap",
+      "query": "customer angry needs help now",
+      "relevant": ["@acme/support/tickets/create"]
+    },
+    {
+      "kind": "paraphrase",
+      "query": "download spreadsheet export",
+      "relevant": ["@acme/tools/export/csv"]
+    },
+    {
+      "kind": "paraphrase",
+      "query": "metered consumption report",
+      "relevant": ["@acme/billing/usage/report"]
+    },
+    {
+      "kind": "paraphrase",
+      "query": "canned response templates",
+      "relevant": ["@acme/support/macros/list"]
+    },
+    {
+      "kind": "paraphrase",
+      "query": "company account lookup",
+      "relevant": ["@acme/crm/accounts/search"]
+    },
+    {
+      "kind": "paraphrase",
+      "query": "pipeline opportunities list",
+      "relevant": ["@acme/crm/deals/list"]
+    },
+    {
       "kind": "exact-id",
       "query": "@acme/crm/users/search",
       "relevant": ["@acme/crm/users/search"]
     },
     {
+      "kind": "exact-id",
+      "query": "@acme/billing/payments/refund",
+      "relevant": ["@acme/billing/payments/refund"]
+    },
+    {
+      "kind": "exact-id",
+      "query": "@acme/support/sla/check",
+      "relevant": ["@acme/support/sla/check"]
+    },
+    {
       "kind": "no-match",
       "query": "quantum flux calibration",
+      "relevant": []
+    },
+    {
+      "kind": "no-match",
+      "query": "terraform mars colony",
+      "relevant": []
+    },
+    {
+      "kind": "no-match",
+      "query": "brew coffee espresso",
       "relevant": []
     }
   ]

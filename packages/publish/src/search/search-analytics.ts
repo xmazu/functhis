@@ -3,9 +3,8 @@ import { searchEvent, searchExposure } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
 import { sha256Hex } from '../bundle';
+import type { HotFunctionDoc, SearchDomain } from '../catalog/hot-catalog';
 import type { HotKvBinding } from '../http/http-context';
-import { orgUsageBoost } from './ranking-boost';
-import { readOrgBoostMap, writeOrgBoostMap } from './ranking-boost-kv';
 import type { SearchExplanationRow } from './search-result';
 
 const searchEventHotKey = (searchId: string): string =>
@@ -13,6 +12,31 @@ const searchEventHotKey = (searchId: string): string =>
 
 export const hashSearchQuery = (query: string): Promise<string> =>
   sha256Hex(query.trim().toLowerCase());
+
+/** Org id for search_event when scope is unambiguous; null skips HOT analytics write. */
+export const resolveSearchEventOrganizationId = (
+  domain: SearchDomain,
+  docs: readonly HotFunctionDoc[],
+  membershipOrganizationIds: readonly string[]
+): string | null => {
+  if (domain === 'library') {
+    return null;
+  }
+  if (domain === 'org' && membershipOrganizationIds.length === 1) {
+    return membershipOrganizationIds[0] ?? null;
+  }
+  const organizationIds = [
+    ...new Set(
+      docs
+        .map((doc) => doc.organizationId)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ];
+  if (organizationIds.length === 1) {
+    return organizationIds[0] ?? null;
+  }
+  return null;
+};
 
 export interface StoredSearchEvent {
   callerUserId: string;
@@ -103,7 +127,7 @@ export const persistSearchSelection = async (input: {
       stored.explanation.map((row, index) => ({
         capabilityId: row.id,
         exactChannel: row.exactRank !== undefined,
-        graphChannel: row.graphBonus > 0,
+        graphChannel: false,
         lexicalChannel: row.lexicalRank !== undefined,
         position: index + 1,
         searchEventId: stored.searchId,
@@ -111,27 +135,4 @@ export const persistSearchSelection = async (input: {
       }))
     );
   }
-  const now = Date.now();
-  const current = await readOrgBoostMap(input.hot, stored.organizationId);
-  const selected = stored.explanation.find(
-    (row) => row.id === input.capabilityId
-  );
-  const boost = orgUsageBoost(
-    [
-      {
-        atMs: now,
-        exposures: 1,
-        position: selected
-          ? stored.explanation.indexOf(selected) + 1
-          : stored.explanation.length + 1,
-        selected: true,
-      },
-    ],
-    now
-  );
-  current[input.capabilityId] = Math.max(
-    current[input.capabilityId] ?? 0,
-    boost
-  );
-  await writeOrgBoostMap(input.hot, stored.organizationId, current);
 };

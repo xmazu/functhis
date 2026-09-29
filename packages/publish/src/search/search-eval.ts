@@ -1,20 +1,11 @@
-export const foldSearchEvalSynonyms = (
-  text: string,
-  relevant: { id: string; searchText: string }
-): string => {
-  const folded = text
-    .toLowerCase()
-    .replaceAll('customer', 'user')
-    .replaceAll('client', 'user')
-    .replaceAll(/\bmail\b/gu, 'email');
-  if (/\buser\b/u.test(folded) && /\bemail\b/u.test(folded)) {
-    return `${relevant.id}\n${relevant.searchText}`;
-  }
-  return folded;
-};
-
 export interface SearchEvalJudgment {
-  kind: 'exact-id' | 'no-match' | 'synonym' | 'zero-overlap';
+  kind:
+    | 'direct-overlap'
+    | 'exact-id'
+    | 'no-match'
+    | 'paraphrase'
+    | 'synonym'
+    | 'zero-overlap';
   query: string;
   relevant: readonly string[];
 }

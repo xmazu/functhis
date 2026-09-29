@@ -115,11 +115,10 @@ export const phraseMatchBoost = (
 };
 
 /**
- * Static synonym fold for the federation index. Both index build and query
- * time apply this, so "client" matches "user" without an embedding call.
- * Keys and values are single normalized tokens.
+ * Static synonym fold at query and index time so "client" matches "user"
+ * without an embedding call.
  */
-export const FEDERATION_SYNONYMS: Record<string, string> = {
+export const SEARCH_SYNONYMS: Record<string, string> = {
   buyer: 'user',
   client: 'user',
   customer: 'user',
@@ -127,8 +126,9 @@ export const FEDERATION_SYNONYMS: Record<string, string> = {
   remove: 'delete',
 };
 
+/** @deprecated Use SEARCH_SYNONYMS */
 export const foldSearchSynonym = (token: string): string =>
-  FEDERATION_SYNONYMS[token] ?? token;
+  SEARCH_SYNONYMS[token] ?? token;
 
 export const foldSearchSynonyms = (tokens: readonly string[]): string[] =>
   tokens.map((token) => foldSearchSynonym(token));
@@ -150,12 +150,24 @@ export const scoreFunctionDocument = (
     doc.functionSlug,
     doc.searchText,
   ].join('\n');
-  const meaningful = extractMeaningfulSearchTokens(query);
-  const queryForLexical =
-    meaningful.length > 0 ? meaningful.join(' ') : query.trim();
-  const base = lexicalScore(queryForLexical, docText);
+  const meaningful = foldSearchSynonyms(extractMeaningfulSearchTokens(query));
+  const docTokens = new Set(
+    foldSearchSynonyms(extractMeaningfulSearchTokens(docText))
+  );
+  if (meaningful.length === 0) {
+    return 0;
+  }
+  let intersection = 0;
+  for (const token of meaningful) {
+    if (docTokens.has(token)) {
+      intersection += 1;
+    }
+  }
+  const base = intersection / meaningful.length;
   const phraseBoost = phraseMatchBoost(
-    meaningful.length > 0 ? meaningful : extractSearchTokens(query),
+    meaningful.length > 0
+      ? meaningful
+      : foldSearchSynonyms(extractSearchTokens(query)),
     docText
   );
   return base + phraseBoost;

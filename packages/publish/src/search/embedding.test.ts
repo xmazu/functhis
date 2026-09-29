@@ -63,23 +63,23 @@ describe('embedTexts', () => {
     ).rejects.toThrow(/AI binding is required/u);
   });
 
-  test('uses Workers AI vectors and falls back when a row is the wrong size', async () => {
+  test('throws when Workers AI returns a row with the wrong size', async () => {
     const modelVector = Array.from(
       { length: CAPABILITY_EMBEDDING_DIMENSIONS },
       () => 0.01
     );
-    const rows = await embedTexts(
-      {
-        AI: {
-          run: () =>
-            Promise.resolve({
-              data: [modelVector, [1, 2]],
-            }),
+    await expect(
+      embedTexts(
+        {
+          AI: {
+            run: () =>
+              Promise.resolve({
+                data: [modelVector, [1, 2]],
+              }),
+          },
         },
-      },
-      ['kept', 'fallback']
-    );
-    expect(rows[0]).toEqual(modelVector);
-    expect(rows[1]).toEqual(deterministicEmbedding('fallback'));
+        ['kept', 'fallback']
+      )
+    ).rejects.toThrow(/invalid embedding/u);
   });
 });

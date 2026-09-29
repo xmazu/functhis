@@ -1,5 +1,6 @@
 import { embedTexts, isEmbeddingOffline } from '@functhis/publish/embedding';
 import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { createJevSearchRerankScorer } from '@functhis/publish/search-jev-rerank';
 import { searchFunctionsWithContext } from '@functhis/publish/search-run';
 import type {
   SearchDomain,
@@ -9,7 +10,6 @@ import type {
 import { VectorizeEmbeddingIndex } from '@functhis/publish/vectorize-index';
 
 import { resolveOpenRouterApiKey } from './openrouter-api-key';
-import { createJevSearchRerankScorer } from './search-jev-rerank';
 
 export interface SearchFunctionsDependencies {
   embedTexts?: typeof embedTexts;
@@ -47,20 +47,19 @@ export const searchFunctions = async (
     ? (dependencies.vectorIndexFactory?.(env.CAPABILITY_VECTOR_INDEX) ??
       new VectorizeEmbeddingIndex(env.CAPABILITY_VECTOR_INDEX))
     : undefined;
-  const embedQuery = async (text: string): Promise<number[]> => {
+  const embedQueries = (texts: readonly string[]): Promise<number[][]> => {
     const offline = dependencies.isEmbeddingOffline ?? isEmbeddingOffline;
     if (!vectorIndex && offline(env)) {
-      return [];
+      return Promise.resolve(texts.map(() => []));
     }
     const embed = dependencies.embedTexts ?? embedTexts;
-    const [vector] = await embed(env, [text]);
-    return vector ?? [];
+    return embed(env, texts);
   };
   const runSearch =
     dependencies.searchFunctionsWithContext ?? searchFunctionsWithContext;
   return runSearch(
     {
-      embedQuery: vectorIndex ? embedQuery : undefined,
+      embedQueries: vectorIndex ? embedQueries : undefined,
       hot,
       vectorIndex,
     },
