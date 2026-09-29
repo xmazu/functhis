@@ -55,7 +55,6 @@ const finishExecution = async (
     doc: HotFunctionDoc;
     requestBytes: number;
     responseText: string;
-    searchId?: string;
     started: number;
     status: number;
     upstreamMs: number;
@@ -72,7 +71,6 @@ const finishExecution = async (
     organizationId: input.doc.organizationId,
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
-    searchId: input.searchId,
     startedAt: new Date(input.started),
   });
   await insertExecutionRow(env, {
@@ -85,7 +83,6 @@ const finishExecution = async (
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
     responseBytes: new TextEncoder().encode(input.responseText).length,
-    searchId: input.searchId,
     startedAt: new Date(input.started),
     status: input.status >= 500 ? 'error' : 'ok',
   });
@@ -98,7 +95,6 @@ export const callOpenApiOperation = async (
     doc: HotFunctionDoc;
     requestBytes: number;
     runInput: unknown;
-    searchId?: string;
     signal?: AbortSignal;
   }
 ): Promise<DispatchResult> => {
@@ -185,7 +181,6 @@ export const callOpenApiOperation = async (
     doc: input.doc,
     requestBytes: input.requestBytes,
     responseText: bodyText,
-    searchId: input.searchId,
     started,
     status: response.status,
     upstreamMs: Date.now() - upstreamStarted,
@@ -209,7 +204,6 @@ export const callRemoteMcpTool = async (
     doc: HotFunctionDoc;
     requestBytes: number;
     runInput: unknown;
-    searchId?: string;
     signal?: AbortSignal;
   }
 ): Promise<DispatchResult> => {
@@ -293,7 +287,6 @@ export const callRemoteMcpTool = async (
     doc: input.doc,
     requestBytes: input.requestBytes,
     responseText: bodyText,
-    searchId: input.searchId,
     started,
     status: response.status,
     upstreamMs: Date.now() - upstreamStarted,

@@ -53,7 +53,6 @@ export interface ExecutionSummaryRow {
   id: string;
   requestBytes: number | null;
   responseBytes: number | null;
-  searchId: string | null;
   status: string;
 }
 
@@ -282,7 +281,6 @@ export const listPackageExecutions = async (
       id: execution.id,
       requestBytes: execution.requestBytes,
       responseBytes: execution.responseBytes,
-      searchId: execution.searchId,
       status: execution.status,
     })
     .from(execution)

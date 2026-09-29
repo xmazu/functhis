@@ -44,7 +44,6 @@ export interface ExecutionListItem {
   createdAt: Date;
   functionSlug: string | null;
   id: string;
-  searchId: string | null;
   status: string;
 }
 
@@ -191,7 +190,6 @@ export const listExecutionsForSession = createServerFn({ method: 'GET' })
           createdAt: row.createdAt,
           functionSlug: row.functionSlug,
           id: row.id,
-          searchId: row.searchId,
           status: row.status,
         })),
         handle: authorized.catalog.handle,

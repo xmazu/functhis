@@ -328,8 +328,7 @@ export const finalizeExecute = async (
   functionId: string | undefined,
   executionId: string,
   handle?: string,
-  packageSlug?: string,
-  searchId?: string | null
+  packageSlug?: string
 ): Promise<Response> => {
   writeExecutionAnalytics(bindings, {
     callerUserId: parsed.callerUserId,
@@ -353,7 +352,6 @@ export const finalizeExecute = async (
     packageVersionId: parsed.versionId,
     requestBytes: run.requestBytes,
     responseBytes: run.responseBytes,
-    searchId,
     startedAt: run.startedAt,
     status: run.status,
   });

@@ -24,14 +24,10 @@ export const mineIndexHotKey = (userId: string): string =>
 export const orgIndexHotKey = (organizationId: string): string =>
   `${HOT_IDX_ORG_PREFIX}${organizationId}`;
 
-export const HOT_GEN_PREFIX = 'gen:v1:';
 export const HOT_EMBED_FP_PREFIX = 'embedfp:v1:';
 export const HOT_DEBT_PREFIX = 'debt:v1:';
 export const HOT_DEBT_PENDING_KEY = 'debt:v1:pending';
 export const HOT_MCP_SNAP_PREFIX = 'mcpsnap:v1:';
-
-export const catalogGenerationHotKey = (organizationId: string): string =>
-  `${HOT_GEN_PREFIX}${organizationId}`;
 
 export const embedFingerprintHotKey = (capabilityId: string): string =>
   `${HOT_EMBED_FP_PREFIX}${capabilityId}`;

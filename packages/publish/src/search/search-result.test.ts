@@ -16,19 +16,14 @@ describe('trimSearchResultToBudget', () => {
     const bulky = 'x'.repeat(300);
     const result: SearchResult = {
       ambiguous: false,
-      explanation: [
-        { fusedScore: 1, id: '@a/p/one' },
-        { fusedScore: 0.5, id: '@a/p/two' },
-      ],
       reason: 'ok',
       results: [
         { availability: 'ready', contract: { bulky }, id: '@a/p/one' },
         { availability: 'ready', contract: { bulky }, id: '@a/p/two' },
       ],
-      searchId: 's1',
       timing: emptyTiming,
     };
-    const trimmed = trimSearchResultToBudget(result, 900);
+    const trimmed = trimSearchResultToBudget(result, 400);
     expect(trimmed.results).toHaveLength(1);
     expect(utf8ByteLength(JSON.stringify(trimmed))).toBeLessThanOrEqual(900);
   });

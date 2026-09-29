@@ -1,6 +1,6 @@
 # MCP search, ranking, and execution
 
-How `functhis-mcp` finds a capability for an agent and runs it. This covers indexing on publish/import, the `search` tool, the `execute` tool, and how selections are logged for offline evaluation.
+How `functhis-mcp` finds a capability for an agent and runs it. This covers indexing on publish/import, the `search` tool, and the `execute` tool.
 
 If a term is unfamiliar (`RRF`, `nDCG`, …), skip to [Ranking vocabulary](#ranking-vocabulary) and come back.
 
@@ -8,7 +8,7 @@ Code lives in two places:
 
 - `apps/mcp/src/` — MCP tools (`mcp.ts`), search wiring (`search.ts`), execute dispatch.
 - Jev rerank scorer lives in `packages/publish/src/search/search-jev-rerank.ts` (MCP imports it when OpenRouter is configured).
-- `packages/publish/src/` — HOT catalog, search (`search/`), embeddings, Vectorize debt, analytics, execution adapters.
+- `packages/publish/src/` — HOT catalog, search (`search/`), embeddings, Vectorize debt, execution adapters.
 
 ```mermaid
 flowchart LR
@@ -16,7 +16,6 @@ flowchart LR
     P[publish or import] --> H[HOT fn docs and idx lists]
     H --> PR[projectCapabilityAfterHotWrite]
     PR --> D[vector debt]
-    H --> G[bump catalog generation]
     D -- cron --> V[(Vectorize)]
   end
   subgraph read [search]
@@ -63,16 +62,14 @@ Stable id: `@handle/package/function`. Source kinds: `hosted_function`, `openapi
 
 Search reads only `HOT` KV (`hot-keys.ts`):
 
-| Key | Value |
-| --- | --- |
-| `fn:v1:@h/p/f` | `HotFunctionDoc` JSON |
-| `idx:v1:mine:{userId}` | Owned function ids |
-| `idx:v1:org:{orgId}` | Org-visible ids |
-| `idx:v1:library` | Library-visible ids |
-| `member:v1:{userId}` | `{ organizationIds }` for ACL |
-| `gen:v1:{orgId}` | Per-org catalog generation (versions `search_event.catalog_generation`) |
+| Key                         | Value                                  |
+| --------------------------- | -------------------------------------- |
+| `fn:v1:@h/p/f`              | `HotFunctionDoc` JSON                  |
+| `idx:v1:mine:{userId}`      | Owned function ids                     |
+| `idx:v1:org:{orgId}`        | Org-visible ids                        |
+| `idx:v1:library`            | Library-visible ids                    |
+| `member:v1:{userId}`        | `{ organizationIds }` for ACL          |
 | `debt:v1:*`, `embedfp:v1:*` | Vector embedding debt and fingerprints |
-| `searchevt:v1:{searchId}` | Explanation blob (14 days) |
 
 Execute may fall back to Postgres on a HOT miss, then backfill HOT.
 
@@ -88,7 +85,7 @@ Publish finalize builds `searchText` from slug, description, examples, and schem
 
 ### Projection (`catalog/hot-search-projection.ts`)
 
-After each doc write, `projectCapabilityAfterHotWrite` enqueues vector debt. Batch writes call `bumpCatalogGenerationsForDocs` once per touched org. Embeddings are off the publish hot path.
+After each doc write, `projectCapabilityAfterHotWrite` enqueues vector debt. Embeddings are off the publish hot path.
 
 ### Embedding reconcile
 
@@ -127,9 +124,9 @@ fusedScore = rrfScore
 
 Empty query with no intents returns the first 15 accessible docs.
 
-## `execute` and feedback
+## `execute`
 
-`execute` resolves the doc, validates input, idempotency, quota, then dispatches by source kind. With `searchId`, `persistSearchSelection` writes `search_event` and `search_exposure` rows (`graphChannel: false`). Usage-based KV boosts were removed; exposure rows remain the offline evaluation dataset.
+`execute` resolves the doc, validates input, idempotency, quota, then dispatches by source kind.
 
 ## Development and offline behavior
 

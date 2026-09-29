@@ -36,7 +36,6 @@ describe('runCatalogSearch', () => {
     );
     expect(outcome).toEqual({
       ambiguous: false,
-      explanation: [],
       reason: 'no_match',
       results: [],
     });
@@ -76,6 +75,5 @@ describe('runCatalogSearch', () => {
     );
     expect(outcome.reason).toBe('ok');
     expect(outcome.results[0]?.id).toBe(id);
-    expect(outcome.explanation[0]?.exactRank).toBe(1);
   });
 });

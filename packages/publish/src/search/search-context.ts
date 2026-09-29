@@ -1,11 +1,7 @@
 import type { HotFunctionDoc } from '../catalog/hot-catalog';
 import type { HotKvBinding } from '../http/http-context';
 import type { SearchRerankScorer } from './search-rerank';
-import type {
-  SearchExplanationRow,
-  SearchHit,
-  SearchTiming,
-} from './search-result';
+import type { SearchHit, SearchTiming } from './search-result';
 import type { EmbeddingIndex } from './vectorize-index';
 
 export interface SearchFunctionsContext {
@@ -32,7 +28,6 @@ export interface CatalogSearchInput {
 
 export interface CatalogSearchOutcome {
   ambiguous: boolean;
-  explanation: SearchExplanationRow[];
   reason: 'browse' | 'no_match' | 'ok';
   results: SearchHit[];
 }

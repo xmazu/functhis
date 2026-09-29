@@ -2,9 +2,8 @@ import { describe, expect, test } from 'bun:test';
 
 import type { HotFunctionDoc } from './hot-catalog';
 import { writeHotFunctionDoc } from './hot-catalog';
-import { catalogGenerationHotKey, HOT_DEBT_PENDING_KEY } from './hot-keys';
+import { HOT_DEBT_PENDING_KEY } from './hot-keys';
 import {
-  bumpCatalogGenerationsForDocs,
   projectCapabilityAfterHotWrite,
   projectHotDocsForSearch,
 } from './hot-search-projection';
@@ -55,7 +54,7 @@ describe('hot search projection', () => {
     expect(await hot.get(HOT_DEBT_PENDING_KEY)).toBeNull();
   });
 
-  test('projectHotDocsForSearch enqueues debt and bumps generations', async () => {
+  test('projectHotDocsForSearch enqueues vector debt', async () => {
     const hot = memoryHot();
     const doc = sampleDoc('org-1');
     await writeHotFunctionDoc(hot, doc);
@@ -63,17 +62,5 @@ describe('hot search projection', () => {
     expect(await hot.get(HOT_DEBT_PENDING_KEY)).toContain(
       '@acme/crm/users/search'
     );
-    expect(await hot.get(catalogGenerationHotKey('org-1'))).toBe('1');
-  });
-
-  test('bumpCatalogGenerationsForDocs bumps each touched org once', async () => {
-    const hot = memoryHot();
-    await bumpCatalogGenerationsForDocs(hot, [
-      sampleDoc('org-a'),
-      sampleDoc('org-a'),
-      sampleDoc('org-b'),
-    ]);
-    expect(await hot.get(catalogGenerationHotKey('org-a'))).toBe('1');
-    expect(await hot.get(catalogGenerationHotKey('org-b'))).toBe('1');
   });
 });

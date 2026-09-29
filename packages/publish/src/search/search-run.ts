@@ -1,9 +1,4 @@
-import { readCatalogGeneration } from '../catalog/catalog-generation';
 import type { SearchDomain } from '../catalog/hot-catalog';
-import {
-  resolveSearchEventOrganizationId,
-  storeSearchEventHot,
-} from './search-analytics';
 import { loadSearchDocs } from './search-catalog-load';
 import { runCatalogSearch } from './search-catalog-pipeline';
 import type {
@@ -37,30 +32,6 @@ const emptyTiming = (): SearchTiming => ({
   vectorMs: 0,
 });
 
-const runEmptyQuerySearch = async (
-  hot: SearchFunctionsContext['hot'],
-  domain: SearchDomain,
-  callerUserId: string,
-  timing: SearchTiming
-): Promise<{
-  analyticsOrganizationId: string | null;
-  results: ReturnType<typeof toHit>[];
-}> => {
-  const loadStarted = Date.now();
-  const loaded = await loadSearchDocs(hot, domain, callerUserId);
-  timing.loadMs = Date.now() - loadStarted;
-  return {
-    analyticsOrganizationId: resolveSearchEventOrganizationId(
-      domain,
-      loaded.docs,
-      loaded.accessContext.organizationIds
-    ),
-    results: loaded.docs
-      .slice(0, SEARCH_DEFAULT_LIMIT)
-      .map((doc) => toHit(doc)),
-  };
-};
-
 export const searchFunctionsWithContext = async (
   context: SearchFunctionsContext,
   input: {
@@ -79,58 +50,27 @@ export const searchFunctionsWithContext = async (
     input.intents?.some((intent) => intent.trim().length > 0) ?? false;
   const phrasings = searchPhrasings(trimmedQuery, input.intents);
   const primaryQuery = phrasings[0] ?? '';
-  const searchId = crypto.randomUUID();
   const { hot } = context;
 
-  let analyticsOrganizationId: string | null = null;
-  let analyticsGeneration = 0;
-
-  const finish = async (
-    result: Omit<SearchResult, 'searchId' | 'timing'> & {
-      timing?: SearchTiming;
-    }
-  ): Promise<SearchResult> => {
+  const finish = (
+    result: Omit<SearchResult, 'timing'> & { timing?: SearchTiming }
+  ): SearchResult => {
     timing.totalMs = Date.now() - started;
-    const payload: SearchResult = trimSearchResultToBudget({
+    return trimSearchResultToBudget({
       ...result,
-      searchId,
       timing: result.timing ?? timing,
     });
-    if (analyticsOrganizationId && trimmedQuery.length > 0) {
-      await storeSearchEventHot({
-        callerUserId: input.callerUserId,
-        catalogGeneration: analyticsGeneration,
-        explanation: payload.explanation,
-        hot,
-        organizationId: analyticsOrganizationId,
-        query: trimmedQuery,
-        searchId,
-      });
-    }
-    return payload;
   };
 
   if (trimmedQuery.length === 0 && !hasIntentInput) {
-    const empty = await runEmptyQuerySearch(
-      hot,
-      domain,
-      input.callerUserId,
-      timing
-    );
-    const { analyticsOrganizationId: emptyAnalyticsOrgId, results } = empty;
-    analyticsOrganizationId = emptyAnalyticsOrgId;
-    if (emptyAnalyticsOrgId) {
-      analyticsGeneration = await readCatalogGeneration(
-        hot,
-        emptyAnalyticsOrgId
-      );
-    }
+    const loadStarted = Date.now();
+    const loaded = await loadSearchDocs(hot, domain, input.callerUserId);
+    timing.loadMs = Date.now() - loadStarted;
+    const results = loaded.docs
+      .slice(0, SEARCH_DEFAULT_LIMIT)
+      .map((doc) => toHit(doc));
     return finish({
       ambiguous: false,
-      explanation: results.map((hit) => ({
-        fusedScore: 0,
-        id: hit.id,
-      })),
       reason: results.length === 0 ? 'no_match' : 'ok',
       results,
     });
@@ -139,7 +79,6 @@ export const searchFunctionsWithContext = async (
   if (phrasings.length === 0) {
     return finish({
       ambiguous: false,
-      explanation: [],
       reason: 'no_match',
       results: [],
     });
@@ -161,16 +100,5 @@ export const searchFunctionsWithContext = async (
     },
     options
   );
-  analyticsOrganizationId = resolveSearchEventOrganizationId(
-    domain,
-    loaded.docs,
-    loaded.accessContext.organizationIds
-  );
-  if (analyticsOrganizationId) {
-    analyticsGeneration = await readCatalogGeneration(
-      hot,
-      analyticsOrganizationId
-    );
-  }
   return finish(outcome);
 };

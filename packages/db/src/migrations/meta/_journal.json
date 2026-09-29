@@ -36,6 +36,13 @@
       "when": 1790580000000,
       "tag": "0004_catalog_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790705198392,
+      "tag": "0005_swift_wind_dancer",
+      "breakpoints": true
     }
   ]
 }

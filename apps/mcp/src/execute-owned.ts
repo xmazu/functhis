@@ -9,7 +9,6 @@ export interface ExecuteOwnedInput {
   arguments?: unknown;
   id: string;
   idempotencyKey?: string;
-  searchId?: string;
 }
 
 export interface ExecuteOwnedSuccess {
@@ -50,7 +49,6 @@ export const executeOwnedFunction = async (
             : undefined,
         id: input.id,
         idempotencyKey: input.idempotencyKey,
-        searchId: input.searchId,
       }
     );
     if (!result.ok) {

@@ -6,8 +6,6 @@ import {
   execution,
   pkg,
   pkgFunction,
-  searchEvent,
-  searchExposure,
 } from '@functhis/db/schema/catalog';
 import { dispatchExecute } from '@functhis/mcp/execute-dispatch';
 import { searchFunctionsWithContext } from '@functhis/mcp/search';
@@ -139,7 +137,6 @@ describe('OpenAPI import through execute and analytics', () => {
       arguments: { id: '1' },
       id: capabilityId,
       idempotencyKey,
-      searchId: search.searchId,
     };
 
     const firstExecute = await dispatchExecute(env, userId, executeInput);
@@ -157,24 +154,7 @@ describe('OpenAPI import through execute and analytics', () => {
     });
     expect(mismatch.status).toBe(409);
 
-    const [eventRow] = await db
-      .select()
-      .from(searchEvent)
-      .where(eq(searchEvent.id, search.searchId))
-      .limit(1);
-    expect(eventRow?.selectedCapabilityId).toBe(capabilityId);
-    expect(eventRow?.executionOutcome).toBe('succeeded');
-
-    const exposures = await db
-      .select()
-      .from(searchExposure)
-      .where(eq(searchExposure.searchEventId, search.searchId));
-    expect(exposures.length).toBeGreaterThan(0);
-
-    const executions = await db
-      .select()
-      .from(execution)
-      .where(eq(execution.searchId, search.searchId));
+    const executions = await db.select().from(execution);
     expect(executions.length).toBeGreaterThan(0);
 
     const generations = await db

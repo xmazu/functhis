@@ -166,14 +166,6 @@
       "types": "./src/search/search-result.ts",
       "default": "./src/search/search-result.ts"
     },
-    "./search-analytics": {
-      "types": "./src/search/search-analytics.ts",
-      "default": "./src/search/search-analytics.ts"
-    },
-    "./catalog-generation": {
-      "types": "./src/catalog/catalog-generation.ts",
-      "default": "./src/catalog/catalog-generation.ts"
-    },
     "./hot-search-projection": {
       "types": "./src/catalog/hot-search-projection.ts",
       "default": "./src/catalog/hot-search-projection.ts"

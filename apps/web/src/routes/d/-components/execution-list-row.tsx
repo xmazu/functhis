@@ -14,7 +14,6 @@ export interface ExecutionListRowModel {
   cpuMs?: number | null;
   functionSlug: string | null;
   id: string;
-  searchId?: string | null;
   status: string;
 }
 
@@ -44,11 +43,6 @@ export const ExecutionListRow = ({
       {execution.functionSlug ?? '—'}
     </span>
     <span className="ms-auto">{execution.status}</span>
-    {execution.searchId ? (
-      <span className="text-muted-foreground font-mono">
-        {execution.searchId.slice(0, 8)}
-      </span>
-    ) : null}
     {execution.cpuMs === null || execution.cpuMs === undefined ? null : (
       <span className="font-mono tabular-nums">{execution.cpuMs} ms</span>
     )}

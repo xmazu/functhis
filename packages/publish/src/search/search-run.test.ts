@@ -193,7 +193,7 @@ describe('searchFunctionsWithContext', () => {
     expect(result.results.map((hit) => hit.id)).toEqual([
       '@acme/crm/users/search',
     ]);
-    expect(result.explanation[0]?.exactRank).toBe(1);
+    expect(result.reason).toBe('ok');
   });
 
   test('empty query lists owned functions', async () => {

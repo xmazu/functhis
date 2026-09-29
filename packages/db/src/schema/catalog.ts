@@ -1,7 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
-  doublePrecision,
   index,
   integer,
   jsonb,
@@ -165,7 +164,6 @@ export const execution = pgTable(
       .references(() => packageVersion.id, { onDelete: 'cascade' }),
     requestBytes: integer('request_bytes'),
     responseBytes: integer('response_bytes'),
-    searchId: text('search_id'),
     startedAt: timestamp('started_at'),
     status: text('status').notNull(),
   },
@@ -175,7 +173,6 @@ export const execution = pgTable(
     index('execution_created_at_idx').on(table.createdAt),
     index('execution_caller_user_id_idx').on(table.callerUserId),
     index('execution_status_idx').on(table.status),
-    index('execution_search_id_idx').on(table.searchId),
   ]
 );
 
@@ -220,14 +217,6 @@ export const hostedSecret = pgTable(
     index('secret_package_id_idx').on(table.packageId),
   ]
 );
-
-export const orgCatalogSettings = pgTable('org_catalog_settings', {
-  organizationId: text('organization_id')
-    .primaryKey()
-    .references(() => organization.id, { onDelete: 'cascade' }),
-  rankingShareOptIn: boolean('ranking_share_opt_in').default(false).notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
 
 export const capabilitySource = pgTable(
   'capability_source',
@@ -289,82 +278,6 @@ export const capabilityGeneration = pgTable(
       table.generation
     ),
     index('capability_generation_source_id_idx').on(table.sourceId),
-  ]
-);
-
-export const capabilityGraphEdge = pgTable(
-  'capability_graph_edge',
-  {
-    confidence: doublePrecision('confidence').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    fromId: text('from_id').notNull(),
-    generation: integer('generation').notNull(),
-    id: text('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    organizationId: text('organization_id')
-      .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
-    provenance: text('provenance').notNull(),
-    toId: text('to_id').notNull(),
-    type: text('type').notNull(),
-    weight: doublePrecision('weight').notNull(),
-  },
-  (table) => [
-    uniqueIndex('capability_graph_edge_uidx').on(
-      table.organizationId,
-      table.fromId,
-      table.toId,
-      table.type,
-      table.generation
-    ),
-    index('capability_graph_edge_org_idx').on(table.organizationId),
-    index('capability_graph_edge_from_idx').on(table.fromId),
-    index('capability_graph_edge_to_idx').on(table.toId),
-  ]
-);
-
-export const searchEvent = pgTable(
-  'search_event',
-  {
-    callerUserId: text('caller_user_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    catalogGeneration: integer('catalog_generation').default(0).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    executionOutcome: text('execution_outcome').default('not_called').notNull(),
-    id: text('id').primaryKey(),
-    organizationId: text('organization_id')
-      .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
-    queryHash: text('query_hash').notNull(),
-    selectedCapabilityId: text('selected_capability_id'),
-  },
-  (table) => [
-    index('search_event_organization_id_idx').on(table.organizationId),
-    index('search_event_created_at_idx').on(table.createdAt),
-  ]
-);
-
-export const searchExposure = pgTable(
-  'search_exposure',
-  {
-    capabilityId: text('capability_id').notNull(),
-    exactChannel: boolean('exact_channel').default(false).notNull(),
-    graphChannel: boolean('graph_channel').default(false).notNull(),
-    id: text('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    lexicalChannel: boolean('lexical_channel').default(false).notNull(),
-    position: integer('position').notNull(),
-    searchEventId: text('search_event_id')
-      .notNull()
-      .references(() => searchEvent.id, { onDelete: 'cascade' }),
-    vectorChannel: boolean('vector_channel').default(false).notNull(),
-  },
-  (table) => [
-    index('search_exposure_event_idx').on(table.searchEventId),
-    index('search_exposure_capability_idx').on(table.capabilityId),
   ]
 );
 

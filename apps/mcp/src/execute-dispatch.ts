@@ -22,7 +22,6 @@ import {
   assertExecuteRequestSize,
   executeRequestByteLength,
 } from '@functhis/publish/quotas';
-import { persistSearchSelection } from '@functhis/publish/search-analytics';
 import { validateContractInput } from '@functhis/publish/validate-input';
 import type { ContractInputValidationIssue } from '@functhis/publish/validate-input';
 
@@ -41,7 +40,6 @@ export interface DispatchInput {
   arguments?: Record<string, unknown>;
   id: string;
   idempotencyKey?: string;
-  searchId?: string;
 }
 
 export interface DispatchResult {
@@ -73,18 +71,6 @@ const jsonError = (
   timing: { queueMs: 0, totalMs: Date.now() - started, upstreamMs: 0 },
   ...extra,
 });
-
-const selectionOutcome = (
-  result: DispatchResult
-): 'failed' | 'succeeded' | 'unavailable' => {
-  if (result.error === 'source_unavailable') {
-    return 'unavailable';
-  }
-  if (result.ok) {
-    return 'succeeded';
-  }
-  return 'failed';
-};
 
 export const dispatchExecute = async (
   env: Env,
@@ -206,7 +192,6 @@ export const dispatchExecute = async (
       doc: row,
       requestBytes,
       runInput,
-      searchId: input.searchId,
       signal,
     });
   } else if (sourceKind === 'remote_mcp_tool') {
@@ -215,7 +200,6 @@ export const dispatchExecute = async (
       doc: row,
       requestBytes,
       runInput,
-      searchId: input.searchId,
       signal,
     });
   } else {
@@ -225,7 +209,6 @@ export const dispatchExecute = async (
       parsedId,
       requestBytes,
       runInput,
-      searchId: input.searchId,
       signal,
     });
   }
@@ -237,16 +220,6 @@ export const dispatchExecute = async (
       key: input.idempotencyKey,
       organizationId: row.organizationId,
       status: result.status,
-    });
-  }
-
-  if (input.searchId) {
-    await persistSearchSelection({
-      capabilityId: input.id,
-      database,
-      hot,
-      outcome: selectionOutcome(result),
-      searchId: input.searchId,
     });
   }
 

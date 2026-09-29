@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
 import { searchFunctionsWithContext } from '@functhis/mcp/search';
-import { readCatalogGeneration } from '@functhis/publish/catalog-generation';
 import {
   CAPABILITY_VECTOR_KIND,
   deterministicEmbedding,
@@ -29,7 +28,7 @@ const manyExportFunctions = (count: number) =>
   }));
 
 describe('publish projection and hybrid search', () => {
-  test('finalize projects catalog generation and vector debt', async () => {
+  test('finalize projects vector debt', async () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
@@ -76,8 +75,6 @@ describe('publish projection and hybrid search', () => {
       handle,
       packageSlug,
     });
-
-    expect(await readCatalogGeneration(hot, organizationId)).toBeGreaterThan(0);
 
     const index = new MemoryEmbeddingIndex();
     expect(

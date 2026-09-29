@@ -52,7 +52,6 @@ export const executeHostedAdapter = async (
     };
     requestBytes: number;
     runInput: unknown;
-    searchId?: string;
     signal?: AbortSignal;
   }
 ): Promise<DispatchResult> => {
@@ -134,7 +133,6 @@ export const executeHostedAdapter = async (
     organizationId: input.doc.organizationId,
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
-    searchId: input.searchId,
     startedAt: new Date(),
   });
 
@@ -171,8 +169,7 @@ export const executeHostedAdapter = async (
     input.doc.functionId,
     executionId,
     input.parsedId.handle,
-    input.parsedId.packageSlug,
-    input.searchId
+    input.parsedId.packageSlug
   );
   const responseText = await httpResponse.text();
   if (run.status === 'cancelled') {

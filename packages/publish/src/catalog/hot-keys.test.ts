@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
-  catalogGenerationHotKey,
   embedFingerprintHotKey,
   functionHotKey,
   functionHotKeyFromId,
@@ -31,7 +30,6 @@ describe('hot-keys', () => {
     expect(HOT_IDX_LIBRARY_KEY).toBe('idx:v1:library');
     expect(memberHotKey('user-1')).toBe('member:v1:user-1');
     expect(HOT_JWKS_KEY).toBe('jwks:v1');
-    expect(catalogGenerationHotKey('org-1')).toBe('gen:v1:org-1');
     expect(embedFingerprintHotKey('@acme/crm/users/search')).toBe(
       'embedfp:v1:@acme/crm/users/search'
     );

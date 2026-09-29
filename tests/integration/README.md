@@ -50,7 +50,7 @@ In-process Node, **direct TCP** Postgres (`127.0.0.1:5432/integration`).
 - **Deploy start → finalize** - opaque bearer auth, catalog rows, artifact store stub, semver, org scope.
 - **Deploy rollback** - restore a previous semver by slug or package id.
 - **Publish → hybrid search** - finalize projects graph/vector debt; reconcile + `searchFunctionsWithContext` (vector, alias, mocked Jev).
-- **OpenAPI import → execute** - import/drift/accept, search, stubbed upstream `fetch`, idempotency replay, `search_event` analytics.
+- **OpenAPI import → execute** - import/drift/accept, search, stubbed upstream `fetch`, idempotency replay.
 - **Remote MCP sync → execute** - injected tools, snapshot HOT, stubbed `tools/call` via `dispatchExecute`.
 - **MCP search ranking / rerank** - HOT catalog seed, lexical order, mocked Jev rerank via `searchFunctionsWithContext`.
 - **Execute idempotency** - real Postgres claim, completion, replay, and request-hash mismatch behavior (store layer).

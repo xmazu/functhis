@@ -56,10 +56,6 @@ const emptyOutcome = (
   results: SearchHit[]
 ): CatalogSearchOutcome => ({
   ambiguous: false,
-  explanation: results.map((hit) => ({
-    fusedScore: 0,
-    id: hit.id,
-  })),
   reason,
   results,
 });
@@ -178,13 +174,6 @@ export const runCatalogSearch = async (
 
   return {
     ambiguous: selected.ambiguous,
-    explanation: orderedDocs.map((row) => ({
-      exactRank: row.fused.exactRank,
-      fusedScore: row.fused.fusedScore,
-      id: row.fused.id,
-      lexicalRank: row.fused.lexicalRank,
-      vectorRank: row.fused.vectorRank,
-    })),
     reason: selected.reason,
     results: orderedDocs.map((row) => toHit(row.doc)),
   };

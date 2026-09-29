@@ -16,7 +16,6 @@ export const insertExecutionRow = async (
     packageVersionId: string;
     requestBytes: number;
     responseBytes: number;
-    searchId?: string | null;
     startedAt: Date;
     status: string;
   }
@@ -33,7 +32,6 @@ export const insertExecutionRow = async (
         packageVersionId: input.packageVersionId,
         requestBytes: input.requestBytes,
         responseBytes: input.responseBytes,
-        searchId: input.searchId ?? null,
         startedAt: input.startedAt,
         status: input.status,
       })
@@ -52,7 +50,6 @@ export const insertExecutionRow = async (
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       responseBytes: input.responseBytes,
-      searchId: input.searchId ?? null,
       startedAt: input.startedAt,
       status: input.status,
     });
@@ -70,7 +67,6 @@ export const insertStartedExecutionRow = async (
     organizationId: string;
     packageVersionId: string;
     requestBytes: number;
-    searchId?: string | null;
     startedAt: Date;
   }
 ): Promise<void> => {
@@ -83,7 +79,6 @@ export const insertStartedExecutionRow = async (
       organizationId: input.organizationId,
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
-      searchId: input.searchId ?? null,
       startedAt: input.startedAt,
       status: 'running',
     });

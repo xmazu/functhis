@@ -19,7 +19,6 @@ const executeInputSchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
   id: z.string().min(1),
   idempotencyKey: z.string().min(1).optional(),
-  searchId: z.string().min(1).optional(),
 });
 
 const toolErrorContent = (message: string, structured?: unknown) => ({
@@ -49,7 +48,7 @@ export const createFuncthisMcpHandler = (
         'search',
         {
           description:
-            'Find capabilities for an agent goal. Describe the goal as short verb+object phrases (for example "greet a user", "send welcome email"). Put alternative phrasings in intents (up to 5). domain: mine (default), org (organization-shared), library (public). Results include contract (description, examples, inputSchema, outputSchema). Use contract.inputSchema to build execute.arguments. Use the returned id with execute. Pass searchId to execute when following a hit. reason "browse" means nothing ranked; pick from the listed contracts yourself or ask the user to clarify.',
+            'Find capabilities for an agent goal. Describe the goal as short verb+object phrases (for example "greet a user", "send welcome email"). Put alternative phrasings in intents (up to 5). domain: mine (default), org (organization-shared), library (public). Results include contract (description, examples, inputSchema, outputSchema). Use contract.inputSchema to build execute.arguments. Use the returned id with execute. reason "browse" means nothing ranked; pick from the listed contracts yourself or ask the user to clarify.',
           inputSchema: searchInputSchema,
         },
         async (input) => {
@@ -75,7 +74,6 @@ export const createFuncthisMcpHandler = (
             message: 'mcp.search',
             query: summarizeMcpSearchQuery(input.query),
             reason: result.reason,
-            searchId: result.searchId,
             userId,
             vectorMs: result.timing.vectorMs,
           });
@@ -83,7 +81,6 @@ export const createFuncthisMcpHandler = (
             ambiguous: result.ambiguous,
             reason: result.reason,
             results: result.results,
-            searchId: result.searchId,
             timing: result.timing,
           };
           return {
@@ -102,7 +99,7 @@ export const createFuncthisMcpHandler = (
         'execute',
         {
           description:
-            'Run a deployed function by id from search (for example @handle/package/function). Pass arguments as a JSON object matching contract.inputSchema from search when present; otherwise {} or omit. Optional searchId links this call to a prior search. Optional idempotencyKey replays a completed call.',
+            'Run a deployed function by id from search (for example @handle/package/function). Pass arguments as a JSON object matching contract.inputSchema from search when present; otherwise {} or omit. Optional idempotencyKey replays a completed call.',
           inputSchema: executeInputSchema,
         },
         async (input) => {
@@ -114,7 +111,6 @@ export const createFuncthisMcpHandler = (
                 arguments: input.arguments,
                 id: input.id,
                 idempotencyKey: input.idempotencyKey,
-                searchId: input.searchId,
               },
               dependencies
             );

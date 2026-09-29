@@ -162,10 +162,8 @@ describe('MCP protocol handshake', () => {
         await Promise.resolve();
         return {
           ambiguous: false,
-          explanation: [],
           reason: 'ok',
           results: [],
-          searchId: 'search-1',
           timing: {
             jevMs: 2,
             lexicalMs: 3,

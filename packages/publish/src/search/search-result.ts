@@ -53,10 +53,8 @@ export interface SearchExplanationRow {
 
 export interface SearchResult {
   ambiguous: boolean;
-  explanation: SearchExplanationRow[];
   reason: 'browse' | 'no_match' | 'ok';
   results: SearchHit[];
-  searchId: string;
   timing: SearchTiming;
 }
 
@@ -69,7 +67,6 @@ export const trimSearchResultToBudget = (
 ): SearchResult => {
   const clone: SearchResult = {
     ...result,
-    explanation: [...result.explanation],
     results: [...result.results],
   };
   while (
@@ -77,7 +74,6 @@ export const trimSearchResultToBudget = (
     clone.results.length > 1
   ) {
     clone.results.pop();
-    clone.explanation.pop();
   }
   return clone;
 };

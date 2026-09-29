@@ -38,7 +38,6 @@ describe('searchFunctions', () => {
             ambiguous: false,
             reason: 'no_match',
             results: [],
-            searchId: 'search',
             timing: {
               jevMs: 0,
               lexicalMs: 0,
@@ -50,7 +49,7 @@ describe('searchFunctions', () => {
         },
       }
     );
-    expect(result.searchId).toBe('search');
+    expect(result.reason).toBe('no_match');
   });
 
   test('embeds when the environment is online', async () => {
@@ -76,7 +75,6 @@ describe('searchFunctions', () => {
             ambiguous: false,
             reason: 'no_match',
             results: [],
-            searchId: 'search',
             timing: {
               jevMs: 0,
               lexicalMs: 0,
