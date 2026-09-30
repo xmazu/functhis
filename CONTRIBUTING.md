@@ -43,6 +43,64 @@ bun run dev:web
 
 Sign in at http://localhost:3001/login to exercise OAuth flows.
 
+## Stripe billing (optional)
+
+Org billing in `/d` uses the Better Auth Stripe plugin (`packages/auth/src/stripe-plugin.ts`). **You do not need Stripe to develop** publish, MCP, or most of the owner UI—login, packages, secrets, and execute work without it. When Stripe env vars are unset, `billingEnabled` stays false and entitlements still come from Postgres (trial limits, etc.).
+
+### Plans and env vars
+
+Paid plan amounts and limits live in `packages/publish/src/org/plan-catalog.ts` (`FUNCTHIS_PLANS`: Developer **$19/mo**, Team **$79/mo**). Trial and Enterprise have no Stripe price.
+
+| Variable | Purpose |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | Stripe API key (`sk_test_…` locally) |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for `/api/auth/stripe/webhook` |
+| `STRIPE_PRICE_DEVELOPER_MONTHLY` | Price id (`price_…`) for the `developer` plan |
+| `STRIPE_PRICE_TEAM_MONTHLY` | Price id for the `team` plan |
+| `STRIPE_PRO_PRICE_ID` | Legacy alias for the developer price (optional if `STRIPE_PRICE_DEVELOPER_MONTHLY` is set) |
+
+All of the above belong in **`apps/web/.env`** only (see `apps/web/.env.example` and `.env.schema`). MCP does not need Stripe keys.
+
+### Sync products and prices (local test mode)
+
+Scripts under `packages/auth/scripts/` mirror the idempotent catalog sync from `@xmazu/platforms-billing` (`metadata.plan` = `developer` | `team`):
+
+```bash
+# Creates or reuses Stripe products/prices from FUNCTHIS_PLANS; merges price ids into apps/web/.env
+STRIPE_SECRET_KEY=sk_test_... bun run stripe:setup --write-env
+```
+
+Add `STRIPE_SECRET_KEY=sk_test_...` to `apps/web/.env` if it is not there yet, then re-run if you only synced prices.
+
+### Webhooks locally
+
+Better Auth expects events at **`http://localhost:3001/api/auth/stripe/webhook`** in dev.
+
+1. Install the [Stripe CLI](https://stripe.com/docs/stripe-cli).
+2. Use the **same** Stripe account as `STRIPE_SECRET_KEY` (`stripe login` if needed).
+3. Forward webhooks and copy the signing secret into `apps/web/.env`:
+
+```bash
+stripe listen --forward-to http://localhost:3001/api/auth/stripe/webhook
+# Paste whsec_... as STRIPE_WEBHOOK_SECRET, restart bun run dev
+```
+
+After `bun run dev` is up, exercise checkout from `/d` billing UI (org owner/admin). Subscription rows land in Postgres via the plugin; MCP execution quotas still read Postgres, not Stripe on the hot path.
+
+### Production
+
+Production binds the same names from **Cloudflare Secrets Store** (`apps/web/wrangler.jsonc` `env.production`). Terraform does not create Stripe secrets.
+
+```bash
+STRIPE_SECRET_KEY=sk_live_... bun run stripe:setup --write-env
+# After functhis-web is live:
+STRIPE_SECRET_KEY=sk_live_... bun run stripe:setup --url https://functhis.now --rotate-webhook
+set -a && source apps/web/.env && set +a
+bun run stripe:setup --push-secrets-store
+```
+
+See [README.md — Deployment](./README.md#deployment) for the full deploy checklist.
+
 ## Test everything
 
 | Layer | Command | What it covers |

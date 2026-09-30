@@ -259,16 +259,70 @@ CREATE TABLE "verification" (
 	"value" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "capability_generation" (
+	"contract_bundle" jsonb NOT NULL,
+	"contract_hash" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"generation" integer NOT NULL,
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"source_id" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "capability_source" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"credential_name" text,
+	"current_generation" integer DEFAULT 0 NOT NULL,
+	"endpoint" text NOT NULL,
+	"health" text DEFAULT 'ready' NOT NULL,
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"kind" text NOT NULL,
+	"last_error" text,
+	"organization_id" text NOT NULL,
+	"package_id" text,
+	"schema_hash" text,
+	"slug" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "execute_idempotency" (
+	"body_text" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"key" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"request_hash" text NOT NULL,
+	"response_status" integer,
+	"status" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "execution" (
 	"caller_user_id" text,
+	"completed_at" timestamp,
 	"cpu_ms" integer,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"function_id" text,
 	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" text NOT NULL,
 	"package_version_id" text NOT NULL,
 	"request_bytes" integer,
 	"response_bytes" integer,
+	"started_at" timestamp,
 	"status" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "secret" (
+	"ciphertext" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"key_version" integer DEFAULT 1 NOT NULL,
+	"last_used_at" timestamp,
+	"name" text NOT NULL,
+	"nonce" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"package_id" text,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"updated_by" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "org_usage_period" (
@@ -285,11 +339,14 @@ CREATE TABLE "package_version" (
 	"created_by" text NOT NULL,
 	"git_dirty" boolean DEFAULT false NOT NULL,
 	"git_sha" text,
+	"host_allowlist" text[],
 	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"package_id" text NOT NULL,
 	"runtime_version" text NOT NULL,
+	"secret_names" text[] DEFAULT '{}'::text[] NOT NULL,
 	"semver" text NOT NULL,
-	"source_hash" text NOT NULL
+	"source_hash" text NOT NULL,
+	"strict_output" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "package" (
@@ -299,6 +356,7 @@ CREATE TABLE "package" (
 	"organization_id" text NOT NULL,
 	"owner_user_id" text NOT NULL,
 	"slug" text NOT NULL,
+	"source_kind" text DEFAULT 'hosted_function' NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"visibility" "package_visibility" DEFAULT 'private' NOT NULL
 );
@@ -333,9 +391,17 @@ ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_client_id_
 ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "capability_generation" ADD CONSTRAINT "capability_generation_source_id_capability_source_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."capability_source"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "capability_source" ADD CONSTRAINT "capability_source_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "capability_source" ADD CONSTRAINT "capability_source_package_id_package_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."package"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "execute_idempotency" ADD CONSTRAINT "execute_idempotency_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "execution" ADD CONSTRAINT "execution_caller_user_id_user_id_fk" FOREIGN KEY ("caller_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "execution" ADD CONSTRAINT "execution_function_id_function_id_fk" FOREIGN KEY ("function_id") REFERENCES "public"."function"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "execution" ADD CONSTRAINT "execution_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "execution" ADD CONSTRAINT "execution_package_version_id_package_version_id_fk" FOREIGN KEY ("package_version_id") REFERENCES "public"."package_version"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "secret" ADD CONSTRAINT "secret_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "secret" ADD CONSTRAINT "secret_package_id_package_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."package"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "secret" ADD CONSTRAINT "secret_updated_by_user_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."user"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_usage_period" ADD CONSTRAINT "org_usage_period_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "package_version" ADD CONSTRAINT "package_version_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "package_version" ADD CONSTRAINT "package_version_package_id_package_id_fk" FOREIGN KEY ("package_id") REFERENCES "public"."package"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -367,9 +433,22 @@ CREATE INDEX "oauthRefreshToken_authorizationCodeId_idx" ON "oauth_refresh_token
 CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "subscription_reference_id_idx" ON "subscription" USING btree ("reference_id");--> statement-breakpoint
 CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
+CREATE UNIQUE INDEX "capability_generation_source_generation_uidx" ON "capability_generation" USING btree ("source_id","generation");--> statement-breakpoint
+CREATE INDEX "capability_generation_source_id_idx" ON "capability_generation" USING btree ("source_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "capability_source_org_slug_uidx" ON "capability_source" USING btree ("organization_id","slug");--> statement-breakpoint
+CREATE INDEX "capability_source_organization_id_idx" ON "capability_source" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "capability_source_package_id_idx" ON "capability_source" USING btree ("package_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "execute_idempotency_org_key_uidx" ON "execute_idempotency" USING btree ("organization_id","key");--> statement-breakpoint
+CREATE INDEX "execute_idempotency_updated_at_idx" ON "execute_idempotency" USING btree ("updated_at");--> statement-breakpoint
+CREATE INDEX "execution_organization_id_idx" ON "execution" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "execution_package_version_id_idx" ON "execution" USING btree ("package_version_id");--> statement-breakpoint
 CREATE INDEX "execution_created_at_idx" ON "execution" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "execution_caller_user_id_idx" ON "execution" USING btree ("caller_user_id");--> statement-breakpoint
+CREATE INDEX "execution_status_idx" ON "execution" USING btree ("status");--> statement-breakpoint
+CREATE UNIQUE INDEX "secret_org_name_uidx" ON "secret" USING btree ("organization_id","name") WHERE "secret"."package_id" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX "secret_package_name_uidx" ON "secret" USING btree ("package_id","name") WHERE "secret"."package_id" is not null;--> statement-breakpoint
+CREATE INDEX "secret_organization_id_idx" ON "secret" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "secret_package_id_idx" ON "secret" USING btree ("package_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "org_usage_period_org_period_uidx" ON "org_usage_period" USING btree ("organization_id","period_key");--> statement-breakpoint
 CREATE INDEX "package_version_package_id_idx" ON "package_version" USING btree ("package_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "package_version_package_id_semver_uidx" ON "package_version" USING btree ("package_id","semver");--> statement-breakpoint

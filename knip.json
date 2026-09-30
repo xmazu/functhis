@@ -43,8 +43,8 @@
       "ignoreDependencies": ["zod"]
     },
     "packages/auth": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**/*.{ts,tsx}"],
+      "entry": ["src/index.ts", "scripts/**/*.ts"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
       "ignoreDependencies": ["zod"]
     },
     "packages/api": {

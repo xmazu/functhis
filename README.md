@@ -258,6 +258,19 @@ Detailed execution telemetry uses `AXIOM_API_TOKEN` and `AXIOM_DATASET` on **`fu
 
 Stripe price environment names are `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`. Enterprise is contract-priced and does not use a Stripe price environment variable.
 
+**Stripe catalog (test or live):** sync products/prices from `FUNCTHIS_PLANS` (Developer $19/mo, Team $79/mo), same idea as `@xmazu/platforms-billing` `syncStripe`:
+
+```bash
+STRIPE_SECRET_KEY=sk_test_... bun run stripe:setup --write-env
+# After functhis-web is reachable:
+STRIPE_SECRET_KEY=sk_... bun run stripe:setup --url https://functhis.now --rotate-webhook
+# Push STRIPE_* from your shell env into Cloudflare Secrets Store (store id in apps/web/wrangler.jsonc):
+set -a && source apps/web/.env && set +a
+bun run stripe:setup --push-secrets-store
+```
+
+Scripts live under `packages/auth/scripts/` (`sync-stripe-catalog.ts`, `ensure-stripe-webhook.ts`, `stripe-setup.ts`). Webhook target: `https://functhis.now/api/auth/stripe/webhook`.
+
 **Schema deploy order:** run `bun run db:migrate:local` (or your production migration path) **before** deploying web or MCP whenever migrations add columns the Workers read (for example `secret.last_used_at`). Shipping code first against an unmigrated database breaks execute and dashboard secret views.
 
 **Analytics continuity:** runtime execution analytics now index by `organizationId`. Organization Usage charts only include activity recorded after that change; older datapoints keyed by caller user id do not appear in org-filtered queries.
