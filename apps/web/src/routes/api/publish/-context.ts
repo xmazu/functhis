@@ -1,5 +1,5 @@
 import { validatePublishBearerToken } from '@functhis/auth/publish-token';
-import type { PublishHandlerContext } from '@functhis/core/publish/http';
+import type { PublishHandlerContext } from '@functhis/core/publish';
 
 import { env } from '#/env.server';
 import { getCatalog, getDb } from '#/services';

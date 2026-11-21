@@ -1,4 +1,4 @@
-import type { ExecutionLogPort } from '@functhis/core/publish/ports';
+import type { ExecutionLogPort } from '@functhis/core/publish';
 
 import { eq } from '../drizzle';
 import type { Database } from '../index';

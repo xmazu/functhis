@@ -1,267 +1,44 @@
 {
   "name": "@functhis/core",
   "version": "0.1.0",
+  "description": "Functhis publish, MCP, runtime, and catalog ports (no database)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xmazu/functhis.git",
+    "directory": "packages/core"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "README.md"
+  ],
   "type": "module",
   "imports": {
     "#/*": "./src/*"
   },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
-    "./search": {
-      "types": "./src/mcp/search.ts",
-      "default": "./src/mcp/search.ts"
-    },
-    "./execute-dispatch": {
-      "types": "./src/mcp/execute-dispatch.ts",
-      "default": "./src/mcp/execute-dispatch.ts"
-    },
-    "./runtime": {
-      "types": "./src/runtime/index.ts",
-      "default": "./src/runtime/index.ts"
+    "./mcp": {
+      "types": "./src/mcp/index.ts",
+      "default": "./src/mcp/index.ts"
     },
     "./publish": {
       "types": "./src/publish/index.ts",
       "default": "./src/publish/index.ts"
     },
-    "./publish/oauth": {
-      "types": "./src/publish/auth/oauth.ts",
-      "default": "./src/publish/auth/oauth.ts"
-    },
-    "./publish/oauth-resource": {
-      "types": "./src/publish/auth/oauth-resource.ts",
-      "default": "./src/publish/auth/oauth-resource.ts"
-    },
-    "./publish/schemas": {
-      "types": "./src/publish/schemas.ts",
-      "default": "./src/publish/schemas.ts"
-    },
-    "./publish/bundle": {
-      "types": "./src/publish/bundle.ts",
-      "default": "./src/publish/bundle.ts"
-    },
-    "./publish/function-id": {
-      "types": "./src/publish/function-id.ts",
-      "default": "./src/publish/function-id.ts"
-    },
-    "./publish/artifact": {
-      "types": "./src/publish/artifact.ts",
-      "default": "./src/publish/artifact.ts"
-    },
-    "./publish/constants": {
-      "types": "./src/publish/constants.ts",
-      "default": "./src/publish/constants.ts"
-    },
-    "./publish/semver": {
-      "types": "./src/publish/semver.ts",
-      "default": "./src/publish/semver.ts"
-    },
-    "./publish/validate-input": {
-      "types": "./src/publish/execution/validate-input.ts",
-      "default": "./src/publish/execution/validate-input.ts"
-    },
-    "./publish/package-visibility": {
-      "types": "./src/publish/catalog/package-visibility.ts",
-      "default": "./src/publish/catalog/package-visibility.ts"
-    },
-    "./publish/org-slug": {
-      "types": "./src/publish/org/org-slug.ts",
-      "default": "./src/publish/org/org-slug.ts"
-    },
-    "./publish/safe-callback-url": {
-      "types": "./src/publish/auth/safe-callback-url.ts",
-      "default": "./src/publish/auth/safe-callback-url.ts"
-    },
-    "./publish/http": {
-      "types": "./src/publish/http/http-handlers.ts",
-      "default": "./src/publish/http/http-handlers.ts"
-    },
-    "./publish/bundle-load-error": {
-      "types": "./src/publish/execution/bundle-load-error.ts",
-      "default": "./src/publish/execution/bundle-load-error.ts"
-    },
-    "./publish/catalog-access": {
-      "types": "./src/publish/catalog/catalog-access.ts",
-      "default": "./src/publish/catalog/catalog-access.ts"
-    },
-    "./publish/catalog-read": {
-      "types": "./src/publish/catalog/catalog-read.ts",
-      "default": "./src/publish/catalog/catalog-read.ts"
-    },
-    "./publish/catalog-errors": {
-      "types": "./src/publish/catalog-errors.ts",
-      "default": "./src/publish/catalog-errors.ts"
-    },
-    "./publish/catalog/hot-catalog": {
-      "types": "./src/publish/catalog/hot-catalog.ts",
-      "default": "./src/publish/catalog/hot-catalog.ts"
-    },
-    "./publish/execution/idempotency": {
-      "types": "./src/publish/execution/idempotency.ts",
-      "default": "./src/publish/execution/idempotency.ts"
-    },
-    "./publish/search/function-search-text": {
-      "types": "./src/publish/search/function-search-text.ts",
-      "default": "./src/publish/search/function-search-text.ts"
-    },
-    "./publish/hot-catalog": {
-      "types": "./src/publish/catalog/hot-catalog.ts",
-      "default": "./src/publish/catalog/hot-catalog.ts"
-    },
-    "./publish/hot-keys": {
-      "types": "./src/publish/catalog/hot-keys.ts",
-      "default": "./src/publish/catalog/hot-keys.ts"
-    },
-    "./publish/hot-kv-binding": {
-      "types": "./src/publish/catalog/hot-kv-binding.ts",
-      "default": "./src/publish/catalog/hot-kv-binding.ts"
-    },
-    "./publish/http-context": {
-      "types": "./src/publish/http/http-context.ts",
-      "default": "./src/publish/http/http-context.ts"
-    },
-    "./publish/jwks-hot": {
-      "types": "./src/publish/auth/jwks-hot.ts",
-      "default": "./src/publish/auth/jwks-hot.ts"
-    },
-    "./publish/org-entitlements": {
-      "types": "./src/publish/org/org-entitlements.ts",
-      "default": "./src/publish/org/org-entitlements.ts"
-    },
-    "./publish/org-usage": {
-      "types": "./src/publish/org/org-usage.ts",
-      "default": "./src/publish/org/org-usage.ts"
-    },
-    "./publish/quotas": {
-      "types": "./src/publish/org/quotas.ts",
-      "default": "./src/publish/org/quotas.ts"
-    },
-    "./publish/search-lexical": {
-      "types": "./src/publish/search/search-lexical.ts",
-      "default": "./src/publish/search/search-lexical.ts"
-    },
-    "./publish/hosted-secrets": {
-      "types": "./src/publish/secrets/hosted-secrets.ts",
-      "default": "./src/publish/secrets/hosted-secrets.ts"
-    },
-    "./publish/secret-crypto": {
-      "types": "./src/publish/secrets/secret-crypto.ts",
-      "default": "./src/publish/secrets/secret-crypto.ts"
-    },
-    "./publish/secret-names": {
-      "types": "./src/publish/secrets/secret-names.ts",
-      "default": "./src/publish/secrets/secret-names.ts"
-    },
-    "./publish/worker-execute": {
-      "types": "./src/publish/execution/worker-execute.ts",
-      "default": "./src/publish/execution/worker-execute.ts"
-    },
-    "./publish/execution-store": {
-      "types": "./src/publish/execution/execution-store.ts",
-      "default": "./src/publish/execution/execution-store.ts"
-    },
-    "./publish/axiom": {
-      "types": "./src/publish/telemetry/axiom.ts",
-      "default": "./src/publish/telemetry/axiom.ts"
-    },
-    "./publish/telemetry-redaction": {
-      "types": "./src/publish/telemetry/telemetry-redaction.ts",
-      "default": "./src/publish/telemetry/telemetry-redaction.ts"
-    },
-    "./publish/search-eval": {
-      "types": "./src/publish/search/search-eval.ts",
-      "default": "./src/publish/search/search-eval.ts"
-    },
-    "./publish/search-ranking": {
-      "types": "./src/publish/search/search-ranking.ts",
-      "default": "./src/publish/search/search-ranking.ts"
-    },
-    "./publish/search-run": {
-      "types": "./src/publish/search/search-run.ts",
-      "default": "./src/publish/search/search-run.ts"
-    },
-    "./publish/search-rerank": {
-      "types": "./src/publish/search/search-rerank.ts",
-      "default": "./src/publish/search/search-rerank.ts"
-    },
-    "./publish/search-jev-rerank": {
-      "types": "./src/publish/search/search-jev-rerank.ts",
-      "default": "./src/publish/search/search-jev-rerank.ts"
-    },
-    "./publish/embedding": {
-      "types": "./src/publish/search/embedding.ts",
-      "default": "./src/publish/search/embedding.ts"
-    },
-    "./publish/search-exact": {
-      "types": "./src/publish/search/search-exact.ts",
-      "default": "./src/publish/search/search-exact.ts"
-    },
-    "./publish/search-fusion": {
-      "types": "./src/publish/search/search-fusion.ts",
-      "default": "./src/publish/search/search-fusion.ts"
-    },
-    "./publish/search-projection": {
-      "types": "./src/publish/search/search-projection.ts",
-      "default": "./src/publish/search/search-projection.ts"
-    },
-    "./publish/search-result": {
-      "types": "./src/publish/search/search-result.ts",
-      "default": "./src/publish/search/search-result.ts"
-    },
-    "./publish/hot-search-projection": {
-      "types": "./src/publish/catalog/hot-search-projection.ts",
-      "default": "./src/publish/catalog/hot-search-projection.ts"
-    },
-    "./publish/vectorize-index": {
-      "types": "./src/publish/search/vectorize-index.ts",
-      "default": "./src/publish/search/vectorize-index.ts"
-    },
-    "./publish/vectorize-upsert": {
-      "types": "./src/publish/search/vectorize-upsert.ts",
-      "default": "./src/publish/search/vectorize-upsert.ts"
-    },
-    "./publish/idempotency": {
-      "types": "./src/publish/execution/idempotency.ts",
-      "default": "./src/publish/execution/idempotency.ts"
-    },
-    "./publish/idempotency-store": {
-      "types": "./src/publish/execution/idempotency-store.ts",
-      "default": "./src/publish/execution/idempotency-store.ts"
-    },
-    "./publish/ports": {
-      "types": "./src/publish/ports.ts",
-      "default": "./src/publish/ports.ts"
-    },
-    "./publish/secret-binding": {
-      "types": "./src/publish/secret-binding.ts",
-      "default": "./src/publish/secret-binding.ts"
-    },
-    "./publish/host-allowlist": {
-      "types": "./src/publish/sources/host-allowlist.ts",
-      "default": "./src/publish/sources/host-allowlist.ts"
-    },
-    "./publish/openapi-operations": {
-      "types": "./src/publish/sources/openapi-operations.ts",
-      "default": "./src/publish/sources/openapi-operations.ts"
-    },
-    "./publish/openapi-sync": {
-      "types": "./src/publish/sources/openapi-sync.ts",
-      "default": "./src/publish/sources/openapi-sync.ts"
-    },
-    "./publish/remote-mcp-sync": {
-      "types": "./src/publish/sources/remote-mcp-sync.ts",
-      "default": "./src/publish/sources/remote-mcp-sync.ts"
-    },
-    "./publish/remote-mcp-protocol": {
-      "types": "./src/publish/sources/remote-mcp-protocol.ts",
-      "default": "./src/publish/sources/remote-mcp-protocol.ts"
+    "./runtime": {
+      "types": "./src/runtime/index.ts",
+      "default": "./src/runtime/index.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "build": "bun scripts/build-runtime.ts",
     "check-types": "bun run build && tsc --noEmit",
+    "prepack": "bun run build",
     "test": "bun scripts/check-src-coverage.ts"
   },
   "dependencies": {
@@ -270,13 +47,12 @@
     "ai": "^7",
     "evlog": "^2.28.1",
     "jose": "^6.1.0",
-    "zod": "catalog:"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260906.1",
-    "@functhis/config": "workspace:*",
     "@types/bun": "latest",
     "esbuild": "^0.25.12",
-    "typescript": "catalog:"
+    "typescript": "^6.0.3"
   }
 }

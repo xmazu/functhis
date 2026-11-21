@@ -1,5 +1,5 @@
-import type { McpWellKnownRoute } from '@functhis/core';
-import { normalizeOAuthResourceIdentifier } from '@functhis/core/publish/oauth-resource';
+import type { McpWellKnownRoute } from '@functhis/core/mcp';
+import { normalizeOAuthResourceIdentifier } from '@functhis/core/publish';
 
 import { authIssuerFromConsoleUrl } from './auth-urls';
 import type { FuncthisMcpBindings } from './functhis-bindings';

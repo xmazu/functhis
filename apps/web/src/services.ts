@@ -10,7 +10,7 @@ import {
   writeJwksHot,
   writeMembershipHot,
 } from '@functhis/core/publish';
-import type { CatalogPorts } from '@functhis/core/publish/ports';
+import type { CatalogPorts } from '@functhis/core/publish';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
 import { createCatalog } from '@functhis/db/catalog';

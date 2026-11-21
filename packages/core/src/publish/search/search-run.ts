@@ -19,7 +19,6 @@ export type {
   SearchFunctionsContext,
   SearchFunctionsOptions,
 } from './search-context';
-export type { SearchRerankCard, SearchRerankScorer } from './search-rerank';
 
 export const normalizeSearchDomain = (domain?: SearchDomain): SearchDomain =>
   domain ?? 'mine';

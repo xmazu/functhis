@@ -1,4 +1,4 @@
-import type { SourceStorePort } from '@functhis/core/publish/ports';
+import type { SourceStorePort } from '@functhis/core/publish';
 
 import type { Database } from '../index';
 import {

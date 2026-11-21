@@ -1,5 +1,5 @@
-import { formatFunctionId } from '@functhis/core/publish/function-id';
-import type { PublishFinalizeResponse } from '@functhis/core/publish/schemas';
+import { formatFunctionId } from '@functhis/core/publish';
+import type { PublishFinalizeResponse } from '@functhis/core/publish';
 
 export const formatPublishResult = (
   result: PublishFinalizeResponse

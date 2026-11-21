@@ -79,7 +79,7 @@ export const resolveAxiomBindings = async (
   }
 };
 
-const axiomHeaders = (token: string): HeadersInit => ({
+const axiomHeaders = (token: string): Record<string, string> => ({
   authorization: `Bearer ${token}`,
   'content-type': 'application/json',
 });

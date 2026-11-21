@@ -16,10 +16,6 @@ export const SEARCH_VECTOR_MAX_NAMESPACES = 8;
 export const VECTOR_RRF_WEIGHT = 1;
 
 export type CapabilityAvailability = 'degraded' | 'ready' | 'unavailable';
-export type CapabilitySourceKind =
-  | 'hosted_function'
-  | 'openapi_operation'
-  | 'remote_mcp_tool';
 
 export type JsonValue =
   | JsonValue[]

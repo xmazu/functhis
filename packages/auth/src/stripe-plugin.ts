@@ -1,8 +1,5 @@
 import { stripe } from '@better-auth/stripe';
-import {
-  DEVELOPER_ORG_LIMITS,
-  TEAM_ORG_LIMITS,
-} from '@functhis/core/publish/org-entitlements';
+import { DEVELOPER_ORG_LIMITS, TEAM_ORG_LIMITS } from '@functhis/core/publish';
 import type { Database } from '@functhis/db';
 import { member } from '@functhis/db/schema/auth';
 import { and, eq } from 'drizzle-orm';

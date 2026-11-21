@@ -1,4 +1,4 @@
-import type { PackageRecord } from '@functhis/core/publish/ports';
+import type { PackageRecord } from '@functhis/core/publish';
 
 import type { pkg } from '../schema/catalog';
 

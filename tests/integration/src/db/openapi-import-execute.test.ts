@@ -1,16 +1,18 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
-import { dispatchExecute } from '@functhis/core/execute-dispatch';
-import { deterministicEmbedding } from '@functhis/core/publish/embedding';
-import { formatFunctionId } from '@functhis/core/publish/function-id';
-import { functionHotKeyFromId } from '@functhis/core/publish/hot-keys';
 import {
+  dispatchExecute,
+  searchFunctionsWithContext,
+} from '@functhis/core/mcp';
+import {
+  deterministicEmbedding,
+  formatFunctionId,
+  functionHotKeyFromId,
   acceptOpenApiGeneration,
   importOpenApiSource,
-} from '@functhis/core/publish/openapi-sync';
-import { MemoryEmbeddingIndex } from '@functhis/core/publish/vectorize-index';
-import { reconcileSearchIndexDebt } from '@functhis/core/publish/vectorize-upsert';
-import { searchFunctionsWithContext } from '@functhis/core/search';
+  MemoryEmbeddingIndex,
+  reconcileSearchIndexDebt,
+} from '@functhis/core/publish';
 import { createCatalog } from '@functhis/db/catalog';
 import {
   capabilityGeneration,

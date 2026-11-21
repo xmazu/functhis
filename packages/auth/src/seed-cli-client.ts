@@ -4,8 +4,8 @@ import {
   CURSOR_MCP_REDIRECT_URIS,
   MCP_RESOURCE_PRODUCTION,
   PUBLISH_API_RESOURCE,
-} from '@functhis/core/publish/oauth';
-import { oauthResourceIdentifierVariants } from '@functhis/core/publish/oauth-resource';
+  oauthResourceIdentifierVariants,
+} from '@functhis/core/publish';
 import type { Database } from '@functhis/db';
 import {
   oauthClient,

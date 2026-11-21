@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { handlePublishRollback } from '@functhis/core/publish/http';
+import { handlePublishRollback } from '@functhis/core/publish';
 import { pkg } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 

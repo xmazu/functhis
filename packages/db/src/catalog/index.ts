@@ -1,4 +1,4 @@
-import type { CatalogPorts } from '@functhis/core/publish/ports';
+import type { CatalogPorts } from '@functhis/core/publish';
 
 import type { Database } from '../index';
 import { createCatalogReadPort } from './catalog-read';

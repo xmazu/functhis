@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import type { VersionBump } from '@functhis/core/publish/semver';
+import type { VersionBump } from '@functhis/core/publish';
 
 import {
   parseBooleanFlag,

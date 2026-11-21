@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { searchFunctionsWithContext } from '@functhis/core/search';
+import { searchFunctionsWithContext } from '@functhis/core/mcp';
 
 import { integrationDb } from '../harness/db';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';

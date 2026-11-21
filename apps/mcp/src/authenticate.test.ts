@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { createMcpPostHandler } from '@functhis/core';
+import { createMcpPostHandler } from '@functhis/core/mcp';
 
 import {
   authIssuerFromConsoleUrl,

@@ -1,5 +1,3 @@
-// Vite and Bun may import this barrel. Wrangler workers import the subpath
-// for the module they need (`@functhis/core/publish/quotas`, and so on).
 export { CatalogWriteError, PackageSlugTakenError } from './catalog-errors';
 export {
   bundleKvKey,
@@ -124,8 +122,10 @@ export {
 } from './catalog/hot-catalog';
 export {
   functionHotKey,
+  functionHotKeyFromId,
   HOT_JWKS_KEY,
   memberHotKey,
+  mcpSnapshotHotKey,
   mineIndexHotKey,
 } from './catalog/hot-keys';
 export {
@@ -140,8 +140,10 @@ export {
 } from './search/search-lexical';
 export {
   CLI_CLIENT_ID,
-  PUBLISH_API_RESOURCE,
+  CURSOR_MCP_CLIENT_ID,
+  CURSOR_MCP_REDIRECT_URIS,
   MCP_RESOURCE_PRODUCTION,
+  PUBLISH_API_RESOURCE,
 } from './auth/oauth';
 export {
   publishFinalizeBodySchema,
@@ -189,10 +191,13 @@ export {
 export {
   assertOrgCanAddPackage,
   countOrgPackages,
+  DEVELOPER_ORG_LIMITS,
+  ENTERPRISE_ORG_LIMITS,
   insertOrgPackageIfUnderLimit,
   limitsForPlan,
   OrgQuotaExceededError,
   resolveOrgPlan,
+  TEAM_ORG_LIMITS,
   type OrgPlanId,
   type OrgPlanLimits,
 } from './org/org-entitlements';
@@ -233,6 +238,7 @@ export {
 } from './secrets/secret-crypto';
 export {
   isValidSecretName,
+  MAX_SECRET_VALUE_BYTES,
   mergeSecretValues,
   parseSecretNamesFromManifestJson,
 } from './secrets/secret-names';
@@ -262,3 +268,67 @@ export {
   safeCallbackURL,
   safeCallbackURLFromRequest,
 } from './auth/safe-callback-url';
+export type * from './ports';
+export { resolveSecret, type SecretBinding } from './secret-binding';
+export {
+  handlePublishFinalize,
+  handlePublishRollback,
+  handlePublishStart,
+} from './http/http-handlers';
+export type { PublishHandlerContext } from './http/http-context';
+export type { IdempotencyRecord } from './execution/idempotency';
+export {
+  claimIdempotencyKey,
+  completeIdempotencyKey,
+  decideIdempotency,
+  loadIdempotencyRecord,
+} from './execution/idempotency-store';
+export {
+  normalizeOAuthResourceIdentifier,
+  oauthResourceIdentifierVariants,
+} from './auth/oauth-resource';
+export { LAST_USED_TOUCH_INTERVAL_MS } from './secrets/hosted-secrets';
+export type { OpenApiOperation } from './sources/openapi-operations';
+export {
+  extractOpenApiOperations,
+  hashOpenApiSpec,
+  openApiServerUrl,
+} from './sources/openapi-operations';
+export type { RemoteMcpTool } from './sources/remote-mcp-protocol';
+export {
+  acceptOpenApiGeneration,
+  importOpenApiSource,
+  rollbackOpenApiGeneration,
+  type SourceHealth,
+} from './sources/openapi-sync';
+export { syncRemoteMcpSource } from './sources/remote-mcp-sync';
+export {
+  CAPABILITY_EMBEDDING_DIMENSIONS,
+  CAPABILITY_EMBEDDING_MODEL,
+  CAPABILITY_VECTOR_KIND,
+  deterministicEmbedding,
+  embedTexts,
+  isEmbeddingOffline,
+} from './search/embedding';
+export {
+  MemoryEmbeddingIndex,
+  VectorizeEmbeddingIndex,
+} from './search/vectorize-index';
+export { reconcileSearchIndexDebt } from './search/vectorize-upsert';
+export {
+  evaluateSearchRanking,
+  recallAtK,
+  type SearchEvalJudgment,
+} from './search/search-eval';
+export { createJevSearchRerankScorer } from './search/search-jev-rerank';
+export type {
+  SearchRerankCard,
+  SearchRerankScorer,
+} from './search/search-rerank';
+export {
+  normalizeSearchDomain,
+  searchFunctionsWithContext,
+  type SearchHit,
+  type SearchResult,
+} from './search/search-run';
+export { projectHotDocsForSearch } from './catalog/hot-search-projection';

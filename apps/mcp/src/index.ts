@@ -1,7 +1,7 @@
 import { createEvlogWorkerFetch } from '@functhis/config/evlog-workers';
-import type { McpBindings } from '@functhis/core';
-import { reconcileMcpSearchIndex } from '@functhis/core';
-import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
+import type { McpBindings } from '@functhis/core/mcp';
+import { reconcileMcpSearchIndex } from '@functhis/core/mcp';
+import { asHotKvBinding } from '@functhis/core/publish';
 import { createDb } from '@functhis/db';
 import { createCatalog } from '@functhis/db/catalog';
 import type { AuditableLogger } from 'evlog';

@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 
-import { PUBLISH_API_RESOURCE } from '@functhis/core/publish';
-import { CURSOR_MCP_CLIENT_ID } from '@functhis/core/publish/oauth';
+import {
+  PUBLISH_API_RESOURCE,
+  CURSOR_MCP_CLIENT_ID,
+} from '@functhis/core/publish';
 
 import {
   ensureCliOAuthClient,

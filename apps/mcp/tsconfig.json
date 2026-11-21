@@ -7,54 +7,9 @@
     "noEmit": true,
     "types": ["@cloudflare/workers-types"],
     "paths": {
-      "@functhis/core/publish/bundle": [
-        "../../packages/core/src/publish/bundle.ts"
-      ],
-      "@functhis/core/publish/catalog-errors": [
-        "../../packages/core/src/publish/catalog-errors.ts"
-      ],
-      "@functhis/core/publish/catalog-read": [
-        "../../packages/core/src/publish/catalog/catalog-read.ts"
-      ],
-      "@functhis/core/publish/catalog/hot-catalog": [
-        "../../packages/core/src/publish/catalog/hot-catalog.ts"
-      ],
-      "@functhis/core/publish/constants": [
-        "../../packages/core/src/publish/constants.ts"
-      ],
-      "@functhis/core/publish/execution/idempotency": [
-        "../../packages/core/src/publish/execution/idempotency.ts"
-      ],
-      "@functhis/core/publish/function-id": [
-        "../../packages/core/src/publish/function-id.ts"
-      ],
-      "@functhis/core/publish/hosted-secrets": [
-        "../../packages/core/src/publish/secrets/hosted-secrets.ts"
-      ],
-      "@functhis/core/publish/idempotency": [
-        "../../packages/core/src/publish/execution/idempotency.ts"
-      ],
-      "@functhis/core/publish/openapi-operations": [
-        "../../packages/core/src/publish/sources/openapi-operations.ts"
-      ],
-      "@functhis/core/publish/package-visibility": [
-        "../../packages/core/src/publish/catalog/package-visibility.ts"
-      ],
-      "@functhis/core/publish/ports": [
-        "../../packages/core/src/publish/ports.ts"
-      ],
-      "@functhis/core/publish/remote-mcp-protocol": [
-        "../../packages/core/src/publish/sources/remote-mcp-protocol.ts"
-      ],
-      "@functhis/core/publish/search/function-search-text": [
-        "../../packages/core/src/publish/search/function-search-text.ts"
-      ],
-      "@functhis/core/publish/secret-crypto": [
-        "../../packages/core/src/publish/secrets/secret-crypto.ts"
-      ],
-      "@functhis/core/publish/secret-names": [
-        "../../packages/core/src/publish/secrets/secret-names.ts"
-      ]
+      "@functhis/core/mcp": ["../../packages/core/src/mcp/index.ts"],
+      "@functhis/core/publish": ["../../packages/core/src/publish/index.ts"],
+      "@functhis/core/runtime": ["../../packages/core/src/runtime/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "cloudflare-env.d.ts"],

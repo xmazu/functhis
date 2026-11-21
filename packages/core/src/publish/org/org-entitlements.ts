@@ -15,8 +15,8 @@ export type OrgPlanLimits = FuncthisPlanLimits;
 
 export const TRIAL_ORG_LIMITS = planLimits('trial');
 export const DEVELOPER_ORG_LIMITS = planLimits('developer');
-export const TEAM_ORG_LIMITS = planLimits('team');
 export const ENTERPRISE_ORG_LIMITS = planLimits('enterprise');
+export const TEAM_ORG_LIMITS = planLimits('team');
 
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing'] as const;
 

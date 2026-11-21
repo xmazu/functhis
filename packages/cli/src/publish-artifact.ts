@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { PublishArtifact } from '@functhis/core/publish/artifact';
-import { WORKER_COMPATIBILITY_DATE } from '@functhis/core/publish/constants';
+import type { PublishArtifact } from '@functhis/core/publish';
+import { WORKER_COMPATIBILITY_DATE } from '@functhis/core/publish';
 
 import type { WorkerLoaderBundle } from './build-bundle';
 import type { DiscoveredFunction } from './discover';

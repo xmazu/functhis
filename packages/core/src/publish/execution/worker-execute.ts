@@ -36,8 +36,6 @@ import {
 import { StoredBundleLoadError } from './bundle-load-error';
 import { insertExecutionRow } from './execution-store';
 
-export { insertStartedExecutionRow } from './execution-store';
-
 export interface ExecuteAnalyticsBinding {
   writeDataPoint: (input: {
     blobs: string[];

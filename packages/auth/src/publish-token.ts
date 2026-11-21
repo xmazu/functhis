@@ -1,16 +1,10 @@
-import {
-  CLI_CLIENT_ID,
-  PUBLISH_API_RESOURCE,
-} from '@functhis/core/publish/oauth';
+import { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/core/publish';
 import type { Database } from '@functhis/db';
 import { oauthAccessToken } from '@functhis/db/schema/auth';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-export {
-  CLI_CLIENT_ID,
-  PUBLISH_API_RESOURCE,
-} from '@functhis/core/publish/oauth';
+export { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/core/publish';
 
 export type PublishAuthResult =
   | { ok: true; userId: string }

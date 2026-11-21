@@ -89,7 +89,9 @@
     },
     "packages/core": {
       "entry": [
-        "src/index.ts",
+        "src/mcp/index.ts",
+        "src/publish/index.ts",
+        "src/runtime/index.ts",
         "src/**/*.test.ts",
         "scripts/build-runtime.ts",
         "scripts/check-src-coverage.ts"

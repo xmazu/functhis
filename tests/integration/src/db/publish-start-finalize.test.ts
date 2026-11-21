@@ -6,11 +6,9 @@ import {
   getPackageBySlugs,
   hashPublishArtifact,
   MAX_SOURCE_MANIFEST_FILES,
-} from '@functhis/core/publish';
-import {
   handlePublishFinalize,
   handlePublishStart,
-} from '@functhis/core/publish/http';
+} from '@functhis/core/publish';
 import { createCatalog } from '@functhis/db/catalog';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';

@@ -1,6 +1,5 @@
-import type { McpBindings } from '@functhis/core';
-import type { HotKvBinding } from '@functhis/core/publish';
-import type { CatalogPorts } from '@functhis/core/publish/ports';
+import type { McpBindings } from '@functhis/core/mcp';
+import type { HotKvBinding, CatalogPorts } from '@functhis/core/publish';
 
 import type { MemoryHotKv } from './memory-hot-kv';
 
