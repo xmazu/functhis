@@ -4,9 +4,9 @@ import {
   mineIndexHotKey,
   writeHotFunctionDoc,
   writeMembershipHot,
-} from '@functhis/publish';
-import type { HotFunctionDoc } from '@functhis/publish';
-import { projectHotDocsForSearch } from '@functhis/publish/hot-search-projection';
+} from '@functhis/core/publish';
+import type { HotFunctionDoc } from '@functhis/core/publish';
+import { projectHotDocsForSearch } from '@functhis/core/publish/hot-search-projection';
 
 import type { MemoryHotKv } from './memory-hot-kv';
 

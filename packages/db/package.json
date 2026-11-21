@@ -21,6 +21,10 @@
     "./integration-migrate": {
       "types": "./dist/src/integration-migrate.d.ts",
       "default": "./src/integration-migrate.ts"
+    },
+    "./drizzle": {
+      "types": "./dist/src/drizzle.d.ts",
+      "default": "./src/drizzle.ts"
     }
   },
   "scripts": {

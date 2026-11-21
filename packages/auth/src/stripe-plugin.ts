@@ -1,10 +1,10 @@
 import { stripe } from '@better-auth/stripe';
-import type { Database } from '@functhis/db';
-import { member } from '@functhis/db/schema/auth';
 import {
   DEVELOPER_ORG_LIMITS,
   TEAM_ORG_LIMITS,
-} from '@functhis/publish/org-entitlements';
+} from '@functhis/core/publish/org-entitlements';
+import type { Database } from '@functhis/db';
+import { member } from '@functhis/db/schema/auth';
 import { and, eq } from 'drizzle-orm';
 import StripeSdk from 'stripe';
 

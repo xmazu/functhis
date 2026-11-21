@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { dispatchExecute } from '@functhis/core/execute-dispatch';
-import { pkg } from '@functhis/db/schema/catalog';
-import { formatFunctionId } from '@functhis/publish/function-id';
+import { formatFunctionId } from '@functhis/core/publish/function-id';
 import {
   mcpSnapshotHotKey,
   functionHotKeyFromId,
-} from '@functhis/publish/hot-keys';
-import { syncRemoteMcpSource } from '@functhis/publish/remote-mcp-sync';
+} from '@functhis/core/publish/hot-keys';
+import { syncRemoteMcpSource } from '@functhis/core/publish/remote-mcp-sync';
+import { pkg } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';

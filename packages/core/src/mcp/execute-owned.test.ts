@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { ExecutePayloadTooLargeError } from '@functhis/publish/quotas';
-
+import { ExecutePayloadTooLargeError } from '../publish/org/quotas';
 import type { McpBindings } from './bindings';
 import { executeOwnedFunction } from './execute-owned';
 

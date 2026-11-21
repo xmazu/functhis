@@ -1,5 +1,4 @@
-import { ExecutePayloadTooLargeError } from '@functhis/publish/quotas';
-
+import { ExecutePayloadTooLargeError } from '../publish/org/quotas';
 import type { McpBindings } from './bindings';
 import { dispatchExecute } from './execute-dispatch';
 import type { DispatchResult } from './execute-dispatch';

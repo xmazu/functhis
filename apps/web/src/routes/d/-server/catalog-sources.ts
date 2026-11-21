@@ -1,9 +1,9 @@
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
 import {
   acceptOpenApiGeneration,
   importOpenApiSource,
-} from '@functhis/publish/openapi-sync';
-import { syncRemoteMcpSource } from '@functhis/publish/remote-mcp-sync';
+} from '@functhis/core/publish/openapi-sync';
+import { syncRemoteMcpSource } from '@functhis/core/publish/remote-mcp-sync';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 

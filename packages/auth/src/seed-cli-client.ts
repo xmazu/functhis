@@ -1,17 +1,17 @@
-import type { Database } from '@functhis/db';
-import {
-  oauthClient,
-  oauthClientResource,
-  oauthResource,
-} from '@functhis/db/schema/auth';
 import {
   CLI_CLIENT_ID,
   CURSOR_MCP_CLIENT_ID,
   CURSOR_MCP_REDIRECT_URIS,
   MCP_RESOURCE_PRODUCTION,
   PUBLISH_API_RESOURCE,
-} from '@functhis/publish/oauth';
-import { oauthResourceIdentifierVariants } from '@functhis/publish/oauth-resource';
+} from '@functhis/core/publish/oauth';
+import { oauthResourceIdentifierVariants } from '@functhis/core/publish/oauth-resource';
+import type { Database } from '@functhis/db';
+import {
+  oauthClient,
+  oauthClientResource,
+  oauthResource,
+} from '@functhis/db/schema/auth';
 
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 

@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { WORKER_COMPATIBILITY_DATE } from '@functhis/publish/constants';
+import { WORKER_COMPATIBILITY_DATE } from '@functhis/core/publish/constants';
 
 import {
   buildPublishArtifact,

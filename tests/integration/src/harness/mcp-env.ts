@@ -1,5 +1,5 @@
 import type { McpBindings } from '@functhis/core';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
 
 import { integrationDatabaseUrl } from './env';
 import type { MemoryHotKv } from './memory-hot-kv';

@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { createRuntimeModuleSource } from '@functhis/runtime';
+import { createRuntimeModuleSource } from '@functhis/core/runtime';
 
 import { createBootstrapSource } from './bundle';
 import type { DiscoveredFunction } from './discover';

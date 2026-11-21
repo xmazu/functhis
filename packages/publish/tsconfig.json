@@ -1,8 +1,0 @@
-{
-  "extends": "@functhis/config/tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["@cloudflare/workers-types"]
-  },
-  "include": ["src/**/*.ts", "src/cloudflare-env.d.ts"],
-  "exclude": ["src/**/*.test.ts"]
-}

@@ -1,4 +1,7 @@
-import { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+import {
+  CLI_CLIENT_ID,
+  PUBLISH_API_RESOURCE,
+} from '@functhis/core/publish/oauth';
 
 import { loadConfig, resolveUrl, saveConfig } from './config';
 import type { CliConfig } from './config';

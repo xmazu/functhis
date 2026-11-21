@@ -1,6 +1,6 @@
 /**
  * Ambient types for `import from 'functhis:runtime'`.
- * Keep in sync with `@functhis/runtime` isolate public API.
+ * Keep in sync with `@functhis/core` runtime isolate public API.
  */
 declare module 'functhis:runtime' {
   export interface FuncthisInvocationContext {

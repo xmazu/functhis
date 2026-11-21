@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 
-import { searchFunctionsWithContext } from '@functhis/core/search';
 import {
   CAPABILITY_VECTOR_KIND,
   deterministicEmbedding,
-} from '@functhis/publish/embedding';
-import { formatFunctionId } from '@functhis/publish/function-id';
-import { functionHotKeyFromId } from '@functhis/publish/hot-keys';
-import { MemoryEmbeddingIndex } from '@functhis/publish/vectorize-index';
-import { reconcileSearchIndexDebt } from '@functhis/publish/vectorize-upsert';
+} from '@functhis/core/publish/embedding';
+import { formatFunctionId } from '@functhis/core/publish/function-id';
+import { functionHotKeyFromId } from '@functhis/core/publish/hot-keys';
+import { MemoryEmbeddingIndex } from '@functhis/core/publish/vectorize-index';
+import { reconcileSearchIndexDebt } from '@functhis/core/publish/vectorize-upsert';
+import { searchFunctionsWithContext } from '@functhis/core/search';
 
 import { integrationDb } from '../harness/db';
 import { integrationHotBinding } from '../harness/mcp-env';

@@ -17,10 +17,7 @@ export const prepareNpmManifest = async (): Promise<{
     dependencies?: Record<string, string>;
   };
 
-  const bundledWorkspaceDeps = new Set([
-    '@functhis/publish',
-    '@functhis/runtime',
-  ]);
+  const bundledWorkspaceDeps = new Set(['@functhis/core']);
 
   if (pkg.dependencies) {
     const next: Record<string, string> = {};

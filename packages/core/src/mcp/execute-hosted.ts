@@ -1,19 +1,19 @@
 import { createDb } from '@functhis/db';
-import { StoredBundleLoadError } from '@functhis/publish/bundle-load-error';
-import { insertStartedExecutionRow } from '@functhis/publish/execution-store';
-import {
-  loadPackageVersionSecretNames,
-  resolveHostedRuntimeSecrets,
-} from '@functhis/publish/hosted-secrets';
-import type { HotFunctionDoc } from '@functhis/publish/hot-catalog';
-import { HostedSecretError } from '@functhis/publish/secret-crypto';
-import { validateContractInput } from '@functhis/publish/validate-input';
+
+import type { HotFunctionDoc } from '../publish/catalog/hot-catalog';
+import { StoredBundleLoadError } from '../publish/execution/bundle-load-error';
+import { insertStartedExecutionRow } from '../publish/execution/execution-store';
+import { validateContractInput } from '../publish/execution/validate-input';
 import {
   finalizeExecute,
   loadStoredBundle,
   runDynamicWorker,
-} from '@functhis/publish/worker-execute';
-
+} from '../publish/execution/worker-execute';
+import {
+  loadPackageVersionSecretNames,
+  resolveHostedRuntimeSecrets,
+} from '../publish/secrets/hosted-secrets';
+import { HostedSecretError } from '../publish/secrets/secret-crypto';
 import type { McpBindings } from './bindings';
 import type { DispatchResult } from './execute-dispatch';
 

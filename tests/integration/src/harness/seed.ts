@@ -1,4 +1,6 @@
 import { ensureCliOAuthClient } from '@functhis/auth/seed-cli-client';
+import { PUBLISH_API_RESOURCE } from '@functhis/core/publish';
+import { CLI_CLIENT_ID } from '@functhis/core/publish/oauth';
 import type { Database } from '@functhis/db';
 import {
   member,
@@ -6,8 +8,6 @@ import {
   organization,
   user,
 } from '@functhis/db/schema/auth';
-import { PUBLISH_API_RESOURCE } from '@functhis/publish';
-import { CLI_CLIENT_ID } from '@functhis/publish/oauth';
 import { eq } from 'drizzle-orm';
 
 export interface IntegrationPublishAuth {

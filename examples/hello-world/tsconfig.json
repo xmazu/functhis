@@ -3,7 +3,7 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "functhis:runtime": ["../../packages/runtime/src/index.ts"]
+      "functhis:runtime": ["../../packages/core/src/runtime/index.ts"]
     }
   },
   "include": ["**/*.ts"]

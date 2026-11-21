@@ -4,7 +4,10 @@ import path from 'node:path';
 
 const packageRoot = path.join(import.meta.dirname, '..');
 const authorTypesPath = path.join(packageRoot, 'author-types/index.d.ts');
-const runtimePath = path.join(packageRoot, '../runtime/src/isolate/runtime.ts');
+const runtimePath = path.join(
+  packageRoot,
+  '../core/src/runtime/isolate/runtime.ts'
+);
 
 describe('author-types', () => {
   test('declares functhis:runtime with context and secret', async () => {

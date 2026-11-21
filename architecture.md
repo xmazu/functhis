@@ -280,7 +280,7 @@ or (organizationId in memberships and visibility = organization)
 
 **Org migration (deploy):** SQL `0004` / `0005` backfill legacy user-scoped packages onto workspace orgs. If an owner’s handle slug is already taken by another workspace, migration creates `{handle}-workspace` instead of joining the foreign org. `0005` aborts when any package row still lacks `organization_id` (no silent deletes).
 
-Billing: Better Auth Stripe plugin with `customerType: organization` (optional when Stripe secrets are unset). Entitlements (trial/Developer/Team package and execution caps) are enforced in `@functhis/publish` from Postgres subscription rows and `org_usage_period` counters—not from Stripe on the MCP hot path. Stripe price configuration uses `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`; Enterprise is contract-priced and has no Stripe price env name.
+Billing: Better Auth Stripe plugin with `customerType: organization` (optional when Stripe secrets are unset). Entitlements (trial/Developer/Team package and execution caps) are enforced in `@functhis/core/publish` from Postgres subscription rows and `org_usage_period` counters—not from Stripe on the MCP hot path. Stripe price configuration uses `STRIPE_PRICE_DEVELOPER_MONTHLY` and `STRIPE_PRICE_TEAM_MONTHLY`; Enterprise is contract-priced and has no Stripe price env name.
 
 Quotas fail closed from day one: CPU, concurrency, request/response size. Execute request and response payloads are capped at 1 MiB. Telemetry limits are separate and lower so detailed observability cannot become an unbounded storage or egress path.
 
@@ -289,21 +289,19 @@ Quotas fail closed from day one: CPU, concurrency, request/response size. Execut
 ```text
 apps/web          hosted origin: marketing, OAuth, /d owner UI, deploy API
 apps/mcp          hosted Worker shell for mcp.functhis.now (Wrangler + evlog)
-packages/core     portable MCP server: search/execute tools, auth gate, OAuth PRM
+packages/core     MCP server, publish protocol, runtime isolate, catalog/search/execute
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
 packages/cli      OSS: login, publish, local run/dev
 packages/db       schema
 packages/api      shared oRPC / business logic (see below)
-packages/publish   publish schemas, bundle hashing, catalog reads, execute helpers
-packages/runtime  OSS: discover, contracts, bundle, worker template (later)
 packages/protocol OSS: contract + search/execute types (later)
 packages/infra    Terraform (flat .tf root) + Wrangler deploy/migrate scripts
 ```
 
 **`packages/api` sharing rule:** shared oRPC and business logic for code that **more than one app** will call (web, MCP HTTP later). Do **not** put procedures or types that only one app uses there. App-only API stays in that app until a second consumer appears; then extract.
 
-OSS: CLI, `runtime`, `protocol`. Hosted: auth, ACL, Dynamic Workers, MCP ids, quotas, history.
+OSS: CLI, core `runtime` export, `protocol` (later). Hosted: auth, ACL, Dynamic Workers, MCP ids, quotas, history.
 
 CLI: `functhis login` (device), `functhis publish`, `functhis rollback <semver>`, `functhis run` / `dev`. `deploy` remains a hidden alias of `publish`. No Docker. No author wrangler.toml.
 

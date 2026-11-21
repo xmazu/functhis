@@ -4,7 +4,7 @@ import {
   limitsForPlan,
   queryAxiomLogs,
   resolveOrgPlan,
-} from '@functhis/publish';
+} from '@functhis/core/publish';
 
 import { env } from '#/env.server';
 import { getDb } from '#/services';

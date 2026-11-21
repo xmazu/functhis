@@ -1,15 +1,15 @@
 import { createDb } from '@functhis/db';
+
+import type { HotFunctionDoc } from '../publish/catalog/hot-catalog';
+import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
 import {
   insertExecutionRow,
   insertStartedExecutionRow,
-} from '@functhis/publish/execution-store';
-import { hostAllowedForFetch } from '@functhis/publish/host-allowlist';
-import { resolveHostedRuntimeSecrets } from '@functhis/publish/hosted-secrets';
-import type { HotFunctionDoc } from '@functhis/publish/hot-catalog';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
-import { buildRemoteMcpCallToolRequest } from '@functhis/publish/remote-mcp-protocol';
-import { invalidateRemoteMcpSnapshot } from '@functhis/publish/remote-mcp-sync';
-
+} from '../publish/execution/execution-store';
+import { resolveHostedRuntimeSecrets } from '../publish/secrets/hosted-secrets';
+import { hostAllowedForFetch } from '../publish/sources/host-allowlist';
+import { buildRemoteMcpCallToolRequest } from '../publish/sources/remote-mcp-protocol';
+import { invalidateRemoteMcpSnapshot } from '../publish/sources/remote-mcp-sync';
 import type { McpBindings } from './bindings';
 import type { DispatchResult } from './execute-dispatch';
 

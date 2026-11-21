@@ -1,9 +1,12 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+import { PUBLISH_API_RESOURCE } from '@functhis/core/publish/oauth';
 
-export { CLI_CLIENT_ID, PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+export {
+  CLI_CLIENT_ID,
+  PUBLISH_API_RESOURCE,
+} from '@functhis/core/publish/oauth';
 
 export interface CliConfig {
   accessToken: string;

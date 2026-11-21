@@ -7,8 +7,8 @@ If a term is unfamiliar (`RRF`, `nDCG`, …), skip to [Ranking vocabulary](#rank
 Code lives in two places:
 
 - `packages/core/src/mcp/` — MCP tools (`mcp.ts`), search wiring (`search.ts`), execute dispatch.
-- Jev rerank scorer lives in `packages/publish/src/search/search-jev-rerank.ts` (MCP imports it when OpenRouter is configured).
-- `packages/publish/src/` — HOT catalog, search (`search/`), embeddings, Vectorize debt, execution adapters.
+- Jev rerank scorer lives in `packages/core/src/publish/search/search-jev-rerank.ts` (MCP imports it when OpenRouter is configured).
+- `packages/core/src/publish/` — HOT catalog, search (`search/`), embeddings, Vectorize debt, execution adapters.
 
 ```mermaid
 flowchart LR

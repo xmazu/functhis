@@ -6,7 +6,7 @@ import {
   listOrganizationSecrets,
   setOrganizationSecret,
   setPackageSecret,
-} from '@functhis/publish';
+} from '@functhis/core/publish';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 

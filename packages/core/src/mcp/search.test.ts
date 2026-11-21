@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import type { HotKvBinding } from '@functhis/publish/http-context';
-
+import type { HotKvBinding } from '../publish/http/http-context';
 import type { McpBindings } from './bindings';
 import { normalizeSearchDomain, searchFunctions } from './search';
 

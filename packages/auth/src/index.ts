@@ -4,13 +4,13 @@
 import { cimd } from '@better-auth/cimd';
 import { mcp } from '@better-auth/mcp';
 import { oauthDeviceAuthorization } from '@better-auth/oauth-provider';
-import type { Database } from '@functhis/db';
-import * as schema from '@functhis/db/schema/auth';
-import { PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+import { PUBLISH_API_RESOURCE } from '@functhis/core/publish/oauth';
 import {
   normalizeOAuthResourceIdentifier,
   oauthResourceIdentifierVariants,
-} from '@functhis/publish/oauth-resource';
+} from '@functhis/core/publish/oauth-resource';
+import type { Database } from '@functhis/db';
+import * as schema from '@functhis/db/schema/auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';

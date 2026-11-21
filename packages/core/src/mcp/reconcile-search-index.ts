@@ -1,7 +1,6 @@
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
-import { VectorizeEmbeddingIndex } from '@functhis/publish/vectorize-index';
-import { reconcileSearchIndexDebt } from '@functhis/publish/vectorize-upsert';
-
+import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
+import { VectorizeEmbeddingIndex } from '../publish/search/vectorize-index';
+import { reconcileSearchIndexDebt } from '../publish/search/vectorize-upsert';
 import type { McpBindings } from './bindings';
 
 export const reconcileMcpSearchIndex = (

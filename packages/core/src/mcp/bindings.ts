@@ -1,7 +1,8 @@
 import type { SecretBinding } from '@functhis/db';
-import type { VectorizeBinding } from '@functhis/publish/vectorize-index';
-import type { VectorizeUpsertEnv } from '@functhis/publish/vectorize-upsert';
-import type { WorkerExecuteBindings } from '@functhis/publish/worker-execute';
+
+import type { WorkerExecuteBindings } from '../publish/execution/worker-execute';
+import type { VectorizeBinding } from '../publish/search/vectorize-index';
+import type { VectorizeUpsertEnv } from '../publish/search/vectorize-upsert';
 
 /** Worker bindings required by the Functhis MCP server (no Wrangler `Env` type). */
 export type McpBindings = WorkerExecuteBindings & {

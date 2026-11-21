@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 
-import { organization } from '@functhis/db/schema/auth';
-import { executeIdempotency } from '@functhis/db/schema/catalog';
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
   decideIdempotency,
   loadIdempotencyRecord,
-} from '@functhis/publish/idempotency-store';
+} from '@functhis/core/publish/idempotency-store';
+import { organization } from '@functhis/db/schema/auth';
+import { executeIdempotency } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';

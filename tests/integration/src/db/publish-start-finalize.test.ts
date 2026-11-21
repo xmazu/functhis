@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 
-import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import {
   artifactPrefix,
   bundleKvKey,
   getPackageBySlugs,
   hashPublishArtifact,
   MAX_SOURCE_MANIFEST_FILES,
-} from '@functhis/publish';
+} from '@functhis/core/publish';
 import {
   handlePublishFinalize,
   handlePublishStart,
-} from '@functhis/publish/http';
+} from '@functhis/core/publish/http';
+import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';

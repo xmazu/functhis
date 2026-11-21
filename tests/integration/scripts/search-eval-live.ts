@@ -15,12 +15,12 @@ import {
   CAPABILITY_EMBEDDING_DIMENSIONS,
   CAPABILITY_EMBEDDING_MODEL,
   CAPABILITY_VECTOR_KIND,
-} from '@functhis/publish/embedding';
-import type { SearchEvalJudgment } from '@functhis/publish/search-eval';
-import { evaluateSearchRanking } from '@functhis/publish/search-eval';
-import { createJevSearchRerankScorer } from '@functhis/publish/search-jev-rerank';
-import { searchFunctionsWithContext } from '@functhis/publish/search-run';
-import { MemoryEmbeddingIndex } from '@functhis/publish/vectorize-index';
+} from '@functhis/core/publish/embedding';
+import type { SearchEvalJudgment } from '@functhis/core/publish/search-eval';
+import { evaluateSearchRanking } from '@functhis/core/publish/search-eval';
+import { createJevSearchRerankScorer } from '@functhis/core/publish/search-jev-rerank';
+import { searchFunctionsWithContext } from '@functhis/core/publish/search-run';
+import { MemoryEmbeddingIndex } from '@functhis/core/publish/vectorize-index';
 
 import { seedEvalSearchCorpus } from '../src/harness/search-hot';
 

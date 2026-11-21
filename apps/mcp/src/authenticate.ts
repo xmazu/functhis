@@ -1,8 +1,8 @@
 import { parseBearerToken } from '@functhis/auth/publish-token';
 import type { McpAuthenticate, McpBindings } from '@functhis/core';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
-import { verifyAccessTokenWithHotJwks } from '@functhis/publish/jwks-hot';
-import { oauthResourceIdentifierVariants } from '@functhis/publish/oauth-resource';
+import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
+import { verifyAccessTokenWithHotJwks } from '@functhis/core/publish/jwks-hot';
+import { oauthResourceIdentifierVariants } from '@functhis/core/publish/oauth-resource';
 import type { AuditableLogger } from 'evlog';
 import type { JWTPayload } from 'jose';
 

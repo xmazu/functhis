@@ -1,4 +1,4 @@
-import { RUNTIME_MODULE_ID } from '@functhis/runtime';
+import { RUNTIME_MODULE_ID } from '@functhis/core/runtime';
 import type { Plugin } from 'esbuild';
 
 export const runtimeExternalPlugin = (): Plugin => ({

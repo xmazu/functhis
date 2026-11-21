@@ -1,5 +1,5 @@
+import type { WorkerExecuteBindings } from '@functhis/core/publish/worker-execute';
 import type { SecretBinding } from '@functhis/db';
-import type { WorkerExecuteBindings } from '@functhis/publish/worker-execute';
 
 interface CloudflareEnv extends WorkerExecuteBindings {
   AI: Ai;

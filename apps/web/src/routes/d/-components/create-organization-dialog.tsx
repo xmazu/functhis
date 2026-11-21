@@ -1,4 +1,4 @@
-import { normalizeOrganizationSlug } from '@functhis/publish/org-slug';
+import { normalizeOrganizationSlug } from '@functhis/core/publish/org-slug';
 import { useForm } from '@tanstack/react-form';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';

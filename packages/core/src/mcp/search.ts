@@ -1,14 +1,13 @@
-import { embedTexts, isEmbeddingOffline } from '@functhis/publish/embedding';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
-import { createJevSearchRerankScorer } from '@functhis/publish/search-jev-rerank';
-import { searchFunctionsWithContext } from '@functhis/publish/search-run';
+import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
+import { embedTexts, isEmbeddingOffline } from '../publish/search/embedding';
+import { createJevSearchRerankScorer } from '../publish/search/search-jev-rerank';
+import { searchFunctionsWithContext } from '../publish/search/search-run';
 import type {
   SearchDomain,
   SearchFunctionsOptions,
   SearchResult,
-} from '@functhis/publish/search-run';
-import { VectorizeEmbeddingIndex } from '@functhis/publish/vectorize-index';
-
+} from '../publish/search/search-run';
+import { VectorizeEmbeddingIndex } from '../publish/search/vectorize-index';
 import type { McpBindings } from './bindings';
 import { resolveOpenRouterApiKey } from './openrouter-api-key';
 
@@ -22,12 +21,12 @@ export interface SearchFunctionsDependencies {
   ) => VectorizeEmbeddingIndex;
 }
 
-export type { SearchDomain } from '@functhis/publish/search-run';
-export type { SearchHit, SearchResult } from '@functhis/publish/search-run';
+export type { SearchDomain } from '../publish/search/search-run';
+export type { SearchHit, SearchResult } from '../publish/search/search-run';
 export {
   normalizeSearchDomain,
   searchFunctionsWithContext,
-} from '@functhis/publish/search-run';
+} from '../publish/search/search-run';
 
 export const searchFunctions = async (
   bindings: McpBindings,

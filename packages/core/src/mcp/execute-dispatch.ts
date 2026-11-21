@@ -1,29 +1,29 @@
 import { createDb } from '@functhis/db';
-import { canAccessPackage } from '@functhis/publish/catalog-access';
-import { parseFunctionId } from '@functhis/publish/function-id';
+
+import { canAccessPackage } from '../publish/catalog/catalog-access';
 import {
   buildAccessContextFromHot,
   resolveHotFunctionDoc,
-} from '@functhis/publish/hot-catalog';
-import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
+} from '../publish/catalog/hot-catalog';
+import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
 import {
   createIdempotencyRequestHash,
   resolveIdempotency,
-} from '@functhis/publish/idempotency';
+} from '../publish/execution/idempotency';
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
   loadIdempotencyRecord,
-} from '@functhis/publish/idempotency-store';
-import { OrgQuotaExceededError } from '@functhis/publish/org-entitlements';
-import { reserveOrgExecution } from '@functhis/publish/org-usage';
+} from '../publish/execution/idempotency-store';
+import { validateContractInput } from '../publish/execution/validate-input';
+import type { ContractInputValidationIssue } from '../publish/execution/validate-input';
+import { parseFunctionId } from '../publish/function-id';
+import { OrgQuotaExceededError } from '../publish/org/org-entitlements';
+import { reserveOrgExecution } from '../publish/org/org-usage';
 import {
   assertExecuteRequestSize,
   executeRequestByteLength,
-} from '@functhis/publish/quotas';
-import { validateContractInput } from '@functhis/publish/validate-input';
-import type { ContractInputValidationIssue } from '@functhis/publish/validate-input';
-
+} from '../publish/org/quotas';
 /* eslint-disable complexity -- execute dispatcher fans out hosted, OpenAPI, and remote MCP */
 import type { McpBindings } from './bindings';
 import { executeHostedAdapter } from './execute-hosted';

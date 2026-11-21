@@ -1,5 +1,5 @@
+import { listMemberOrganizations } from '@functhis/core/publish';
 import { createDb } from '@functhis/db';
-import { listMemberOrganizations } from '@functhis/publish';
 import { createServerFn } from '@tanstack/react-start';
 
 import { env } from '#/env.server';

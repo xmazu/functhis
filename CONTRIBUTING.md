@@ -49,7 +49,7 @@ Org billing in `/d` uses the Better Auth Stripe plugin (`packages/auth/src/strip
 
 ### Plans and env vars
 
-Paid plan amounts and limits live in `packages/publish/src/org/plan-catalog.ts` (`FUNCTHIS_PLANS`: Developer **$19/mo**, Team **$79/mo**). Trial and Enterprise have no Stripe price.
+Paid plan amounts and limits live in `packages/core/src/publish/org/plan-catalog.ts` (`FUNCTHIS_PLANS`: Developer **$19/mo**, Team **$79/mo**). Trial and Enterprise have no Stripe price.
 
 | Variable | Purpose |
 | --- | --- |

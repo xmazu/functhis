@@ -1,4 +1,4 @@
-import type { PackageVisibility } from '@functhis/publish/package-visibility';
+import type { PackageVisibility } from '@functhis/core/publish/package-visibility';
 
 const VISIBILITY_VALUES = new Set<PackageVisibility>([
   'private',

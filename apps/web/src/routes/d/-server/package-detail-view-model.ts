@@ -1,5 +1,8 @@
-import { formatFunctionId } from '@functhis/publish';
-import type { CatalogPackageRow, ExecutionSummaryRow } from '@functhis/publish';
+import { formatFunctionId } from '@functhis/core/publish';
+import type {
+  CatalogPackageRow,
+  ExecutionSummaryRow,
+} from '@functhis/core/publish';
 
 const readContractDescription = (contract: unknown): string | null => {
   if (typeof contract !== 'object' || contract === null) {

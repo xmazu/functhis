@@ -82,7 +82,7 @@ The published npm CLI (`functhis`) is versioned with each GitHub Release.
 
 - Implement publish API routes for start and finalize, create publish handler context, and add authentication token parsing; enhance CLI with publish functionality and validation tests
 
-- Enhance architecture documentation with runtime kernel versioning details, update bun.lock to include @functhis/runtime, and add new components for package sharing and command execution in the console application
+- Enhance architecture documentation with runtime kernel versioning details, update bun.lock to include @functhis/core/runtime, and add new components for package sharing and command execution in the console application
 
 - Consolidate console application into web application, removing console-specific files and updating documentation for owner UI; enhance design documentation and adjust environment configurations for improved clarity
 

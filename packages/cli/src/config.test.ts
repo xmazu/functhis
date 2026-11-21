@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { PUBLISH_API_RESOURCE } from '@functhis/publish/oauth';
+import { PUBLISH_API_RESOURCE } from '@functhis/core/publish/oauth';
 
 import type { CliConfig } from './config';
 import {

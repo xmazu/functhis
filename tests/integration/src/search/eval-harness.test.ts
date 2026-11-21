@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 
-import { searchFunctionsWithContext } from '@functhis/core/search';
 import {
   evaluateSearchRanking,
   recallAtK,
-} from '@functhis/publish/search-eval';
-import type { SearchEvalJudgment } from '@functhis/publish/search-eval';
+} from '@functhis/core/publish/search-eval';
+import type { SearchEvalJudgment } from '@functhis/core/publish/search-eval';
+import { searchFunctionsWithContext } from '@functhis/core/search';
 
 import { integrationHotBinding } from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';

@@ -4,14 +4,14 @@ import {
   ensureCliOAuthClient,
   ensureCursorMcpOAuthClient,
 } from '@functhis/auth/seed-cli-client';
-import { createDb, resolveSecret } from '@functhis/db';
-import type { Database } from '@functhis/db';
 import {
   asHotKvBinding,
   listMembershipOrganizationIds,
   writeJwksHot,
   writeMembershipHot,
-} from '@functhis/publish';
+} from '@functhis/core/publish';
+import { createDb, resolveSecret } from '@functhis/db';
+import type { Database } from '@functhis/db';
 
 import { env } from './env.server';
 

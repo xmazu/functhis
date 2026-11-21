@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { dispatchExecute } from '@functhis/core/execute-dispatch';
+import { deterministicEmbedding } from '@functhis/core/publish/embedding';
+import { formatFunctionId } from '@functhis/core/publish/function-id';
+import { functionHotKeyFromId } from '@functhis/core/publish/hot-keys';
+import {
+  acceptOpenApiGeneration,
+  importOpenApiSource,
+} from '@functhis/core/publish/openapi-sync';
+import { MemoryEmbeddingIndex } from '@functhis/core/publish/vectorize-index';
+import { reconcileSearchIndexDebt } from '@functhis/core/publish/vectorize-upsert';
 import { searchFunctionsWithContext } from '@functhis/core/search';
 import {
   capabilityGeneration,
@@ -9,15 +18,6 @@ import {
   pkg,
   pkgFunction,
 } from '@functhis/db/schema/catalog';
-import { deterministicEmbedding } from '@functhis/publish/embedding';
-import { formatFunctionId } from '@functhis/publish/function-id';
-import { functionHotKeyFromId } from '@functhis/publish/hot-keys';
-import {
-  acceptOpenApiGeneration,
-  importOpenApiSource,
-} from '@functhis/publish/openapi-sync';
-import { MemoryEmbeddingIndex } from '@functhis/publish/vectorize-index';
-import { reconcileSearchIndexDebt } from '@functhis/publish/vectorize-upsert';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';
