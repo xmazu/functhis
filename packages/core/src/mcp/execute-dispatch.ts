@@ -1,4 +1,3 @@
-/* eslint-disable complexity -- execute dispatcher fans out hosted, OpenAPI, and remote MCP */
 import { createDb } from '@functhis/db';
 import { canAccessPackage } from '@functhis/publish/catalog-access';
 import { parseFunctionId } from '@functhis/publish/function-id';
@@ -25,6 +24,8 @@ import {
 import { validateContractInput } from '@functhis/publish/validate-input';
 import type { ContractInputValidationIssue } from '@functhis/publish/validate-input';
 
+/* eslint-disable complexity -- execute dispatcher fans out hosted, OpenAPI, and remote MCP */
+import type { McpBindings } from './bindings';
 import { executeHostedAdapter } from './execute-hosted';
 import { callOpenApiOperation, callRemoteMcpTool } from './execute-http';
 import { getInboundRequestSignal } from './inbound-request-signal';
@@ -73,7 +74,7 @@ const jsonError = (
 });
 
 export const dispatchExecute = async (
-  env: Env,
+  bindings: McpBindings,
   callerUserId: string | null,
   input: DispatchInput
 ): Promise<DispatchResult> => {
@@ -92,8 +93,8 @@ export const dispatchExecute = async (
   const requestBytes = executeRequestByteLength(requestBody);
   const signal = getInboundRequestSignal();
 
-  const hot = asHotKvBinding(env.HOT);
-  const database = await createDb(env);
+  const hot = asHotKvBinding(bindings.HOT);
+  const database = await createDb(bindings);
   const [row, accessContext] = await Promise.all([
     resolveHotFunctionDoc(hot, database, parsedId),
     buildAccessContextFromHot(hot, database, callerUserId),
@@ -187,7 +188,7 @@ export const dispatchExecute = async (
   const sourceKind = row.sourceKind ?? 'hosted_function';
   let result: DispatchResult;
   if (sourceKind === 'openapi_operation') {
-    result = await callOpenApiOperation(env, {
+    result = await callOpenApiOperation(bindings, {
       callerUserId,
       doc: row,
       requestBytes,
@@ -195,7 +196,7 @@ export const dispatchExecute = async (
       signal,
     });
   } else if (sourceKind === 'remote_mcp_tool') {
-    result = await callRemoteMcpTool(env, {
+    result = await callRemoteMcpTool(bindings, {
       callerUserId,
       doc: row,
       requestBytes,
@@ -203,7 +204,7 @@ export const dispatchExecute = async (
       signal,
     });
   } else {
-    result = await executeHostedAdapter(env, {
+    result = await executeHostedAdapter(bindings, {
       callerUserId,
       doc: row,
       parsedId,

@@ -6,7 +6,7 @@ If a term is unfamiliar (`RRF`, `nDCG`, …), skip to [Ranking vocabulary](#rank
 
 Code lives in two places:
 
-- `apps/mcp/src/` — MCP tools (`mcp.ts`), search wiring (`search.ts`), execute dispatch.
+- `packages/core/src/mcp/` — MCP tools (`mcp.ts`), search wiring (`search.ts`), execute dispatch.
 - Jev rerank scorer lives in `packages/publish/src/search/search-jev-rerank.ts` (MCP imports it when OpenRouter is configured).
 - `packages/publish/src/` — HOT catalog, search (`search/`), embeddings, Vectorize debt, execution adapters.
 
@@ -113,7 +113,7 @@ fusedScore = rrfScore
 
 ## `search` algorithm
 
-`searchFunctions` (`apps/mcp/src/search.ts`) → `searchFunctionsWithContext` (`search/search-run.ts`).
+`searchFunctions` (`packages/core/src/mcp/search.ts`) → `searchFunctionsWithContext` (`search/search-run.ts`).
 
 1. **Load** every accessible `fn:v1:*` for the domain (one KV read per id today — see [Known gaps](#known-gaps)).
 2. **Exact** id fast path when the query is a single `@…` id.

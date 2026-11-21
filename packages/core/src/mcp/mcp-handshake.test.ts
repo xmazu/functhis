@@ -1,6 +1,7 @@
 import './ensure-zod-init';
 import { describe, expect, test } from 'bun:test';
 
+import type { McpBindings } from './bindings';
 import { createFuncthisMcpHandler } from './mcp';
 import type { McpHandlerDependencies } from './mcp';
 
@@ -15,13 +16,10 @@ const PRIOR_MCP_PROTOCOL_VERSIONS = [
 const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const UNSUPPORTED_PROTOCOL_VERSION = -32_022;
 
-const stubEnv = {
-  CONSOLE_URL: 'http://localhost:3001',
-  MCP_RESOURCE: 'http://localhost:3003',
-} as Env;
+const stubBindings = {} as McpBindings;
 
 const handler = (dependencies?: McpHandlerDependencies) =>
-  createFuncthisMcpHandler(stubEnv, 'user_test', dependencies);
+  createFuncthisMcpHandler(stubBindings, 'user_test', dependencies);
 
 const mcpPost = (body: unknown, extraHeaders: HeadersInit = {}): Request =>
   new Request('http://localhost:3003/mcp', {

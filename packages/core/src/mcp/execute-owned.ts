@@ -1,5 +1,6 @@
 import { ExecutePayloadTooLargeError } from '@functhis/publish/quotas';
 
+import type { McpBindings } from './bindings';
 import { dispatchExecute } from './execute-dispatch';
 import type { DispatchResult } from './execute-dispatch';
 
@@ -33,14 +34,14 @@ export interface ExecuteOwnedDependencies {
 }
 
 export const executeOwnedFunction = async (
-  env: Env,
+  bindings: McpBindings,
   callerUserId: string | null,
   input: ExecuteOwnedInput,
   dependencies: ExecuteOwnedDependencies = {}
 ): Promise<ExecuteOwnedResult> => {
   try {
     const result = await (dependencies.dispatch ?? dispatchExecute)(
-      env,
+      bindings,
       callerUserId,
       {
         arguments:

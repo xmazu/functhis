@@ -9,6 +9,7 @@ import type {
 } from '@functhis/publish/search-run';
 import { VectorizeEmbeddingIndex } from '@functhis/publish/vectorize-index';
 
+import type { McpBindings } from './bindings';
 import { resolveOpenRouterApiKey } from './openrouter-api-key';
 
 export interface SearchFunctionsDependencies {
@@ -17,7 +18,7 @@ export interface SearchFunctionsDependencies {
   resolveOpenRouterApiKey?: typeof resolveOpenRouterApiKey;
   searchFunctionsWithContext?: typeof searchFunctionsWithContext;
   vectorIndexFactory?: (
-    binding: NonNullable<Env['CAPABILITY_VECTOR_INDEX']>
+    binding: NonNullable<McpBindings['CAPABILITY_VECTOR_INDEX']>
   ) => VectorizeEmbeddingIndex;
 }
 
@@ -29,7 +30,7 @@ export {
 } from '@functhis/publish/search-run';
 
 export const searchFunctions = async (
-  env: Env,
+  bindings: McpBindings,
   input: {
     callerUserId: string;
     domain?: SearchDomain;
@@ -39,21 +40,21 @@ export const searchFunctions = async (
   options?: SearchFunctionsOptions,
   dependencies: SearchFunctionsDependencies = {}
 ): Promise<SearchResult> => {
-  const hot = asHotKvBinding(env.HOT);
+  const hot = asHotKvBinding(bindings.HOT);
   const resolveKey =
     dependencies.resolveOpenRouterApiKey ?? resolveOpenRouterApiKey;
-  const openRouterApiKey = await resolveKey(env.OPENROUTER_API_KEY);
-  const vectorIndex = env.CAPABILITY_VECTOR_INDEX
-    ? (dependencies.vectorIndexFactory?.(env.CAPABILITY_VECTOR_INDEX) ??
-      new VectorizeEmbeddingIndex(env.CAPABILITY_VECTOR_INDEX))
+  const openRouterApiKey = await resolveKey(bindings.OPENROUTER_API_KEY);
+  const vectorIndex = bindings.CAPABILITY_VECTOR_INDEX
+    ? (dependencies.vectorIndexFactory?.(bindings.CAPABILITY_VECTOR_INDEX) ??
+      new VectorizeEmbeddingIndex(bindings.CAPABILITY_VECTOR_INDEX))
     : undefined;
   const embedQueries = (texts: readonly string[]): Promise<number[][]> => {
     const offline = dependencies.isEmbeddingOffline ?? isEmbeddingOffline;
-    if (!vectorIndex && offline(env)) {
+    if (!vectorIndex && offline(bindings)) {
       return Promise.resolve(texts.map(() => []));
     }
     const embed = dependencies.embedTexts ?? embedTexts;
-    return embed(env, texts);
+    return embed(bindings, texts);
   };
   const runSearch =
     dependencies.searchFunctionsWithContext ?? searchFunctionsWithContext;

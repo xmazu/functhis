@@ -10,6 +10,7 @@ import { asHotKvBinding } from '@functhis/publish/hot-kv-binding';
 import { buildRemoteMcpCallToolRequest } from '@functhis/publish/remote-mcp-protocol';
 import { invalidateRemoteMcpSnapshot } from '@functhis/publish/remote-mcp-sync';
 
+import type { McpBindings } from './bindings';
 import type { DispatchResult } from './execute-dispatch';
 
 const interpolatePath = (
@@ -32,15 +33,15 @@ const retryOnce = async (
 };
 
 const loadCredential = async (
-  env: Env,
+  bindings: McpBindings,
   doc: HotFunctionDoc
 ): Promise<string | undefined> => {
   if (!doc.sourceCredentialName || !doc.organizationId) {
     return undefined;
   }
-  const database = await createDb(env);
+  const database = await createDb(bindings);
   const secrets = await resolveHostedRuntimeSecrets(database, {
-    encryptionKey: env.FUNCTHIS_SECRETS_KEY,
+    encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
     organizationId: doc.organizationId,
     packageId: doc.packageId,
     secretNames: [doc.sourceCredentialName],
@@ -49,7 +50,7 @@ const loadCredential = async (
 };
 
 const finishExecution = async (
-  env: Env,
+  bindings: McpBindings,
   input: {
     callerUserId: string | null;
     doc: HotFunctionDoc;
@@ -64,7 +65,7 @@ const finishExecution = async (
     return;
   }
   const executionId = crypto.randomUUID();
-  await insertStartedExecutionRow(env, {
+  await insertStartedExecutionRow(bindings, {
     callerUserId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
@@ -73,7 +74,7 @@ const finishExecution = async (
     requestBytes: input.requestBytes,
     startedAt: new Date(input.started),
   });
-  await insertExecutionRow(env, {
+  await insertExecutionRow(bindings, {
     callerUserId: input.callerUserId,
     completedAt: new Date(),
     cpuMs: Date.now() - input.started,
@@ -89,7 +90,7 @@ const finishExecution = async (
 };
 
 export const callOpenApiOperation = async (
-  env: Env,
+  bindings: McpBindings,
   input: {
     callerUserId: string | null;
     doc: HotFunctionDoc;
@@ -124,7 +125,7 @@ export const callOpenApiOperation = async (
       timing: { queueMs: 0, totalMs: Date.now() - started, upstreamMs: 0 },
     };
   }
-  const token = await loadCredential(env, input.doc);
+  const token = await loadCredential(bindings, input.doc);
   const method = (input.doc.sourceMethod ?? 'post').toUpperCase();
   const retryable = method === 'GET';
   const upstreamStarted = Date.now();
@@ -176,7 +177,7 @@ export const callOpenApiOperation = async (
     };
   }
   const bodyText = await response.text();
-  await finishExecution(env, {
+  await finishExecution(bindings, {
     callerUserId: input.callerUserId,
     doc: input.doc,
     requestBytes: input.requestBytes,
@@ -198,7 +199,7 @@ export const callOpenApiOperation = async (
 };
 
 export const callRemoteMcpTool = async (
-  env: Env,
+  bindings: McpBindings,
   input: {
     callerUserId: string | null;
     doc: HotFunctionDoc;
@@ -219,7 +220,7 @@ export const callRemoteMcpTool = async (
       timing: { queueMs: 0, totalMs: Date.now() - started, upstreamMs: 0 },
     };
   }
-  const token = await loadCredential(env, input.doc);
+  const token = await loadCredential(bindings, input.doc);
   const upstreamStarted = Date.now();
   let response: Response;
   try {
@@ -244,7 +245,7 @@ export const callRemoteMcpTool = async (
     );
   } catch (error) {
     await invalidateRemoteMcpSnapshot(
-      asHotKvBinding(env.HOT),
+      asHotKvBinding(bindings.HOT),
       input.doc.packageId
     );
     if (input.signal?.aborted) {
@@ -277,12 +278,12 @@ export const callRemoteMcpTool = async (
   }
   if (!response.ok) {
     await invalidateRemoteMcpSnapshot(
-      asHotKvBinding(env.HOT),
+      asHotKvBinding(bindings.HOT),
       input.doc.packageId
     );
   }
   const bodyText = await response.text();
-  await finishExecution(env, {
+  await finishExecution(bindings, {
     callerUserId: input.callerUserId,
     doc: input.doc,
     requestBytes: input.requestBytes,

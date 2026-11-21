@@ -1,5 +1,7 @@
+import type { SecretBinding } from '@functhis/db';
+
 export const resolveOpenRouterApiKey = async (
-  binding: SecretsStoreSecret | string | undefined
+  binding: SecretBinding | undefined
 ): Promise<string | undefined> => {
   if (binding === undefined) {
     return undefined;

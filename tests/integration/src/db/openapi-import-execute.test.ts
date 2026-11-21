@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
+import { dispatchExecute } from '@functhis/core/execute-dispatch';
+import { searchFunctionsWithContext } from '@functhis/core/search';
 import {
   capabilityGeneration,
   capabilitySource,
@@ -7,8 +9,6 @@ import {
   pkg,
   pkgFunction,
 } from '@functhis/db/schema/catalog';
-import { dispatchExecute } from '@functhis/mcp/execute-dispatch';
-import { searchFunctionsWithContext } from '@functhis/mcp/search';
 import { deterministicEmbedding } from '@functhis/publish/embedding';
 import { formatFunctionId } from '@functhis/publish/function-id';
 import { functionHotKeyFromId } from '@functhis/publish/hot-keys';
@@ -23,7 +23,7 @@ import { eq } from 'drizzle-orm';
 import { integrationDb } from '../harness/db';
 import { stubGlobalFetch } from '../harness/fetch-stub';
 import {
-  createIntegrationMcpEnv,
+  createIntegrationMcpBindings,
   integrationHotBinding,
 } from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';
@@ -42,7 +42,7 @@ describe('OpenAPI import through execute and analytics', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const env = createIntegrationMcpEnv(memoryHot);
+    const bindings = createIntegrationMcpBindings(memoryHot);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -139,16 +139,16 @@ describe('OpenAPI import through execute and analytics', () => {
       idempotencyKey,
     };
 
-    const firstExecute = await dispatchExecute(env, userId, executeInput);
+    const firstExecute = await dispatchExecute(bindings, userId, executeInput);
     expect(firstExecute.ok).toBe(true);
     expect(firstExecute.status).toBe(200);
     expect(fetchCalls).toBe(1);
 
-    const replay = await dispatchExecute(env, userId, executeInput);
+    const replay = await dispatchExecute(bindings, userId, executeInput);
     expect(replay.ok).toBe(true);
     expect(fetchCalls).toBe(1);
 
-    const mismatch = await dispatchExecute(env, userId, {
+    const mismatch = await dispatchExecute(bindings, userId, {
       ...executeInput,
       arguments: { id: '2' },
     });

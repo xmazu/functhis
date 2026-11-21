@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import type { HotKvBinding } from '@functhis/publish/http-context';
 
+import type { McpBindings } from './bindings';
 import { normalizeSearchDomain, searchFunctions } from './search';
 
 const memoryHot = (): HotKvBinding => ({
@@ -21,7 +22,7 @@ describe('searchFunctions', () => {
   test('uses the offline embedding path and forwards the result', async () => {
     const hot = memoryHot();
     const result = await searchFunctions(
-      { HOT: hot } as Env,
+      { HOT: hot } as McpBindings,
       { callerUserId: 'user', query: 'mail' },
       undefined,
       {
@@ -55,7 +56,7 @@ describe('searchFunctions', () => {
   test('embeds when the environment is online', async () => {
     let embedded = false;
     const result = await searchFunctions(
-      { CAPABILITY_VECTOR_INDEX: {}, HOT: memoryHot() } as Env,
+      { CAPABILITY_VECTOR_INDEX: {}, HOT: memoryHot() } as McpBindings,
       { callerUserId: 'user', query: 'mail' },
       undefined,
       {

@@ -1,22 +1,32 @@
 import { describe, expect, test } from 'bun:test';
 
+import { createMcpPostHandler } from '@functhis/core';
+
 import {
   authIssuerFromConsoleUrl,
   authJwksUrlFromConsoleUrl,
-  createProtectedMcpHandler,
-} from '../src/protect';
+} from './auth-urls';
+import { authenticateFuncthisMcp } from './authenticate';
+import type { FuncthisMcpBindings } from './authenticate';
 
-describe('MCP auth URLs', () => {
+describe('Functhis MCP authenticate', () => {
   test('returns WWW-Authenticate with path-aware resource_metadata on 401', async () => {
-    const env = {
+    const bindings = {
       CONSOLE_URL: 'http://localhost:3001',
-      HOT: {},
+      HOT: {
+        delete: () => Promise.resolve(),
+        get: () => Promise.resolve(null),
+        put: () => Promise.resolve(),
+      },
       MCP_RESOURCE: 'http://localhost:3003',
-    } as Env;
-    const handler = createProtectedMcpHandler(env, () =>
-      Promise.resolve(new Response('ok'))
+    } as FuncthisMcpBindings;
+    const handlePost = createMcpPostHandler({
+      authenticate: authenticateFuncthisMcp,
+    });
+    const response = await handlePost(
+      new Request('http://localhost:3003/mcp', { method: 'POST' }),
+      bindings
     );
-    const response = await handler(new Request('http://localhost:3003/mcp'));
     expect(response.status).toBe(401);
     const authenticate = response.headers.get('WWW-Authenticate');
     expect(authenticate).toContain('resource_metadata=');

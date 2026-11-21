@@ -65,7 +65,7 @@ Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml).
 ```bash
 bun run --filter functhis build
 bun run check && bun run check-types
-bun test packages/auth packages/publish packages/cli apps/mcp/src scripts apps/console/src/lib
+bun test packages/auth packages/publish packages/cli packages/core/src scripts apps/console/src/lib
 bun run --filter functhis pack-smoke
 ```
 

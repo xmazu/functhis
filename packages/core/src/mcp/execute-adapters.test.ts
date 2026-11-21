@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
+import type { McpBindings } from './bindings';
 import { executeHostedAdapter } from './execute-hosted';
 import { callOpenApiOperation, callRemoteMcpTool } from './execute-http';
 
-const env = {} as Env;
+const bindings = {} as McpBindings;
 const baseDoc = {
   bundleHash: 'bundle',
   contract: null,
@@ -19,7 +20,7 @@ const baseDoc = {
 
 describe('execute adapters', () => {
   test('returns not found when hosted ownership is incomplete', async () => {
-    const result = await executeHostedAdapter(env, {
+    const result = await executeHostedAdapter(bindings, {
       callerUserId: null,
       doc: baseDoc,
       parsedId: { functionSlug: 'fn', handle: 'owner', packageSlug: 'pkg' },
@@ -31,7 +32,7 @@ describe('execute adapters', () => {
   });
 
   test('returns unavailable when OpenAPI metadata is incomplete', async () => {
-    const result = await callOpenApiOperation(env, {
+    const result = await callOpenApiOperation(bindings, {
       callerUserId: null,
       doc: baseDoc,
       requestBytes: 10,
@@ -42,7 +43,7 @@ describe('execute adapters', () => {
   });
 
   test('returns unavailable when remote MCP metadata is incomplete', async () => {
-    const result = await callRemoteMcpTool(env, {
+    const result = await callRemoteMcpTool(bindings, {
       callerUserId: null,
       doc: baseDoc,
       requestBytes: 10,

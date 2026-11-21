@@ -14,6 +14,7 @@ import {
   runDynamicWorker,
 } from '@functhis/publish/worker-execute';
 
+import type { McpBindings } from './bindings';
 import type { DispatchResult } from './execute-dispatch';
 
 const advisoryOutputValidation = (
@@ -41,7 +42,7 @@ const advisoryOutputValidation = (
 };
 
 export const executeHostedAdapter = async (
-  env: Env,
+  bindings: McpBindings,
   input: {
     callerUserId: string | null;
     doc: HotFunctionDoc;
@@ -73,7 +74,7 @@ export const executeHostedAdapter = async (
 
   let bundle;
   try {
-    bundle = await loadStoredBundle(env, input.doc.bundleHash);
+    bundle = await loadStoredBundle(bindings, input.doc.bundleHash);
   } catch (error) {
     if (error instanceof StoredBundleLoadError) {
       return {
@@ -96,7 +97,7 @@ export const executeHostedAdapter = async (
     throw error;
   }
 
-  const database = await createDb(env);
+  const database = await createDb(bindings);
   let runtimeSecrets: Record<string, string> = {};
   try {
     const secretNames = await loadPackageVersionSecretNames(
@@ -104,7 +105,7 @@ export const executeHostedAdapter = async (
       input.doc.versionId
     );
     runtimeSecrets = await resolveHostedRuntimeSecrets(database, {
-      encryptionKey: env.FUNCTHIS_SECRETS_KEY,
+      encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
       organizationId: input.doc.organizationId,
       packageId: input.doc.packageId,
       secretNames,
@@ -126,7 +127,7 @@ export const executeHostedAdapter = async (
   }
 
   const executionId = crypto.randomUUID();
-  await insertStartedExecutionRow(env, {
+  await insertStartedExecutionRow(bindings, {
     callerUserId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
@@ -137,7 +138,7 @@ export const executeHostedAdapter = async (
   });
 
   const upstreamStarted = Date.now();
-  const run = await runDynamicWorker(env, {
+  const run = await runDynamicWorker(bindings, {
     bundle,
     callerUserId: input.callerUserId,
     executionId,
@@ -155,7 +156,7 @@ export const executeHostedAdapter = async (
   const upstreamMs = Date.now() - upstreamStarted;
 
   const httpResponse = await finalizeExecute(
-    env,
+    bindings,
     {
       bundleHash: input.doc.bundleHash,
       callerUserId: input.callerUserId ?? undefined,

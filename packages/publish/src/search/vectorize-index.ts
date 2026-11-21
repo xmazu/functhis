@@ -82,7 +82,7 @@ export class MemoryEmbeddingIndex implements EmbeddingIndex {
   }
 }
 
-interface VectorizeBinding {
+export interface VectorizeBinding {
   deleteByIds: (ids: string[]) => Promise<unknown>;
   query: (
     vector: number[],

@@ -3,6 +3,7 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { log } from 'evlog';
 import { z } from 'zod';
 
+import type { McpBindings } from './bindings';
 import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';
 import type { ExecuteOwnedDependencies } from './execute-owned';
 import { summarizeMcpSearchQuery } from './mcp-log';
@@ -33,7 +34,7 @@ export interface McpHandlerDependencies
 }
 
 export const createFuncthisMcpHandler = (
-  env: Env,
+  bindings: McpBindings,
   userId: string,
   dependencies: McpHandlerDependencies = {}
 ): ReturnType<typeof createMcpHandler> =>
@@ -55,7 +56,7 @@ export const createFuncthisMcpHandler = (
           const result = await (
             dependencies.searchFunctions ?? searchFunctions
           )(
-            env,
+            bindings,
             {
               callerUserId: userId,
               domain: input.domain,
@@ -105,7 +106,7 @@ export const createFuncthisMcpHandler = (
         async (input) => {
           try {
             const result = await executeOwnedFunction(
-              env,
+              bindings,
               userId,
               {
                 arguments: input.arguments,

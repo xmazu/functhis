@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
+import { dispatchExecute } from '@functhis/core/execute-dispatch';
 import { pkg } from '@functhis/db/schema/catalog';
-import { dispatchExecute } from '@functhis/mcp/execute-dispatch';
 import { formatFunctionId } from '@functhis/publish/function-id';
 import {
   mcpSnapshotHotKey,
@@ -13,7 +13,7 @@ import { eq } from 'drizzle-orm';
 import { integrationDb } from '../harness/db';
 import { stubGlobalFetch } from '../harness/fetch-stub';
 import {
-  createIntegrationMcpEnv,
+  createIntegrationMcpBindings,
   integrationHotBinding,
 } from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';
@@ -31,7 +31,7 @@ describe('remote MCP sync and execute', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const env = createIntegrationMcpEnv(memoryHot);
+    const bindings = createIntegrationMcpBindings(memoryHot);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -85,7 +85,7 @@ describe('remote MCP sync and execute', () => {
       });
     });
 
-    const result = await dispatchExecute(env, userId, {
+    const result = await dispatchExecute(bindings, userId, {
       arguments: { message: 'hi' },
       id: capabilityId,
     });
@@ -97,7 +97,7 @@ describe('remote MCP sync and execute', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const env = createIntegrationMcpEnv(memoryHot);
+    const bindings = createIntegrationMcpBindings(memoryHot);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -123,7 +123,7 @@ describe('remote MCP sync and execute', () => {
       packageSlug: sourceSlug,
     });
     await expect(
-      dispatchExecute(env, userId, { arguments: {}, id: capabilityId })
+      dispatchExecute(bindings, userId, { arguments: {}, id: capabilityId })
     ).rejects.toThrow('Function not found');
   });
 });

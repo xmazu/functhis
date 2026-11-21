@@ -1,6 +1,8 @@
+import type { McpWellKnownRoute } from '@functhis/core';
 import { normalizeOAuthResourceIdentifier } from '@functhis/publish/oauth-resource';
 
 import { authIssuerFromConsoleUrl } from './auth-urls';
+import type { FuncthisMcpBindings } from './functhis-bindings';
 
 const MCP_ENDPOINT_PATH = '/mcp';
 
@@ -9,14 +11,24 @@ export const oauthProtectedResourceMetadataPaths = (): readonly string[] => [
   `/.well-known/oauth-protected-resource${MCP_ENDPOINT_PATH}`,
 ];
 
-export const oauthProtectedResourceMetadataUrl = (env: Env): string => {
-  const origin = env.MCP_RESOURCE.replace(/\/$/u, '');
+export const oauthProtectedResourceMetadataUrl = (
+  bindings: FuncthisMcpBindings
+): string => {
+  const origin = bindings.MCP_RESOURCE.replace(/\/$/u, '');
   return `${origin}/.well-known/oauth-protected-resource${MCP_ENDPOINT_PATH}`;
 };
 
-export const oauthProtectedResourceMetadata = (env: Env): Response =>
+export const oauthProtectedResourceMetadata = (
+  bindings: FuncthisMcpBindings
+): Response =>
   Response.json({
-    authorization_servers: [authIssuerFromConsoleUrl(env.CONSOLE_URL)],
+    authorization_servers: [authIssuerFromConsoleUrl(bindings.CONSOLE_URL)],
     bearer_methods_supported: ['header'],
-    resource: normalizeOAuthResourceIdentifier(env.MCP_RESOURCE),
+    resource: normalizeOAuthResourceIdentifier(bindings.MCP_RESOURCE),
   });
+
+export const functhisOAuthProtectedResourceWellKnown: McpWellKnownRoute = {
+  handle: (_request, bindings) =>
+    oauthProtectedResourceMetadata(bindings as FuncthisMcpBindings),
+  paths: oauthProtectedResourceMetadataPaths,
+};

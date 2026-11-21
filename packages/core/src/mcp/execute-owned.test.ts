@@ -2,15 +2,16 @@ import { describe, expect, test } from 'bun:test';
 
 import { ExecutePayloadTooLargeError } from '@functhis/publish/quotas';
 
+import type { McpBindings } from './bindings';
 import { executeOwnedFunction } from './execute-owned';
 
-const env = {} as Env;
+const bindings = {} as McpBindings;
 const timing = { queueMs: 1, totalMs: 2, upstreamMs: 3 };
 
 describe('executeOwnedFunction', () => {
   test('normalizes object arguments and maps a successful dispatch', async () => {
     const result = await executeOwnedFunction(
-      env,
+      bindings,
       'user',
       { arguments: { value: 1 }, id: '@owner/pkg/fn' },
       {
@@ -37,7 +38,7 @@ describe('executeOwnedFunction', () => {
 
   test('drops non-object arguments and maps failures', async () => {
     const result = await executeOwnedFunction(
-      env,
+      bindings,
       null,
       { arguments: 'invalid', id: '@owner/pkg/fn' },
       {
@@ -67,7 +68,7 @@ describe('executeOwnedFunction', () => {
   test('rethrows payload size errors', async () => {
     await expect(
       executeOwnedFunction(
-        env,
+        bindings,
         null,
         { id: '@owner/pkg/fn' },
         {

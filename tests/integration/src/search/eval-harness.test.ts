@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { searchFunctionsWithContext } from '@functhis/mcp/search';
+import { searchFunctionsWithContext } from '@functhis/core/search';
 import {
   evaluateSearchRanking,
   recallAtK,

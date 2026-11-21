@@ -1,0 +1,35 @@
+{
+  "name": "@functhis/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./search": {
+      "types": "./src/mcp/search.ts",
+      "default": "./src/mcp/search.ts"
+    },
+    "./execute-dispatch": {
+      "types": "./src/mcp/execute-dispatch.ts",
+      "default": "./src/mcp/execute-dispatch.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@functhis/db": "workspace:*",
+    "@functhis/publish": "workspace:*",
+    "@modelcontextprotocol/server": "2.0.0",
+    "evlog": "^2.28.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "typescript": "catalog:"
+  }
+}
