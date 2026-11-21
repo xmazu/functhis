@@ -1,13 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 
 import type { HotFunctionDoc } from '../catalog/hot-catalog';
-import {
-  writeHotFunctionDoc,
-  writeMembershipHot,
-} from '../catalog/hot-catalog';
-import { mineIndexHotKey } from '../catalog/hot-keys';
+import { writeHotFunctionDoc } from '../catalog/hot-catalog';
+import { memberHotKey, mineIndexHotKey } from '../catalog/hot-keys';
 import type { HotKvBinding } from '../http/http-context';
 import { deterministicEmbedding } from './embedding';
+import type { SearchLoadPolicy } from './search-access';
 import {
   normalizeSearchDomain,
   searchFunctionsWithContext,
@@ -32,6 +30,16 @@ const memoryHot = (): HotKvBinding & { store: Map<string, string> } => {
 
 const embedQueries = (texts: readonly string[]) =>
   Promise.all(texts.map((text) => deterministicEmbedding(text)));
+
+const testLoadPolicy: SearchLoadPolicy = {
+  accessContext: (userId) =>
+    Promise.resolve({
+      organizationIds: ['org-1'],
+      userId,
+    }),
+  canAccessPackage: () => true,
+  organizationIds: () => Promise.resolve(['org-1']),
+};
 
 const seedDoc = async (
   hot: HotKvBinding,
@@ -58,7 +66,12 @@ const seedDoc = async (
     visibility: 'private',
   };
   await writeHotFunctionDoc(hot, doc);
-  await writeMembershipHot(hot, input.ownerUserId, [doc.organizationId ?? '']);
+  await hot.put(
+    memberHotKey(input.ownerUserId),
+    JSON.stringify({
+      organizationIds: [doc.organizationId ?? ''],
+    })
+  );
   const id = `@acme/crm/${input.functionSlug}`;
   const mineKey = mineIndexHotKey(input.ownerUserId);
   const existingRaw = await hot.get(mineKey);
@@ -83,7 +96,7 @@ describe('searchFunctionsWithContext', () => {
       searchText: 'users/search\nFind a user by email\nemail',
     });
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: 'find the client by mail' }
     );
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
@@ -111,6 +124,7 @@ describe('searchFunctionsWithContext', () => {
       {
         embedQueries,
         hot,
+        loadPolicy: testLoadPolicy,
         vectorIndex: index,
       },
       { callerUserId: userId, query: 'find the client by mail' },
@@ -129,7 +143,7 @@ describe('searchFunctionsWithContext', () => {
       searchText: 'users/search\nFind a user by email\nemail',
     });
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: 'zzzz-unrelated-token' }
     );
     expect(result.reason).toBe('browse');
@@ -151,7 +165,7 @@ describe('searchFunctionsWithContext', () => {
     }
     /* eslint-enable no-await-in-loop */
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: 'zzzz-unrelated-token' }
     );
     expect(result.reason).toBe('no_match');
@@ -167,7 +181,7 @@ describe('searchFunctionsWithContext', () => {
       searchText: 'users/search\nFind a user by email\nemail',
     });
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       {
         callerUserId: userId,
         intents: ['find user by email'],
@@ -187,7 +201,7 @@ describe('searchFunctionsWithContext', () => {
       searchText: 'users/search\nFind a user by email\nemail',
     });
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: '@acme/crm/users/search' }
     );
     expect(result.results.map((hit) => hit.id)).toEqual([
@@ -205,7 +219,7 @@ describe('searchFunctionsWithContext', () => {
       searchText: 'users/search\nFind a user by email\nemail',
     });
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: '   ' }
     );
     expect(result.results[0]?.id).toBe('@acme/crm/users/search');
@@ -221,7 +235,7 @@ describe('searchFunctionsWithContext', () => {
     });
     await hot.put('fn:v1:@acme/crm/users/search', '{}');
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: userId, query: 'find user by email' }
     );
     expect(
@@ -232,7 +246,7 @@ describe('searchFunctionsWithContext', () => {
   test('returns no_match for callers with no memberships', async () => {
     const hot = memoryHot();
     const result = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy: testLoadPolicy },
       { callerUserId: 'user-stranger', query: 'find user by email' }
     );
     expect(result.reason).toBe('no_match');

@@ -1,9 +1,11 @@
 import { formatFunctionId, parseFunctionId } from '../function-id';
 import type { ParsedFunctionId } from '../function-id';
 import type { HotKvBinding } from '../http/http-context';
-import type { HotCatalogSourcePort, MembershipsPort } from '../ports';
-import { canAccessPackage } from './catalog-access';
-import type { PackageAccessContext } from './catalog-access';
+import type { HotCatalogSourcePort } from '../ports';
+import type {
+  SearchAccessContext,
+  SearchAccessPredicate,
+} from '../search/search-access';
 import { stripPackageFunctionIds } from './hot-index';
 import {
   functionHotKey,
@@ -180,35 +182,6 @@ export const syncPackageToHot = async (
   return docs;
 };
 
-export const getMembershipOrganizationIdsFromHot = async (
-  hot: HotKvBinding,
-  memberships: MembershipsPort,
-  userId: string
-): Promise<string[]> => {
-  const raw = await hot.get(memberHotKey(userId));
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw) as { organizationIds?: string[] };
-      if (Array.isArray(parsed.organizationIds)) {
-        return parsed.organizationIds;
-      }
-    } catch {
-      // fall through to postgres
-    }
-  }
-  const organizationIds = await memberships.listOrganizationIds(userId);
-  await putJson(hot, memberHotKey(userId), { organizationIds });
-  return organizationIds;
-};
-
-export const writeMembershipHot = async (
-  hot: HotKvBinding,
-  userId: string,
-  organizationIds: string[]
-): Promise<void> => {
-  await putJson(hot, memberHotKey(userId), { organizationIds });
-};
-
 export const resolveHotFunctionDoc = async (
   hot: HotKvBinding,
   hotSource: HotCatalogSourcePort,
@@ -234,37 +207,15 @@ export const resolveHotFunctionDoc = async (
   return doc;
 };
 
-export const buildAccessContextFromHot = async (
-  hot: HotKvBinding,
-  memberships: MembershipsPort,
-  userId: string | null
-): Promise<PackageAccessContext> => {
-  if (!userId) {
-    return { organizationIds: [], userId: null };
-  }
-  const organizationIds = await getMembershipOrganizationIdsFromHot(
-    hot,
-    memberships,
-    userId
-  );
-  return { organizationIds, userId };
-};
-
 export type SearchDomain = 'library' | 'mine' | 'org';
 
 export const loadSearchFunctionIds = async (
   hot: HotKvBinding,
   hotSource: HotCatalogSourcePort,
-  memberships: MembershipsPort,
+  organizationIds: readonly string[],
   domain: SearchDomain,
   callerUserId: string
 ): Promise<string[]> => {
-  const organizationIds = await getMembershipOrganizationIdsFromHot(
-    hot,
-    memberships,
-    callerUserId
-  );
-
   let indexKey: string | null = null;
   if (domain === 'mine') {
     indexKey = mineIndexHotKey(callerUserId);
@@ -319,10 +270,11 @@ export const loadHotFunctionDocsByIds = async (
 
 export const filterDocsByAccess = (
   docs: HotFunctionDoc[],
-  accessContext: PackageAccessContext
+  accessContext: SearchAccessContext,
+  canAccess: SearchAccessPredicate
 ): HotFunctionDoc[] =>
   docs.filter((doc) =>
-    canAccessPackage(
+    canAccess(
       {
         organizationId: doc.organizationId,
         ownerUserId: doc.ownerUserId,
@@ -348,29 +300,22 @@ export const getMembershipOrganizationIdsFromHotKv = async (
   }
 };
 
-export const buildAccessContextFromHotKv = async (
-  hot: HotKvBinding,
-  userId: string | null
-): Promise<PackageAccessContext> => {
-  if (!userId) {
-    return { organizationIds: [], userId: null };
-  }
-  const organizationIds = await getMembershipOrganizationIdsFromHotKv(
-    hot,
-    userId
-  );
-  return { organizationIds, userId };
-};
-
 export const loadSearchFunctionIdsFromHot = async (
   hot: HotKvBinding,
   domain: SearchDomain,
-  callerUserId: string
+  callerUserId: string,
+  organizationIdsForUser: () => Promise<readonly string[]>
 ): Promise<string[]> => {
-  const organizationIds = await getMembershipOrganizationIdsFromHotKv(
-    hot,
-    callerUserId
-  );
+  const organizationIds = await (async () => {
+    const cached = await getMembershipOrganizationIdsFromHotKv(
+      hot,
+      callerUserId
+    );
+    if (cached.length > 0) {
+      return cached;
+    }
+    return organizationIdsForUser();
+  })();
   if (domain === 'mine') {
     return readIndex(hot, mineIndexHotKey(callerUserId));
   }

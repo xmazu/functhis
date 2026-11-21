@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { env } from '#/env.server';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
-import { getCatalog } from '#/services';
+import { getCatalog, getPlatform } from '#/services';
 
 export const importOpenApiForSession = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
@@ -27,12 +27,15 @@ export const importOpenApiForSession = createServerFn({ method: 'POST' })
     if (!userId || !organizationId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Sign in required');
     }
-    const catalog = await getCatalog();
+    const [catalog, platform] = await Promise.all([
+      getCatalog(),
+      getPlatform(),
+    ]);
     return importOpenApiSource({
       credentialName: data.credentialName,
       hot: asHotKvBinding(env.HOT),
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: data.slug,
@@ -74,13 +77,16 @@ export const importRemoteMcpForSession = createServerFn({ method: 'POST' })
     if (!userId || !organizationId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Sign in required');
     }
-    const catalog = await getCatalog();
+    const [catalog, platform] = await Promise.all([
+      getCatalog(),
+      getPlatform(),
+    ]);
     return syncRemoteMcpSource({
       credentialName: data.credentialName,
       endpoint: data.endpoint,
       hot: asHotKvBinding(env.HOT),
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: data.slug,

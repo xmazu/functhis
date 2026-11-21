@@ -7,7 +7,7 @@ import {
   functionHotKeyFromId,
   syncRemoteMcpSource,
 } from '@functhis/core/publish';
-import { createCatalog } from '@functhis/db/catalog';
+import { createCatalog, createPlatform } from '@functhis/db/catalog';
 import { pkg } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
@@ -33,7 +33,8 @@ describe('remote MCP sync and execute', () => {
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
     const catalog = createCatalog(db);
-    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
+    const platform = createPlatform(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog, platform);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -45,7 +46,7 @@ describe('remote MCP sync and execute', () => {
       endpoint: 'https://mcp.example.test/mcp',
       hot,
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
@@ -102,7 +103,8 @@ describe('remote MCP sync and execute', () => {
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
     const catalog = createCatalog(db);
-    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
+    const platform = createPlatform(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog, platform);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -116,7 +118,7 @@ describe('remote MCP sync and execute', () => {
       endpoint: 'https://mcp.example.test/mcp',
       hot,
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,

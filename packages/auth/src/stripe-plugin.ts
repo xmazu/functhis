@@ -1,7 +1,7 @@
 import { stripe } from '@better-auth/stripe';
-import { DEVELOPER_ORG_LIMITS, TEAM_ORG_LIMITS } from '@functhis/core/publish';
 import type { Database } from '@functhis/db';
 import { member } from '@functhis/db/schema/auth';
+import { DEVELOPER_ORG_LIMITS, TEAM_ORG_LIMITS } from '@functhis/platform';
 import { and, eq } from 'drizzle-orm';
 import StripeSdk from 'stripe';
 

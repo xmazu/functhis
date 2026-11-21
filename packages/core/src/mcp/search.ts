@@ -61,6 +61,7 @@ export const searchFunctions = async (
     {
       embedQueries: vectorIndex ? embedQueries : undefined,
       hot,
+      loadPolicy: bindings.searchLoadPolicy,
       vectorIndex,
     },
     input,

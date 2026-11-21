@@ -1,45 +1,45 @@
-import type { z } from 'zod';
-
-import { artifactObjectKey, hashPublishArtifact } from '../artifact';
-import type { PublishArtifact } from '../artifact';
 import {
-  bundleKvKey,
-  sha256Hex,
-  stableBundlePayload,
-  utf8ByteLength,
-} from '../bundle';
-import { syncPackageToHot } from '../catalog/hot-catalog';
-import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
-import {
-  resolvePublishSharingForPublishStart,
-  resolvePublishStartSharing,
-} from '../catalog/publish-sharing';
-import type { ExistingPackageSharing } from '../catalog/publish-sharing';
-import {
+  artifactObjectKey,
   BUNDLE_KV_PREFIX,
+  buildFunctionSearchText,
+  bundleKvKey,
+  bumpSemver,
+  hashPublishArtifact,
+  highestSemver,
   MAX_ARTIFACT_BYTES,
   MAX_BUNDLE_BYTES,
   MAX_SOURCE_MANIFEST_BYTES,
   MAX_SOURCE_MANIFEST_FILES,
-} from '../constants';
-import {
-  OrgQuotaExceededError,
-  insertOrgPackageIfUnderLimit,
-} from '../org/org-entitlements';
-import {
+  parseSecretNamesFromManifestJson,
+  projectHotDocsForSearch,
   publishFinalizeBodySchema,
   publishRollbackBodySchema,
   publishStartBodySchema,
-} from '../schemas';
-import type { WorkerLoaderBundle } from '../schemas';
-import { buildFunctionSearchText } from '../search/function-search-text';
-import { buildIntentPhrases } from '../search/search-projection';
-import { canPublishPackage } from '../secrets/secret-access';
-import { parseSecretNamesFromManifestJson } from '../secrets/secret-names';
-import { bumpSemver, highestSemver } from '../semver';
-import type { PublishHandlerContext } from './http-context';
+  sha256Hex,
+  stableBundlePayload,
+  syncPackageToHot,
+  utf8ByteLength,
+  buildIntentPhrases,
+} from '@functhis/core/publish';
+import type {
+  PublishArtifact,
+  WorkerLoaderBundle,
+} from '@functhis/core/publish';
+import type { z } from 'zod';
 
-export type { PublishHandlerContext } from './http-context';
+import {
+  resolvePublishSharingForPublishStart,
+  resolvePublishStartSharing,
+} from '../access/publish-sharing';
+import type { ExistingPackageSharing } from '../access/publish-sharing';
+import {
+  insertOrgPackageIfUnderLimit,
+  OrgQuotaExceededError,
+} from '../org/org-entitlements';
+import { canPublishPackage } from '../secrets/secret-access';
+import type { PublishHandlerContext } from './publish-context';
+
+export type { PublishHandlerContext } from './publish-context';
 
 const retryHotWrite = async <T>(
   work: () => Promise<T>,
@@ -137,7 +137,7 @@ export const handlePublishStart = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const { catalog } = ctx;
+  const { catalog, platform } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -169,7 +169,7 @@ export const handlePublishStart = async (
   let orgPackageInTargetOrg: ExistingPackageSharing | null = null;
   if (!ownedPackage) {
     const preview = await resolvePublishStartSharing(
-      catalog.memberships,
+      platform.memberships,
       auth.userId,
       sharingInput,
       null,
@@ -191,7 +191,7 @@ export const handlePublishStart = async (
   }
 
   const sharing = await resolvePublishStartSharing(
-    catalog.memberships,
+    platform.memberships,
     auth.userId,
     sharingInput,
     ownedPackage,
@@ -221,7 +221,7 @@ export const handlePublishStart = async (
     try {
       packageRow = await insertOrgPackageIfUnderLimit(
         catalog.packages,
-        catalog.quota,
+        platform.quota,
         {
           organizationId,
           ownerUserId: auth.userId,
@@ -252,7 +252,7 @@ export const handlePublishFinalize = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const { catalog } = ctx;
+  const { catalog, platform } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -299,7 +299,7 @@ export const handlePublishFinalize = async (
   }
 
   if (
-    !(await canPublishPackage(catalog.memberships, auth.userId, packageRow))
+    !(await canPublishPackage(platform.memberships, auth.userId, packageRow))
   ) {
     return new Response('Not Found', { status: 404 });
   }
@@ -438,7 +438,7 @@ export const handlePublishRollback = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const { catalog } = ctx;
+  const { catalog, platform } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -462,7 +462,7 @@ export const handlePublishRollback = async (
       : await catalog.packages.findById(parsed.data.packageId);
   if (!packageRow && parsed.data.slug) {
     const sharing = await resolvePublishSharingForPublishStart(
-      catalog.memberships,
+      platform.memberships,
       auth.userId,
       { scope: parsed.data.scope },
       null
@@ -482,7 +482,7 @@ export const handlePublishRollback = async (
   }
 
   if (
-    !(await canPublishPackage(catalog.memberships, auth.userId, packageRow))
+    !(await canPublishPackage(platform.memberships, auth.userId, packageRow))
   ) {
     return new Response('Not Found', { status: 404 });
   }

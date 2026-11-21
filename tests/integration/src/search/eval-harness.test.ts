@@ -4,7 +4,10 @@ import { searchFunctionsWithContext } from '@functhis/core/mcp';
 import { evaluateSearchRanking, recallAtK } from '@functhis/core/publish';
 import type { SearchEvalJudgment } from '@functhis/core/publish';
 
-import { integrationHotBinding } from '../harness/mcp-env';
+import {
+  evalSearchLoadPolicy,
+  integrationHotBinding,
+} from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';
 import { seedEvalSearchCorpus } from '../harness/search-hot';
 import rawCorpus from './eval-corpus.json';
@@ -37,7 +40,7 @@ const runCatalogSearch = async (judgments: readonly SearchEvalJudgment[]) => {
   const outcomes = await Promise.all(
     judgments.map((judgment) =>
       searchFunctionsWithContext(
-        { hot },
+        { hot, loadPolicy: evalSearchLoadPolicy(EVAL_ORG) },
         { callerUserId: EVAL_USER, domain: 'mine', query: judgment.query },
         { rerankScorer: () => Promise.resolve(null) }
       )

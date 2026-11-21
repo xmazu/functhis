@@ -1,9 +1,3 @@
-import type { CatalogPorts } from '../ports';
-
-export type PublishAuthResult =
-  | { ok: true; userId: string }
-  | { ok: false; response: Response };
-
 export interface HotKvBinding {
   delete: (key: string) => Promise<void>;
   get: (key: string) => Promise<string | null>;
@@ -12,12 +6,4 @@ export interface HotKvBinding {
     value: string,
     options?: { expirationTtl?: number }
   ) => Promise<void>;
-}
-
-export interface PublishHandlerContext {
-  artifacts: { put: (key: string, value: string) => Promise<void> };
-  authenticatePublish: (request: Request) => Promise<PublishAuthResult>;
-  bundles: { put: (key: string, value: string) => Promise<void> };
-  catalog: CatalogPorts;
-  hot: HotKvBinding;
 }

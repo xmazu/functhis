@@ -1,4 +1,4 @@
-import type { PackageVisibility } from '../catalog/catalog-access';
+import type { PackageVisibility } from '../access/catalog-access';
 import type { ExecutionQuotaPort, PackageStorePort } from '../ports';
 import { normalizePlanId, planLimits } from './plan-catalog';
 import type { FuncthisPlanLimits } from './plan-catalog';

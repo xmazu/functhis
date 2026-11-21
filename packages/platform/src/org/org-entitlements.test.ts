@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import type { PackageVisibility } from '../catalog/catalog-access';
+import type { PackageVisibility } from '../access/catalog-access';
 import type {
   ExecutionQuotaPort,
   PackageRecord,

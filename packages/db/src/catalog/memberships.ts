@@ -1,4 +1,4 @@
-import type { MembershipsPort } from '@functhis/core/publish';
+import type { MembershipsPort } from '@functhis/platform';
 
 import { and, eq } from '../drizzle';
 import type { Database } from '../index';

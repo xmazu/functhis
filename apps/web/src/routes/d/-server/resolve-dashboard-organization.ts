@@ -1,5 +1,5 @@
-import { isMemberOfOrganization } from '@functhis/core/publish';
-import type { MembershipsPort } from '@functhis/core/publish';
+import { isMemberOfOrganization } from '@functhis/platform';
+import type { MembershipsPort } from '@functhis/platform';
 
 import { createAuth } from '#/services';
 

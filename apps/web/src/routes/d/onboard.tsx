@@ -1,4 +1,4 @@
-import { normalizeOrganizationSlug } from '@functhis/core/publish';
+import { normalizeOrganizationSlug } from '@functhis/platform';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
 import { toast } from 'sonner';

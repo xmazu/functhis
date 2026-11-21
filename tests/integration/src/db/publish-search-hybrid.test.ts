@@ -9,9 +9,13 @@ import {
   MemoryEmbeddingIndex,
   reconcileSearchIndexDebt,
 } from '@functhis/core/publish';
+import { createPlatform } from '@functhis/db/catalog';
 
 import { integrationDb } from '../harness/db';
-import { integrationHotBinding } from '../harness/mcp-env';
+import {
+  createIntegrationSearchLoadPolicy,
+  integrationHotBinding,
+} from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';
 import { createMemoryBundles } from '../harness/memory-kv';
 import { finalizePackage, startPackage } from '../harness/publish';
@@ -76,6 +80,9 @@ describe('publish projection and hybrid search', () => {
       packageSlug,
     });
 
+    const platform = createPlatform(db);
+    const loadPolicy = createIntegrationSearchLoadPolicy(hot, platform);
+
     const index = new MemoryEmbeddingIndex();
     expect(
       await reconcileSearchIndexDebt({
@@ -99,7 +106,7 @@ describe('publish projection and hybrid search', () => {
     ]);
 
     const exact = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy },
       { callerUserId: userId, query: capabilityId }
     );
     expect(exact.results[0]?.id).toBe(capabilityId);
@@ -109,6 +116,7 @@ describe('publish projection and hybrid search', () => {
         embedQueries: (texts) =>
           Promise.all(texts.map((text) => deterministicEmbedding(text))),
         hot,
+        loadPolicy,
         vectorIndex: index,
       },
       { callerUserId: userId, query: zeroOverlapQuery },
@@ -117,7 +125,7 @@ describe('publish projection and hybrid search', () => {
     expect(vector.results[0]?.id).toBe(capabilityId);
 
     const synonym = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy },
       { callerUserId: userId, query: 'find customer by email' }
     );
     expect(synonym.results[0]?.id).toBe(capabilityId);
@@ -144,9 +152,11 @@ describe('publish projection and hybrid search', () => {
     });
 
     const hot = integrationHotBinding(memoryHot);
+    const platform = createPlatform(db);
+    const loadPolicy = createIntegrationSearchLoadPolicy(hot, platform);
     const winnerSlug = 'fn-11';
     const hits = await searchFunctionsWithContext(
-      { hot },
+      { hot, loadPolicy },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' },
       {
         rerankScorer: (_query, cards) => {

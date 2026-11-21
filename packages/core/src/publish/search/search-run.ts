@@ -63,7 +63,12 @@ export const searchFunctionsWithContext = async (
 
   if (trimmedQuery.length === 0 && !hasIntentInput) {
     const loadStarted = Date.now();
-    const loaded = await loadSearchDocs(hot, domain, input.callerUserId);
+    const loaded = await loadSearchDocs(
+      hot,
+      domain,
+      input.callerUserId,
+      context.loadPolicy
+    );
     timing.loadMs = Date.now() - loadStarted;
     const results = loaded.docs
       .slice(0, SEARCH_DEFAULT_LIMIT)
@@ -84,7 +89,12 @@ export const searchFunctionsWithContext = async (
   }
 
   const loadStarted = Date.now();
-  const loaded = await loadSearchDocs(hot, domain, input.callerUserId);
+  const loaded = await loadSearchDocs(
+    hot,
+    domain,
+    input.callerUserId,
+    context.loadPolicy
+  );
   timing.loadMs = Date.now() - loadStarted;
   const outcome = await runCatalogSearch(
     context,

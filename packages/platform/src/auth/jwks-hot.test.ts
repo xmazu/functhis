@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 
-import { HOT_JWKS_KEY } from '../catalog/hot-keys';
-import type { HotKvBinding } from '../http/http-context';
+import { HOT_JWKS_KEY } from '@functhis/core/publish';
+import type { HotKvBinding } from '@functhis/core/publish';
+
 import { resolveJwksVerifier, writeJwksHot } from './jwks-hot';
 
 const memoryHot = (): HotKvBinding => {

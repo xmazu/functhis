@@ -1,8 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 
 import { searchFunctionsWithContext } from '@functhis/core/mcp';
+import { createPlatform } from '@functhis/db/catalog';
 
 import { integrationDb } from '../harness/db';
+import {
+  createIntegrationSearchLoadPolicy,
+  integrationHotBinding,
+} from '../harness/mcp-env';
 import { createMemoryHotKv } from '../harness/memory-hot-kv';
 import { seedHotSearchCatalog } from '../harness/search-hot';
 import { seedIntegrationPublishAuth } from '../harness/seed';
@@ -29,8 +34,13 @@ describe('MCP search ranking and rerank', () => {
       packageSlug: 'tools',
     });
 
+    const platform = createPlatform(db);
+    const loadPolicy = createIntegrationSearchLoadPolicy(
+      integrationHotBinding(hot),
+      platform
+    );
     const hits = await searchFunctionsWithContext(
-      { hot },
+      { hot: integrationHotBinding(hot), loadPolicy },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' }
     );
 
@@ -59,9 +69,14 @@ describe('MCP search ranking and rerank', () => {
       packageSlug: 'tools',
     });
 
+    const platform = createPlatform(db);
+    const loadPolicy = createIntegrationSearchLoadPolicy(
+      integrationHotBinding(hot),
+      platform
+    );
     const winnerSlug = 'fn-11';
     const hits = await searchFunctionsWithContext(
-      { hot },
+      { hot: integrationHotBinding(hot), loadPolicy },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' },
       {
         rerankScorer: (_query, cards) => {
@@ -91,8 +106,13 @@ describe('MCP search ranking and rerank', () => {
       packageSlug: 'tools',
     });
 
+    const platform = createPlatform(db);
+    const loadPolicy = createIntegrationSearchLoadPolicy(
+      integrationHotBinding(hot),
+      platform
+    );
     const hits = await searchFunctionsWithContext(
-      { hot },
+      { hot: integrationHotBinding(hot), loadPolicy },
       { callerUserId: userId, domain: 'mine', query: 'export pdf' },
       {
         rerankScorer: () => Promise.resolve(null),

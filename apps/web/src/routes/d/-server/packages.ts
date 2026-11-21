@@ -1,3 +1,9 @@
+import type { Database } from '@functhis/db';
+import {
+  capabilitySource,
+  execution,
+  packageVersion,
+} from '@functhis/db/schema/catalog';
 import {
   buildPackageAccessContext,
   canAccessPackage,
@@ -5,25 +11,19 @@ import {
   getPackageBySlugs,
   listAccessiblePackagesForUser,
   listOrganizationSecrets,
+  listPackageExecutions,
   listPackageSecrets,
   limitsForPlan,
-  listPackageExecutions,
   resolveOrgPlan,
   resolveOrganizationSlugById,
-} from '@functhis/core/publish';
-import type { Database } from '@functhis/db';
-import {
-  capabilitySource,
-  execution,
-  packageVersion,
-} from '@functhis/db/schema/catalog';
+} from '@functhis/platform';
 import { createServerFn } from '@tanstack/react-start';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
 import { withCallCounts } from '#/routes/d/-lib/package-list';
-import { getCatalog, getDb } from '#/services';
+import { getDb, getPlatform } from '#/services';
 
 import { buildPackageDetailViewModel } from './package-detail-view-model';
 
@@ -65,10 +65,10 @@ export const listPackagesForSession = createServerFn({ method: 'GET' })
     if (!userId) {
       return [];
     }
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     const database = await getDb();
     const packages = await listAccessiblePackagesForUser(
-      catalog.catalogRead,
+      platform.catalogRead,
       userId
     );
     const callCounts = await countCallsByPackageIds(
@@ -112,10 +112,10 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       return null;
     }
 
-    const ports = await getCatalog();
+    const platform = await getPlatform();
     const database = await getDb();
     const catalog = await getPackageBySlugs(
-      ports.catalogRead,
+      platform.catalogRead,
       data.handle,
       data.slug
     );
@@ -124,7 +124,7 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
     }
 
     const accessContext = await buildPackageAccessContext(
-      ports.memberships,
+      platform.memberships,
       userId
     );
     if (!canAccessPackage(catalog, accessContext)) {
@@ -132,27 +132,27 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
     }
 
     const organizationSlug = await resolveOrganizationSlugById(
-      ports.memberships,
+      platform.memberships,
       catalog.organizationId
     );
 
     const isOwner = catalog.ownerUserId === userId;
-    const plan = await resolveOrgPlan(ports.quota, catalog.organizationId);
+    const plan = await resolveOrgPlan(platform.quota, catalog.organizationId);
     const { logRetentionDays } = limitsForPlan(plan);
     const retentionCutoff = retentionCutoffForPlan(logRetentionDays);
     const [executions, packageSecrets, orgSecrets, canWriteSecrets] =
       await Promise.all([
-        listPackageExecutions(ports.catalogRead, catalog.id, {
+        listPackageExecutions(platform.catalogRead, catalog.id, {
           limit: 20,
           retentionCutoff,
         }),
-        listPackageSecrets(ports.secretDirectory, userId, catalog),
+        listPackageSecrets(platform.secretDirectory, userId, catalog),
         listOrganizationSecrets(
-          ports.secretDirectory,
+          platform.secretDirectory,
           userId,
           catalog.organizationId
         ),
-        canWritePackageSecrets(ports.memberships, userId, catalog),
+        canWritePackageSecrets(platform.memberships, userId, catalog),
       ]);
 
     const setNames = new Set([

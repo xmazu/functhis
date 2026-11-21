@@ -1,13 +1,15 @@
 import {
   filterDashboardTelemetryRecords,
-  listAccessiblePackagesForUser,
-  limitsForPlan,
   queryAxiomLogs,
-  resolveOrgPlan,
 } from '@functhis/core/publish';
+import {
+  limitsForPlan,
+  listAccessiblePackagesForUser,
+  resolveOrgPlan,
+} from '@functhis/platform';
 
 import { env } from '#/env.server';
-import { getCatalog } from '#/services';
+import { getPlatform } from '#/services';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -83,15 +85,15 @@ export const fetchDashboardLogs = async (
   | 'not_configured'
   | 'unavailable'
 > => {
-  const catalog = await getCatalog();
+  const platform = await getPlatform();
   const accessiblePackages = await listAccessiblePackagesForUser(
-    catalog.catalogRead,
+    platform.catalogRead,
     userId
   );
   const packages = accessiblePackages.filter(
     (pkg) => pkg.organizationId === organizationId
   );
-  const plan = await resolveOrgPlan(catalog.quota, organizationId);
+  const plan = await resolveOrgPlan(platform.quota, organizationId);
   const { logRetentionDays } = limitsForPlan(plan);
   if (logRetentionDays === 0 || packages.length === 0) {
     if (input.executionId) {

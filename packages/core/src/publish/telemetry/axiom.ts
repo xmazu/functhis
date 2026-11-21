@@ -177,11 +177,9 @@ export const queryAxiom = async <T = unknown>(
 export const buildExecutionEvent = (input: {
   executionId: string;
   functionSlug?: string;
-  handle?: string;
   input: unknown;
-  organizationId: string;
+  labels: Record<string, string>;
   output: unknown;
-  packageSlug?: string;
   secretValues?: readonly string[];
   status: string;
   versionId: string;
@@ -189,15 +187,16 @@ export const buildExecutionEvent = (input: {
   withTelemetryIndexFields({
     executionId: input.executionId,
     functionSlug: input.functionSlug ?? '',
-    handle: input.handle ?? '',
+    handle: input.labels.handle ?? '',
     input: redactTelemetry(input.input, input.secretValues),
-    organizationId: input.organizationId,
+    organizationId: input.labels.organizationId ?? '',
     output: redactTelemetry(input.output, input.secretValues),
-    packageSlug: input.packageSlug ?? '',
+    packageSlug: input.labels.packageSlug ?? '',
     status: input.status,
     timestamp: new Date().toISOString(),
     type: 'execution',
     versionId: input.versionId,
+    ...input.labels,
   });
 
 const serializeLogValue = (value: unknown): string => {
@@ -233,11 +232,9 @@ export const buildExecutionLifecycleLogs = (input: {
   completedAt: string;
   executionId: string;
   functionSlug?: string;
-  handle?: string;
   input: unknown;
-  organizationId: string;
+  labels: Record<string, string>;
   output: unknown;
-  packageSlug?: string;
   startedAt: string;
   status: string;
   versionId: string;
@@ -245,10 +242,11 @@ export const buildExecutionLifecycleLogs = (input: {
   const shared = {
     executionId: input.executionId,
     functionSlug: input.functionSlug ?? '',
-    handle: input.handle ?? '',
-    organizationId: input.organizationId,
-    packageSlug: input.packageSlug ?? '',
+    handle: input.labels.handle ?? '',
+    organizationId: input.labels.organizationId ?? '',
+    packageSlug: input.labels.packageSlug ?? '',
     versionId: input.versionId,
+    ...input.labels,
   };
   return [
     withTelemetryIndexFields({

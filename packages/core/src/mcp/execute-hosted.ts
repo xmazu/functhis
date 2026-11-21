@@ -100,7 +100,6 @@ export const executeHostedAdapter = async (
       );
     runtimeSecrets = await catalog.runtimeSecrets.resolveRuntimeSecrets({
       encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
-      organizationId: input.doc.organizationId,
       packageId: input.doc.packageId,
       secretNames,
     });
@@ -121,11 +120,16 @@ export const executeHostedAdapter = async (
   }
 
   const executionId = crypto.randomUUID();
+  const labels = {
+    handle: input.parsedId.handle,
+    organizationId: input.doc.organizationId,
+    packageSlug: input.parsedId.packageSlug,
+  };
   await insertStartedExecutionRow(catalog.executionLog, {
-    callerUserId: input.callerUserId,
+    actorId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
-    organizationId: input.doc.organizationId,
+    labels,
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
     startedAt: new Date(),
@@ -149,26 +153,29 @@ export const executeHostedAdapter = async (
   });
   const upstreamMs = Date.now() - upstreamStarted;
 
+  const { emitTelemetry } =
+    await bindings.hostedPolicy.resolveFinalizeTelemetry({
+      organizationId: input.doc.organizationId,
+    });
   const httpResponse = await finalizeExecute(
     bindings,
-    {
-      executionLog: catalog.executionLog,
-      quota: catalog.quota,
-    },
-    {
-      bundleHash: input.doc.bundleHash,
-      callerUserId: input.callerUserId ?? undefined,
-      functionSlug: input.parsedId.functionSlug,
-      input: input.runInput,
-      secretValues: Object.values(runtimeSecrets),
-      versionId: input.doc.versionId,
-    },
+    catalog.executionLog,
     run,
-    input.doc.organizationId,
-    input.doc.functionId,
-    executionId,
-    input.parsedId.handle,
-    input.parsedId.packageSlug
+    {
+      actorId: input.callerUserId,
+      emitTelemetry,
+      executionId,
+      functionId: input.doc.functionId,
+      labels,
+      parsed: {
+        bundleHash: input.doc.bundleHash,
+        callerUserId: input.callerUserId ?? undefined,
+        functionSlug: input.parsedId.functionSlug,
+        input: input.runInput,
+        secretValues: Object.values(runtimeSecrets),
+        versionId: input.doc.versionId,
+      },
+    }
   );
   const responseText = await httpResponse.text();
   if (run.status === 'cancelled') {

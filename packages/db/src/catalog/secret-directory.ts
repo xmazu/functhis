@@ -10,16 +10,17 @@ import {
 import type {
   HostedSecretListItem,
   SecretDirectoryPort,
-} from '@functhis/core/publish';
-
-import { and, eq, isNull } from '../drizzle';
-import type { Database } from '../index';
-import { hostedSecret, pkg } from '../schema/catalog';
+} from '@functhis/platform';
 import {
   canWritePackageSecrets,
   isMemberOfOrganization,
   isOrgSecretsAdmin,
-} from './secret-access';
+} from '@functhis/platform';
+
+import { and, eq, isNull } from '../drizzle';
+import type { Database } from '../index';
+import { hostedSecret, pkg } from '../schema/catalog';
+import { createMembershipsPort } from './memberships';
 
 const assertValidSecretInput = (name: string, value: string): void => {
   if (!isValidSecretName(name)) {
@@ -120,62 +121,112 @@ const loadPackageRow = async (
 
 export const createSecretDirectoryPort = (
   database: Database
-): SecretDirectoryPort => ({
-  async deleteOrganizationSecret(input) {
-    if (
-      !(await isOrgSecretsAdmin(database, input.userId, input.organizationId))
-    ) {
-      throw new HostedSecretError('Unauthorized', 'unauthorized');
-    }
-    if (!isValidSecretName(input.name)) {
-      throw new HostedSecretError('Invalid secret name', 'invalid_name');
-    }
+): SecretDirectoryPort => {
+  const memberships = createMembershipsPort(database);
+  return {
+    async deleteOrganizationSecret(input) {
+      if (
+        !(await isOrgSecretsAdmin(
+          memberships,
+          input.userId,
+          input.organizationId
+        ))
+      ) {
+        throw new HostedSecretError('Unauthorized', 'unauthorized');
+      }
+      if (!isValidSecretName(input.name)) {
+        throw new HostedSecretError('Invalid secret name', 'invalid_name');
+      }
 
-    await database
-      .delete(hostedSecret)
-      .where(
-        and(
-          eq(hostedSecret.organizationId, input.organizationId),
-          eq(hostedSecret.name, input.name),
-          isNull(hostedSecret.packageId)
-        )
+      await database
+        .delete(hostedSecret)
+        .where(
+          and(
+            eq(hostedSecret.organizationId, input.organizationId),
+            eq(hostedSecret.name, input.name),
+            isNull(hostedSecret.packageId)
+          )
+        );
+    },
+
+    async deletePackageSecret(input) {
+      const packageRow = await loadPackageRow(database, input.packageId);
+      if (!packageRow) {
+        throw new Error('Package not found');
+      }
+      if (
+        !(await canWritePackageSecrets(memberships, input.userId, packageRow))
+      ) {
+        throw new HostedSecretError('Unauthorized', 'unauthorized');
+      }
+      if (!isValidSecretName(input.name)) {
+        throw new HostedSecretError('Invalid secret name', 'invalid_name');
+      }
+
+      await database
+        .delete(hostedSecret)
+        .where(
+          and(
+            eq(hostedSecret.packageId, packageRow.id),
+            eq(hostedSecret.name, input.name)
+          )
+        );
+    },
+
+    async listOrganizationSecrets(userId, organizationId) {
+      const isMember = await isMemberOfOrganization(
+        memberships,
+        userId,
+        organizationId
       );
-  },
+      if (!isMember) {
+        return null;
+      }
 
-  async deletePackageSecret(input) {
-    const packageRow = await loadPackageRow(database, input.packageId);
-    if (!packageRow) {
-      throw new Error('Package not found');
-    }
-    if (!(await canWritePackageSecrets(database, input.userId, packageRow))) {
-      throw new HostedSecretError('Unauthorized', 'unauthorized');
-    }
-    if (!isValidSecretName(input.name)) {
-      throw new HostedSecretError('Invalid secret name', 'invalid_name');
-    }
+      const [rows, canWrite] = await Promise.all([
+        database
+          .select({
+            lastUsedAt: hostedSecret.lastUsedAt,
+            name: hostedSecret.name,
+            packageId: hostedSecret.packageId,
+            updatedAt: hostedSecret.updatedAt,
+          })
+          .from(hostedSecret)
+          .where(
+            and(
+              eq(hostedSecret.organizationId, organizationId),
+              isNull(hostedSecret.packageId)
+            )
+          ),
+        isOrgSecretsAdmin(memberships, userId, organizationId),
+      ]);
 
-    await database
-      .delete(hostedSecret)
-      .where(
-        and(
-          eq(hostedSecret.packageId, packageRow.id),
-          eq(hostedSecret.name, input.name)
-        )
+      return {
+        canWrite,
+        secrets: rows
+          .map((row) => toListItem(row, 'organization'))
+          .toSorted((left, right) => left.name.localeCompare(right.name)),
+      };
+    },
+
+    async listPackageSecrets(userId, packageRow) {
+      const canWrite = await canWritePackageSecrets(
+        memberships,
+        userId,
+        packageRow
       );
-  },
+      if (!canWrite && packageRow.ownerUserId !== userId) {
+        const isMember = await isMemberOfOrganization(
+          memberships,
+          userId,
+          packageRow.organizationId
+        );
+        if (!isMember) {
+          return null;
+        }
+      }
 
-  async listOrganizationSecrets(userId, organizationId) {
-    const isMember = await isMemberOfOrganization(
-      database,
-      userId,
-      organizationId
-    );
-    if (!isMember) {
-      return null;
-    }
-
-    const [rows, canWrite] = await Promise.all([
-      database
+      const rows = await database
         .select({
           lastUsedAt: hostedSecret.lastUsedAt,
           name: hostedSecret.name,
@@ -183,107 +234,76 @@ export const createSecretDirectoryPort = (
           updatedAt: hostedSecret.updatedAt,
         })
         .from(hostedSecret)
-        .where(
-          and(
-            eq(hostedSecret.organizationId, organizationId),
-            isNull(hostedSecret.packageId)
-          )
-        ),
-      isOrgSecretsAdmin(database, userId, organizationId),
-    ]);
+        .where(eq(hostedSecret.packageId, packageRow.id));
 
-    return {
-      canWrite,
-      secrets: rows
-        .map((row) => toListItem(row, 'organization'))
-        .toSorted((left, right) => left.name.localeCompare(right.name)),
-    };
-  },
+      return {
+        canWrite,
+        secrets: rows
+          .map((row) => toListItem(row, 'package'))
+          .toSorted((left, right) => left.name.localeCompare(right.name)),
+      };
+    },
 
-  async listPackageSecrets(userId, packageRow) {
-    const canWrite = await canWritePackageSecrets(database, userId, packageRow);
-    if (!canWrite && packageRow.ownerUserId !== userId) {
-      const isMember = await isMemberOfOrganization(
-        database,
-        userId,
-        packageRow.organizationId
-      );
-      if (!isMember) {
-        return null;
+    async setOrganizationSecret(input) {
+      if (
+        !(await isOrgSecretsAdmin(
+          memberships,
+          input.userId,
+          input.organizationId
+        ))
+      ) {
+        throw new HostedSecretError('Unauthorized', 'unauthorized');
       }
-    }
 
-    const rows = await database
-      .select({
-        lastUsedAt: hostedSecret.lastUsedAt,
-        name: hostedSecret.name,
-        packageId: hostedSecret.packageId,
-        updatedAt: hostedSecret.updatedAt,
-      })
-      .from(hostedSecret)
-      .where(eq(hostedSecret.packageId, packageRow.id));
+      assertValidSecretInput(input.name, input.value);
+      const keyBytes = await resolveSecretsKeyBytes(input.encryptionKey);
+      const encrypted = await encryptSecretValue(input.value, keyBytes);
+      await upsertSecretRow(database, {
+        ciphertext: encrypted.ciphertext,
+        name: input.name,
+        nonce: encrypted.nonce,
+        organizationId: input.organizationId,
+        packageId: null,
+        updatedBy: input.userId,
+      });
 
-    return {
-      canWrite,
-      secrets: rows
-        .map((row) => toListItem(row, 'package'))
-        .toSorted((left, right) => left.name.localeCompare(right.name)),
-    };
-  },
+      return {
+        lastUsedAt: null,
+        name: input.name,
+        scope: 'organization',
+        updatedAt: new Date(),
+      };
+    },
 
-  async setOrganizationSecret(input) {
-    if (
-      !(await isOrgSecretsAdmin(database, input.userId, input.organizationId))
-    ) {
-      throw new HostedSecretError('Unauthorized', 'unauthorized');
-    }
+    async setPackageSecret(input) {
+      const packageRow = await loadPackageRow(database, input.packageId);
+      if (!packageRow) {
+        throw new Error('Package not found');
+      }
+      if (
+        !(await canWritePackageSecrets(memberships, input.userId, packageRow))
+      ) {
+        throw new HostedSecretError('Unauthorized', 'unauthorized');
+      }
 
-    assertValidSecretInput(input.name, input.value);
-    const keyBytes = await resolveSecretsKeyBytes(input.encryptionKey);
-    const encrypted = await encryptSecretValue(input.value, keyBytes);
-    await upsertSecretRow(database, {
-      ciphertext: encrypted.ciphertext,
-      name: input.name,
-      nonce: encrypted.nonce,
-      organizationId: input.organizationId,
-      packageId: null,
-      updatedBy: input.userId,
-    });
+      assertValidSecretInput(input.name, input.value);
+      const keyBytes = await resolveSecretsKeyBytes(input.encryptionKey);
+      const encrypted = await encryptSecretValue(input.value, keyBytes);
+      await upsertSecretRow(database, {
+        ciphertext: encrypted.ciphertext,
+        name: input.name,
+        nonce: encrypted.nonce,
+        organizationId: input.organizationId,
+        packageId: packageRow.id,
+        updatedBy: input.userId,
+      });
 
-    return {
-      lastUsedAt: null,
-      name: input.name,
-      scope: 'organization',
-      updatedAt: new Date(),
-    };
-  },
-
-  async setPackageSecret(input) {
-    const packageRow = await loadPackageRow(database, input.packageId);
-    if (!packageRow) {
-      throw new Error('Package not found');
-    }
-    if (!(await canWritePackageSecrets(database, input.userId, packageRow))) {
-      throw new HostedSecretError('Unauthorized', 'unauthorized');
-    }
-
-    assertValidSecretInput(input.name, input.value);
-    const keyBytes = await resolveSecretsKeyBytes(input.encryptionKey);
-    const encrypted = await encryptSecretValue(input.value, keyBytes);
-    await upsertSecretRow(database, {
-      ciphertext: encrypted.ciphertext,
-      name: input.name,
-      nonce: encrypted.nonce,
-      organizationId: input.organizationId,
-      packageId: packageRow.id,
-      updatedBy: input.userId,
-    });
-
-    return {
-      lastUsedAt: null,
-      name: input.name,
-      scope: 'package',
-      updatedAt: new Date(),
-    };
-  },
-});
+      return {
+        lastUsedAt: null,
+        name: input.name,
+        scope: 'package',
+        updatedAt: new Date(),
+      };
+    },
+  };
+};

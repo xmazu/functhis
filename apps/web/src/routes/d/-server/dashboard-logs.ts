@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
 import { requireDashboardOrganizationId } from '#/routes/d/-server/resolve-dashboard-organization';
-import { getCatalog } from '#/services';
+import { getPlatform } from '#/services';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -35,10 +35,10 @@ export const listDashboardLogsForSession = createServerFn({ method: 'GET' })
     const { fetchDashboardLogs } =
       await import('#/routes/d/-server/dashboard-logs-query.server');
     const request = getRequest();
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     const organizationId = await requireDashboardOrganizationId(
       request,
-      catalog.memberships,
+      platform.memberships,
       context.session
     );
     const userId = context.session?.user?.id;
@@ -89,10 +89,10 @@ export const getDashboardLogExecutionForSession = createServerFn({
     const { fetchDashboardLogs } =
       await import('#/routes/d/-server/dashboard-logs-query.server');
     const request = getRequest();
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     const organizationId = await requireDashboardOrganizationId(
       request,
-      catalog.memberships,
+      platform.memberships,
       context.session
     );
     const userId = context.session?.user?.id;

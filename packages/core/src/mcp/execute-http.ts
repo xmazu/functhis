@@ -38,7 +38,6 @@ const loadCredential = async (
   }
   const secrets = await bindings.catalog.runtimeSecrets.resolveRuntimeSecrets({
     encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
-    organizationId: doc.organizationId,
     packageId: doc.packageId,
     secretNames: [doc.sourceCredentialName],
   });
@@ -61,22 +60,23 @@ const finishExecution = async (
     return;
   }
   const executionId = crypto.randomUUID();
+  const labels = { organizationId: input.doc.organizationId };
   await insertStartedExecutionRow(bindings.catalog.executionLog, {
-    callerUserId: input.callerUserId,
+    actorId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
-    organizationId: input.doc.organizationId,
+    labels,
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
     startedAt: new Date(input.started),
   });
   await insertExecutionRow(bindings.catalog.executionLog, {
-    callerUserId: input.callerUserId,
+    actorId: input.callerUserId,
     completedAt: new Date(),
     cpuMs: Date.now() - input.started,
     executionId,
     functionId: input.doc.functionId,
-    organizationId: input.doc.organizationId,
+    labels,
     packageVersionId: input.doc.versionId,
     requestBytes: input.requestBytes,
     responseBytes: new TextEncoder().encode(input.responseText).length,

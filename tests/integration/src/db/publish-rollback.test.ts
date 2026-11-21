@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { handlePublishRollback } from '@functhis/core/publish';
 import { pkg } from '@functhis/db/schema/catalog';
+import { handlePublishRollback } from '@functhis/platform';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';

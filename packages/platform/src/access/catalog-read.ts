@@ -1,7 +1,10 @@
 import type { CatalogReadPort } from '../ports';
 import { canAccessPackage } from './catalog-access';
-import type { PackageAccessContext, PackageAccessRow } from './catalog-access';
-import type { PackageVisibility } from './package-visibility';
+import type {
+  PackageAccessContext,
+  PackageAccessRow,
+  PackageVisibility,
+} from './catalog-access';
 
 export interface CatalogFunctionRow {
   contract: unknown;

@@ -1,26 +1,25 @@
-import {
-  buildPackageAccessContext,
-  canAccessPackage,
-  getPackageBySlugs,
-  limitsForPlan,
-  listPackageExecutions,
-  queryAxiom,
-  readAxiomQueryRecords,
-  resolveOrgPlan,
-} from '@functhis/core/publish';
+import { queryAxiom, readAxiomQueryRecords } from '@functhis/core/publish';
 import {
   execution,
   pkg,
   pkgFunction,
   packageVersion,
 } from '@functhis/db/schema/catalog';
+import {
+  buildPackageAccessContext,
+  canAccessPackage,
+  getPackageBySlugs,
+  limitsForPlan,
+  listPackageExecutions,
+  resolveOrgPlan,
+} from '@functhis/platform';
 import { createServerFn } from '@tanstack/react-start';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
-import { getCatalog, getDb } from '#/services';
+import { getDb, getPlatform } from '#/services';
 
 import {
   executionPayloadFromAxiomRecords,
@@ -78,21 +77,21 @@ const getAuthorizedPackage = async (
   handle: string,
   packageSlug: string
 ) => {
-  const ports = await getCatalog();
+  const platform = await getPlatform();
   const database = await getDb();
   const catalog = await getPackageBySlugs(
-    ports.catalogRead,
+    platform.catalogRead,
     handle,
     packageSlug
   );
   if (!catalog) {
     return null;
   }
-  const access = await buildPackageAccessContext(ports.memberships, userId);
+  const access = await buildPackageAccessContext(platform.memberships, userId);
   if (!canAccessPackage(catalog, access)) {
     return null;
   }
-  return { catalog, database, ports };
+  return { catalog, database, platform };
 };
 
 const axiomConfigured = (): boolean =>
@@ -113,8 +112,8 @@ const loadExecutionPayload = async (
   payload: ExecutionDetailViewModel['payload'];
   payloadState: ExecutionPayloadState;
 }> => {
-  const ports = await getCatalog();
-  const plan = await resolveOrgPlan(ports.quota, organizationId);
+  const platform = await getPlatform();
+  const plan = await resolveOrgPlan(platform.quota, organizationId);
   const { logRetentionDays } = limitsForPlan(plan);
   if (logRetentionDays === 0) {
     return { payload: null, payloadState: 'expired' };
@@ -176,12 +175,12 @@ export const listExecutionsForSession = createServerFn({ method: 'GET' })
       }
 
       const plan = await resolveOrgPlan(
-        authorized.ports.quota,
+        authorized.platform.quota,
         authorized.catalog.organizationId
       );
       const { logRetentionDays } = limitsForPlan(plan);
       const rows = await listPackageExecutions(
-        authorized.ports.catalogRead,
+        authorized.platform.catalogRead,
         authorized.catalog.id,
         {
           limit: 100,
@@ -222,7 +221,7 @@ export const getExecutionForSession = createServerFn({ method: 'GET' })
       }
 
       const plan = await resolveOrgPlan(
-        authorized.ports.quota,
+        authorized.platform.quota,
         authorized.catalog.organizationId
       );
       const { logRetentionDays } = limitsForPlan(plan);

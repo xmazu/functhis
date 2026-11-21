@@ -1,5 +1,6 @@
 import type { HotFunctionDoc } from '../catalog/hot-catalog';
 import type { HotKvBinding } from '../http/http-context';
+import type { SearchLoadPolicy } from './search-access';
 import type { SearchRerankScorer } from './search-rerank';
 import type { SearchHit, SearchTiming } from './search-result';
 import type { EmbeddingIndex } from './vectorize-index';
@@ -7,6 +8,7 @@ import type { EmbeddingIndex } from './vectorize-index';
 export interface SearchFunctionsContext {
   embedQueries?: (texts: readonly string[]) => Promise<number[][]>;
   hot: HotKvBinding;
+  loadPolicy: SearchLoadPolicy;
   nowMs?: number;
   vectorIndex?: EmbeddingIndex;
 }

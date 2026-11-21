@@ -1,5 +1,4 @@
 import {
-  buildAccessContextFromHotKv,
   filterDocsByAccess,
   loadHotFunctionDocsFromKv,
   loadSearchFunctionIdsFromHot,
@@ -7,23 +6,28 @@ import {
 import type { HotFunctionDoc, SearchDomain } from '../catalog/hot-catalog';
 import { formatFunctionId } from '../function-id';
 import type { HotKvBinding } from '../http/http-context';
+import type { SearchLoadPolicy } from './search-access';
 
 export const loadSearchDocs = async (
   hot: HotKvBinding,
   domain: SearchDomain,
-  callerUserId: string
+  callerUserId: string,
+  loadPolicy: SearchLoadPolicy
 ): Promise<{
-  accessContext: Awaited<ReturnType<typeof buildAccessContextFromHotKv>>;
+  accessContext: Awaited<ReturnType<SearchLoadPolicy['accessContext']>>;
   docs: HotFunctionDoc[];
   docsById: Map<string, HotFunctionDoc>;
 }> => {
   const [functionIds, accessContext] = await Promise.all([
-    loadSearchFunctionIdsFromHot(hot, domain, callerUserId),
-    buildAccessContextFromHotKv(hot, callerUserId),
+    loadSearchFunctionIdsFromHot(hot, domain, callerUserId, () =>
+      loadPolicy.organizationIds(callerUserId)
+    ),
+    loadPolicy.accessContext(callerUserId),
   ]);
   const docs = filterDocsByAccess(
     await loadHotFunctionDocsFromKv(hot, functionIds),
-    accessContext
+    accessContext,
+    loadPolicy.canAccessPackage
   );
   const docsById = new Map(
     docs.map((doc) => [

@@ -3,13 +3,10 @@ import {
   hashPublishArtifact,
   sha256Hex,
   stableBundlePayload,
-  handlePublishFinalize,
-  handlePublishStart,
 } from '@functhis/core/publish';
-import type {
-  VersionBump,
-  PublishHandlerContext,
-} from '@functhis/core/publish';
+import type { VersionBump } from '@functhis/core/publish';
+import { handlePublishFinalize, handlePublishStart } from '@functhis/platform';
+import type { PublishHandlerContext } from '@functhis/platform';
 
 export const deployAuthHeaders = (
   accessToken: string

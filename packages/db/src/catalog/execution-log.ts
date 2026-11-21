@@ -4,15 +4,19 @@ import { eq } from '../drizzle';
 import type { Database } from '../index';
 import { execution } from '../schema/catalog';
 
+const organizationIdFromLabels = (
+  labels: Record<string, string>
+): string | null => labels.organizationId ?? null;
+
 export const createExecutionLogPort = (
   database: Database
 ): ExecutionLogPort => ({
   async insertStarted(input) {
     await database.insert(execution).values({
-      callerUserId: input.callerUserId ?? null,
+      callerUserId: input.actorId ?? null,
       functionId: input.functionId,
       id: input.executionId,
-      organizationId: input.organizationId,
+      organizationId: organizationIdFromLabels(input.labels) ?? '',
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       startedAt: input.startedAt,
@@ -21,10 +25,11 @@ export const createExecutionLogPort = (
   },
 
   async upsertCompleted(input) {
+    const organizationId = organizationIdFromLabels(input.labels);
     const updated = await database
       .update(execution)
       .set({
-        callerUserId: input.callerUserId ?? null,
+        callerUserId: input.actorId ?? null,
         completedAt: input.completedAt,
         cpuMs: input.cpuMs,
         functionId: input.functionId,
@@ -40,12 +45,12 @@ export const createExecutionLogPort = (
       return;
     }
     await database.insert(execution).values({
-      callerUserId: input.callerUserId ?? null,
+      callerUserId: input.actorId ?? null,
       completedAt: input.completedAt,
       cpuMs: input.cpuMs,
       functionId: input.functionId,
       id: input.executionId,
-      organizationId: input.organizationId,
+      organizationId: organizationId ?? '',
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       responseBytes: input.responseBytes,

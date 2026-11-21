@@ -30,6 +30,8 @@
         "@functhis/auth": "workspace:*",
         "@functhis/config": "workspace:*",
         "@functhis/core": "workspace:*",
+        "@functhis/db": "workspace:*",
+        "@functhis/platform": "workspace:*",
         "evlog": "^2.28.1",
         "jose": "^6.1.0",
       },
@@ -49,6 +51,7 @@
         "@functhis/auth": "workspace:*",
         "@functhis/core": "workspace:*",
         "@functhis/db": "workspace:*",
+        "@functhis/platform": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -123,6 +126,7 @@
         "@better-auth/stripe": "1.7.6",
         "@functhis/core": "workspace:*",
         "@functhis/db": "workspace:*",
+        "@functhis/platform": "workspace:*",
         "better-auth": "catalog:",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
@@ -172,26 +176,24 @@
       "name": "@functhis/core",
       "version": "0.1.0",
       "dependencies": {
-        "@functhis/db": "workspace:*",
         "@modelcontextprotocol/server": "2.0.0",
         "@openrouter/ai-sdk-provider": "^3.1.0",
         "ai": "^7",
-        "drizzle-orm": "^0.45.2",
         "evlog": "^2.28.1",
-        "jose": "^6.1.0",
-        "zod": "catalog:",
+        "zod": "^4.5.4",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20260906.1",
-        "@functhis/config": "workspace:*",
         "@types/bun": "latest",
         "esbuild": "^0.25.12",
-        "typescript": "catalog:",
+        "typescript": "^6.0.3",
       },
     },
     "packages/db": {
       "name": "@functhis/db",
       "dependencies": {
+        "@functhis/core": "workspace:*",
+        "@functhis/platform": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "pg": "^8.16.3",
         "zod": "catalog:",
@@ -211,6 +213,18 @@
         "wrangler": "^4.40.2",
       },
     },
+    "packages/platform": {
+      "name": "@functhis/platform",
+      "dependencies": {
+        "@functhis/core": "workspace:*",
+        "jose": "^6.1.0",
+      },
+      "devDependencies": {
+        "@functhis/config": "workspace:*",
+        "@types/bun": "latest",
+        "typescript": "catalog:",
+      },
+    },
     "tests/integration": {
       "name": "@functhis/integration-tests",
       "version": "0.0.0",
@@ -218,6 +232,7 @@
         "@functhis/auth": "workspace:*",
         "@functhis/core": "workspace:*",
         "@functhis/db": "workspace:*",
+        "@functhis/platform": "workspace:*",
         "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
@@ -488,6 +503,8 @@
     "@functhis/integration-tests": ["@functhis/integration-tests@workspace:tests/integration"],
 
     "@functhis/mcp": ["@functhis/mcp@workspace:apps/mcp"],
+
+    "@functhis/platform": ["@functhis/platform@workspace:packages/platform"],
 
     "@hono/node-server": ["@hono/node-server@2.1.1", "", { "peerDependencies": { "hono": "^4" } }, "sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg=="],
 

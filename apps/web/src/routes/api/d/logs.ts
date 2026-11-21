@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { fetchDashboardLogs } from '#/routes/d/-server/dashboard-logs-query.server';
 import { requireDashboardOrganizationId } from '#/routes/d/-server/resolve-dashboard-organization';
-import { createAuth, getCatalog } from '#/services';
+import { createAuth, getPlatform } from '#/services';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -30,10 +30,10 @@ export const Route = createFileRoute('/api/d/logs')({
         const auth = await createAuth();
         const session = await auth.api.getSession({ headers: request.headers });
         const userId = session?.user.id;
-        const catalog = await getCatalog();
+        const platform = await getPlatform();
         const organizationId = await requireDashboardOrganizationId(
           request,
-          catalog.memberships,
+          platform.memberships,
           session
         );
 

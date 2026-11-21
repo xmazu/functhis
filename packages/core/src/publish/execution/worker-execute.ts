@@ -10,12 +10,7 @@ import {
   EXECUTE_SUB_REQUESTS,
   WORKER_COMPATIBILITY_DATE,
 } from '../constants';
-import { limitsForPlan, resolveOrgPlan } from '../org/org-entitlements';
-import {
-  assertExecuteResponseSize,
-  ExecutePayloadTooLargeError,
-} from '../org/quotas';
-import type { ExecutionLogPort, ExecutionQuotaPort } from '../ports';
+import type { ExecutionLogPort } from '../ports';
 import type { RuntimeExecuteBody } from '../schemas';
 import type { SecretBinding } from '../secret-binding';
 import {
@@ -35,6 +30,11 @@ import {
 } from '../telemetry/axiom-tail';
 import { StoredBundleLoadError } from './bundle-load-error';
 import { insertExecutionRow } from './execution-store';
+import type { ExecutionLabels } from './labels';
+import {
+  assertExecuteResponseSize,
+  ExecutePayloadTooLargeError,
+} from './payload-limits';
 
 export interface ExecuteAnalyticsBinding {
   writeDataPoint: (input: {
@@ -120,11 +120,11 @@ export const loadStoredBundle = async (
 export const writeExecutionAnalytics = (
   bindings: Pick<WorkerExecuteBindings, 'ANALYTICS'>,
   input: {
-    callerUserId?: string;
+    actorId?: string | null;
     durationMs: number;
     executionId: string;
     functionSlug?: string;
-    organizationId: string;
+    labels: ExecutionLabels;
     requestBytes: number;
     responseBytes: number;
     status: string;
@@ -137,10 +137,10 @@ export const writeExecutionAnalytics = (
       input.versionId,
       input.functionSlug ?? '',
       input.status,
-      input.callerUserId ?? '',
+      input.actorId ?? '',
     ],
     doubles: [input.durationMs, input.requestBytes, input.responseBytes],
-    indexes: [input.organizationId],
+    indexes: [input.labels.organizationId ?? ''],
   });
 };
 
@@ -319,38 +319,37 @@ export const runDynamicWorker = async (
 
 export const finalizeExecute = async (
   bindings: WorkerExecuteBindings,
-  executionPorts: {
-    executionLog: ExecutionLogPort;
-    quota: ExecutionQuotaPort;
-  },
-  parsed: RuntimeExecuteBody & { secretValues?: readonly string[] },
+  executionLog: ExecutionLogPort,
   run: DynamicRunResult,
-  organizationId: string,
-  functionId: string | undefined,
-  executionId: string,
-  handle?: string,
-  packageSlug?: string
+  input: {
+    actorId?: string | null;
+    emitTelemetry: boolean;
+    executionId: string;
+    functionId?: string;
+    labels: ExecutionLabels;
+    parsed: RuntimeExecuteBody & { secretValues?: readonly string[] };
+  }
 ): Promise<Response> => {
   writeExecutionAnalytics(bindings, {
-    callerUserId: parsed.callerUserId,
+    actorId: input.actorId,
     durationMs: run.durationMs,
-    executionId,
-    functionSlug: parsed.functionSlug,
-    organizationId,
+    executionId: input.executionId,
+    functionSlug: input.parsed.functionSlug,
+    labels: input.labels,
     requestBytes: run.requestBytes,
     responseBytes: run.responseBytes,
     status: run.status,
-    versionId: parsed.versionId,
+    versionId: input.parsed.versionId,
   });
 
-  await insertExecutionRow(executionPorts.executionLog, {
-    callerUserId: parsed.callerUserId,
+  await insertExecutionRow(executionLog, {
+    actorId: input.actorId,
     completedAt: run.completedAt,
     cpuMs: run.cpuMs,
-    executionId,
-    functionId,
-    organizationId,
-    packageVersionId: parsed.versionId,
+    executionId: input.executionId,
+    functionId: input.functionId,
+    labels: input.labels,
+    packageVersionId: input.parsed.versionId,
     requestBytes: run.requestBytes,
     responseBytes: run.responseBytes,
     startedAt: run.startedAt,
@@ -365,40 +364,29 @@ export const finalizeExecute = async (
     }
   })();
 
-  let logRetentionDays = 0;
-  try {
-    const plan = await resolveOrgPlan(executionPorts.quota, organizationId);
-    ({ logRetentionDays } = limitsForPlan(plan));
-  } catch {
-    // Best-effort plan lookup; execution response must still return.
-  }
-  if (logRetentionDays > 0) {
+  if (input.emitTelemetry) {
     const executionEvent = buildExecutionEvent({
-      executionId,
-      functionSlug: parsed.functionSlug,
-      handle,
-      input: capTelemetryValue(parsed.input, AXIOM_MAX_INPUT_BYTES),
-      organizationId,
+      executionId: input.executionId,
+      functionSlug: input.parsed.functionSlug,
+      input: capTelemetryValue(input.parsed.input, AXIOM_MAX_INPUT_BYTES),
+      labels: input.labels,
       output: capTelemetryValue(output, AXIOM_MAX_OUTPUT_BYTES),
-      packageSlug,
-      secretValues: parsed.secretValues,
+      secretValues: input.parsed.secretValues,
       status: run.status,
-      versionId: parsed.versionId,
+      versionId: input.parsed.versionId,
     });
     await ingestAxiomEvents(bindings, [
       executionEvent,
       ...buildExecutionLifecycleLogs({
         completedAt: run.completedAt.toISOString(),
-        executionId,
-        functionSlug: parsed.functionSlug,
-        handle,
+        executionId: input.executionId,
+        functionSlug: input.parsed.functionSlug,
         input: executionEvent.input,
-        organizationId,
+        labels: input.labels,
         output: executionEvent.output,
-        packageSlug,
         startedAt: run.startedAt.toISOString(),
         status: run.status,
-        versionId: parsed.versionId,
+        versionId: input.parsed.versionId,
       }),
     ]);
   }

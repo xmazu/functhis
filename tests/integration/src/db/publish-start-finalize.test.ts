@@ -3,14 +3,16 @@ import { describe, expect, test } from 'bun:test';
 import {
   artifactPrefix,
   bundleKvKey,
-  getPackageBySlugs,
   hashPublishArtifact,
   MAX_SOURCE_MANIFEST_FILES,
+} from '@functhis/core/publish';
+import { createPlatform } from '@functhis/db/catalog';
+import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
+import {
+  getPackageBySlugs,
   handlePublishFinalize,
   handlePublishStart,
-} from '@functhis/core/publish';
-import { createCatalog } from '@functhis/db/catalog';
-import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
+} from '@functhis/platform';
 import { eq } from 'drizzle-orm';
 
 import { integrationDb } from '../harness/db';
@@ -161,7 +163,7 @@ describe('deploy start and finalize', () => {
     expect(functions.map((fn) => fn.slug)).toEqual(['hello']);
 
     const catalog = await getPackageBySlugs(
-      createCatalog(db).catalogRead,
+      createPlatform(db).catalogRead,
       handle,
       slug
     );
@@ -348,7 +350,7 @@ describe('deploy start and finalize', () => {
     expect(packageRow?.visibility).toBe('library');
 
     const catalog = await getPackageBySlugs(
-      createCatalog(db).catalogRead,
+      createPlatform(db).catalogRead,
       org.slug,
       slug
     );

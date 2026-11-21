@@ -8,7 +8,7 @@ import type { RuntimeSecretsPort } from '@functhis/core/publish';
 
 import { and, eq, inArray, isNull, or } from '../drizzle';
 import type { Database } from '../index';
-import { hostedSecret, packageVersion } from '../schema/catalog';
+import { hostedSecret, pkg, packageVersion } from '../schema/catalog';
 
 const shouldTouchLastUsedAt = (lastUsedAt: Date | null): boolean =>
   lastUsedAt === null ||
@@ -46,6 +46,16 @@ export const createRuntimeSecretsPort = (
       return {};
     }
 
+    const [packageRow] = await database
+      .select({ organizationId: pkg.organizationId })
+      .from(pkg)
+      .where(eq(pkg.id, input.packageId))
+      .limit(1);
+    const organizationId = packageRow?.organizationId;
+    if (!organizationId) {
+      return {};
+    }
+
     const keyBytes = await resolveSecretsKeyBytes(input.encryptionKey);
     const rows = await database
       .select({
@@ -62,7 +72,7 @@ export const createRuntimeSecretsPort = (
           inArray(hostedSecret.name, [...input.secretNames]),
           or(
             and(
-              eq(hostedSecret.organizationId, input.organizationId),
+              eq(hostedSecret.organizationId, organizationId),
               isNull(hostedSecret.packageId)
             ),
             eq(hostedSecret.packageId, input.packageId)
@@ -78,13 +88,13 @@ export const createRuntimeSecretsPort = (
       if (!(name in merged)) {
         continue;
       }
-      const packageRow = rows.find(
+      const packageSecretRow = rows.find(
         (row) => row.name === name && row.packageId !== null
       );
       const organizationRow = rows.find(
         (row) => row.name === name && row.packageId === null
       );
-      const winningRow = packageRow ?? organizationRow;
+      const winningRow = packageSecretRow ?? organizationRow;
       if (winningRow && shouldTouchLastUsedAt(winningRow.lastUsedAt ?? null)) {
         secretIdsToTouch.push(winningRow.id);
       }

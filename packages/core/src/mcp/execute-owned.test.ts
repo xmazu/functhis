@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { ExecutePayloadTooLargeError } from '../publish/org/quotas';
+import { ExecutePayloadTooLargeError } from '../publish/execution/payload-limits';
 import type { McpBindings } from './bindings';
 import { executeOwnedFunction } from './execute-owned';
 
@@ -73,7 +73,7 @@ describe('executeOwnedFunction', () => {
         {
           dispatch: async () => {
             await Promise.resolve();
-            throw new ExecutePayloadTooLargeError(10);
+            throw new ExecutePayloadTooLargeError('response', 2_000_000);
           },
         }
       )

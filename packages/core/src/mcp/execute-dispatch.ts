@@ -1,8 +1,4 @@
-import { canAccessPackage } from '../publish/catalog/catalog-access';
-import {
-  buildAccessContextFromHot,
-  resolveHotFunctionDoc,
-} from '../publish/catalog/hot-catalog';
+import { resolveHotFunctionDoc } from '../publish/catalog/hot-catalog';
 import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
 import {
   createIdempotencyRequestHash,
@@ -13,15 +9,13 @@ import {
   completeIdempotencyKey,
   loadIdempotencyRecord,
 } from '../publish/execution/idempotency-store';
-import { validateContractInput } from '../publish/execution/validate-input';
-import type { ContractInputValidationIssue } from '../publish/execution/validate-input';
-import { parseFunctionId } from '../publish/function-id';
-import { OrgQuotaExceededError } from '../publish/org/org-entitlements';
-import { reserveOrgExecution } from '../publish/org/org-usage';
 import {
   assertExecuteRequestSize,
   executeRequestByteLength,
-} from '../publish/org/quotas';
+} from '../publish/execution/payload-limits';
+import { validateContractInput } from '../publish/execution/validate-input';
+import type { ContractInputValidationIssue } from '../publish/execution/validate-input';
+import { parseFunctionId } from '../publish/function-id';
 /* eslint-disable complexity -- execute dispatcher fans out hosted, OpenAPI, and remote MCP */
 import type { McpBindings } from './bindings';
 import { executeHostedAdapter } from './execute-hosted';
@@ -92,17 +86,17 @@ export const dispatchExecute = async (
   const signal = getInboundRequestSignal();
 
   const hot = asHotKvBinding(bindings.HOT);
-  const { catalog } = bindings;
+  const { catalog, hostedPolicy } = bindings;
   const [row, accessContext] = await Promise.all([
     resolveHotFunctionDoc(hot, catalog.hotSource, parsedId),
-    buildAccessContextFromHot(hot, catalog.memberships, callerUserId),
+    hostedPolicy.buildAccessContext(hot, callerUserId),
   ]);
 
   if (!row) {
     throw new FunctionNotFoundError();
   }
   if (
-    !canAccessPackage(
+    !hostedPolicy.canAccessPackage(
       {
         organizationId: row.organizationId,
         ownerUserId: row.ownerUserId,
@@ -175,10 +169,10 @@ export const dispatchExecute = async (
   }
 
   try {
-    await reserveOrgExecution(catalog.quota, row.organizationId);
+    await hostedPolicy.reserveExecution(row.organizationId);
   } catch (error) {
-    if (error instanceof OrgQuotaExceededError) {
-      return jsonError(started, error.message, 429);
+    if (hostedPolicy.isQuotaExceeded(error)) {
+      return jsonError(started, hostedPolicy.quotaErrorMessage(error), 429);
     }
     throw error;
   }

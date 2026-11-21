@@ -1,8 +1,5 @@
-import type {
-  ExecutionSummaryRow,
-  PackageVisibility,
-  CatalogReadPort,
-} from '@functhis/core/publish';
+import type { PackageVisibility } from '@functhis/core/publish';
+import type { CatalogReadPort, ExecutionSummaryRow } from '@functhis/platform';
 
 import { and, desc, eq, gte, inArray, isNotNull, sql } from '../drizzle';
 import type { SQL } from '../drizzle';

@@ -39,7 +39,7 @@ describe('telemetry redaction', () => {
       buildExecutionEvent({
         executionId: 'exec-1',
         input: { credentials: { token: 'secret-value' } },
-        organizationId: 'org-1',
+        labels: { organizationId: 'org-1' },
         output: { authorization: 'Bearer abc' },
         secretValues: ['secret-value'],
         status: 'ok',

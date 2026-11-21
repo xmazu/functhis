@@ -3,17 +3,23 @@ import type { McpBindings } from '@functhis/core/mcp';
 import { reconcileMcpSearchIndex } from '@functhis/core/mcp';
 import { asHotKvBinding } from '@functhis/core/publish';
 import { createDb } from '@functhis/db';
-import { createCatalog } from '@functhis/db/catalog';
+import { createCatalog, createPlatform } from '@functhis/db/catalog';
 import type { AuditableLogger } from 'evlog';
 
 import { handleFuncthisMcpWorkerRequest } from './functhis-worker';
+import { createHostedPolicy, createSearchLoadPolicy } from './hosted-policy';
 
 const asMcpBindings = async (env: Env): Promise<McpBindings> => {
   const database = await createDb({ HYPERDRIVE: env.HYPERDRIVE });
+  const platform = createPlatform(database);
+  const catalog = createCatalog(database);
+  const HOT = asHotKvBinding(env.HOT);
   return {
     ...env,
-    HOT: asHotKvBinding(env.HOT),
-    catalog: createCatalog(database),
+    HOT,
+    catalog,
+    hostedPolicy: createHostedPolicy({ HOT, platform }),
+    searchLoadPolicy: createSearchLoadPolicy({ HOT, platform }),
   } satisfies McpBindings;
 };
 

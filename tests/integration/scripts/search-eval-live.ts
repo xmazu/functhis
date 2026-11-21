@@ -22,6 +22,7 @@ import {
 } from '@functhis/core/publish';
 import type { SearchEvalJudgment } from '@functhis/core/publish';
 
+import { evalSearchLoadPolicy } from '../src/harness/mcp-env';
 import { seedEvalSearchCorpus } from '../src/harness/search-hot';
 
 const corpusPath = path.join(import.meta.dir, '../src/search/eval-corpus.json');
@@ -156,6 +157,7 @@ const runMode = async (
       {
         embedQueries,
         hot,
+        loadPolicy: evalSearchLoadPolicy(EVAL_ORG),
         vectorIndex: mode === 'lexical' ? undefined : vectorIndex,
       },
       { callerUserId: EVAL_USER, domain: 'mine', query: judgment.query },

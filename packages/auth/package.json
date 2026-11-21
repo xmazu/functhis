@@ -31,6 +31,7 @@
     "@better-auth/stripe": "1.7.6",
     "@functhis/core": "workspace:*",
     "@functhis/db": "workspace:*",
+    "@functhis/platform": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.1.0",

@@ -1,4 +1,4 @@
-import { handlePublishStart } from '@functhis/core/publish';
+import { handlePublishStart } from '@functhis/platform';
 import { createFileRoute } from '@tanstack/react-router';
 
 import { createPublishHandlerContext } from '#/routes/api/publish/-context';

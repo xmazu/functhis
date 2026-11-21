@@ -1,19 +1,19 @@
+import { HostedSecretError } from '@functhis/core/publish';
 import {
   deleteOrganizationSecret,
   deletePackageSecret,
   getPackageBySlugs,
-  HostedSecretError,
   listOrganizationSecrets,
   setOrganizationSecret,
   setPackageSecret,
-} from '@functhis/core/publish';
+} from '@functhis/platform';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
 import { env } from '#/env.server';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
-import { getCatalog } from '#/services';
+import { getPlatform } from '#/services';
 
 const secretNameSchema = z
   .string()
@@ -36,9 +36,9 @@ export const listOrgSecretsForSession = createServerFn({ method: 'GET' })
     if (!userId) {
       return null;
     }
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     return listOrganizationSecrets(
-      catalog.secretDirectory,
+      platform.secretDirectory,
       userId,
       data.organizationId
     );
@@ -58,9 +58,9 @@ export const setOrgSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     try {
-      return await setOrganizationSecret(catalog.secretDirectory, {
+      return await setOrganizationSecret(platform.secretDirectory, {
         encryptionKey: env.FUNCTHIS_SECRETS_KEY,
         name: data.name,
         organizationId: data.organizationId,
@@ -85,9 +85,9 @@ export const deleteOrgSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     try {
-      await deleteOrganizationSecret(catalog.secretDirectory, {
+      await deleteOrganizationSecret(platform.secretDirectory, {
         name: data.name,
         organizationId: data.organizationId,
         userId,
@@ -113,9 +113,9 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const ports = await getCatalog();
+    const platform = await getPlatform();
     const catalog = await getPackageBySlugs(
-      ports.catalogRead,
+      platform.catalogRead,
       data.handle,
       data.packageSlug
     );
@@ -123,7 +123,7 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
       throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
-      return await setPackageSecret(ports.secretDirectory, {
+      return await setPackageSecret(platform.secretDirectory, {
         encryptionKey: env.FUNCTHIS_SECRETS_KEY,
         name: data.name,
         packageRow: catalog,
@@ -149,9 +149,9 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const ports = await getCatalog();
+    const platform = await getPlatform();
     const catalog = await getPackageBySlugs(
-      ports.catalogRead,
+      platform.catalogRead,
       data.handle,
       data.packageSlug
     );
@@ -159,7 +159,7 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
       throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
-      await deletePackageSecret(ports.secretDirectory, {
+      await deletePackageSecret(platform.secretDirectory, {
         name: data.name,
         packageRow: catalog,
         userId,

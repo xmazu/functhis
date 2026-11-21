@@ -4,16 +4,17 @@ import {
   ensureCliOAuthClient,
   ensureCursorMcpOAuthClient,
 } from '@functhis/auth/seed-cli-client';
-import {
-  asHotKvBinding,
-  listMembershipOrganizationIds,
-  writeJwksHot,
-  writeMembershipHot,
-} from '@functhis/core/publish';
+import { asHotKvBinding } from '@functhis/core/publish';
 import type { CatalogPorts } from '@functhis/core/publish';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
-import { createCatalog } from '@functhis/db/catalog';
+import { createCatalog, createPlatform } from '@functhis/db/catalog';
+import {
+  listMembershipOrganizationIds,
+  writeJwksHot,
+  writeMembershipHot,
+} from '@functhis/platform';
+import type { PlatformPorts } from '@functhis/platform';
 
 import { env } from './env.server';
 
@@ -43,6 +44,9 @@ export const getDb = (): Promise<Database> => createDb(env);
 
 export const getCatalog = async (): Promise<CatalogPorts> =>
   createCatalog(await getDb());
+
+export const getPlatform = async (): Promise<PlatformPorts> =>
+  createPlatform(await getDb());
 
 let cliClientSeeded = false;
 let cliSeedPromise: Promise<void> | null = null;
@@ -138,7 +142,7 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       syncMembershipHot: async (userId) => {
         const db = await getDb();
         const organizationIds = await listMembershipOrganizationIds(
-          createCatalog(db).memberships,
+          createPlatform(db).memberships,
           userId
         );
         await writeMembershipHot(

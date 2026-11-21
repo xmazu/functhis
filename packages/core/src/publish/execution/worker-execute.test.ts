@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { ExecutePayloadTooLargeError } from '../org/quotas';
 import { StoredBundleLoadError } from './bundle-load-error';
+import { ExecutePayloadTooLargeError } from './payload-limits';
 import {
   finalizeExecute,
   loadStoredBundle,
@@ -292,11 +292,11 @@ describe('writeExecutionAnalytics', () => {
         },
       },
       {
-        callerUserId: 'user-1',
+        actorId: 'user-1',
         durationMs: 12,
         executionId: 'exec-1',
         functionSlug: 'hello',
-        organizationId: 'org-1',
+        labels: { organizationId: 'org-1' },
         requestBytes: 3,
         responseBytes: 4,
         status: 'ok',
@@ -329,30 +329,18 @@ describe('finalizeExecute', () => {
     LOADER: loader,
   } as never;
 
-  const executionPorts = {
-    executionLog: {
-      insertStarted: () => Promise.resolve(),
-      upsertCompleted: () => Promise.reject(new Error('db down')),
-    },
-    quota: {
-      countPackages: () => Promise.resolve(0),
-      readActiveSubscription: () => Promise.resolve(null),
-      readExecutionCount: () => Promise.resolve(0),
-      tryReserve: () => Promise.resolve('reserved' as const),
-    },
+  const executionLog = {
+    insertStarted: () => Promise.resolve(),
+    upsertCompleted: () => Promise.reject(new Error('db down')),
   };
 
   test('returns the worker response and swallows execution-row failures', async () => {
     const response = await finalizeExecute(
       bindings,
-      executionPorts,
-      {
-        bundleHash: 'abcdefgh',
-        functionSlug: 'hello',
-        versionId: 'ver_1',
-      },
+      executionLog,
       {
         completedAt: new Date(5),
+        cpuMs: 5,
         durationMs: 5,
         httpStatus: 200,
         requestBytes: 1,
@@ -362,9 +350,17 @@ describe('finalizeExecute', () => {
         status: 'ok',
         tooLarge: false,
       },
-      'org-1',
-      undefined,
-      'exec-1'
+      {
+        actorId: 'user-1',
+        emitTelemetry: false,
+        executionId: 'exec-1',
+        labels: { organizationId: 'org-1' },
+        parsed: {
+          bundleHash: 'abcdefgh',
+          functionSlug: 'hello',
+          versionId: 'ver_1',
+        },
+      }
     );
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('{"ok":true}');
@@ -373,13 +369,10 @@ describe('finalizeExecute', () => {
   test('returns 413 when the run was too large', async () => {
     const response = await finalizeExecute(
       bindings,
-      executionPorts,
-      {
-        bundleHash: 'abcdefgh',
-        versionId: 'ver_1',
-      },
+      executionLog,
       {
         completedAt: new Date(5),
+        cpuMs: 5,
         durationMs: 5,
         httpStatus: 413,
         requestBytes: 1,
@@ -389,9 +382,15 @@ describe('finalizeExecute', () => {
         status: 'error',
         tooLarge: true,
       },
-      'org-1',
-      undefined,
-      'exec-1'
+      {
+        emitTelemetry: false,
+        executionId: 'exec-1',
+        labels: { organizationId: 'org-1' },
+        parsed: {
+          bundleHash: 'abcdefgh',
+          versionId: 'ver_1',
+        },
+      }
     );
     expect(response.status).toBe(413);
     expect(await response.json()).toEqual({ error: 'too_large' });

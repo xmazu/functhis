@@ -1,4 +1,4 @@
-import { isMemberOfOrganization } from '@functhis/core/publish';
+import { isMemberOfOrganization } from '@functhis/platform';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
@@ -10,7 +10,7 @@ import {
   buildExecutionAnalyticsSql,
   emptyExecutionAnalyticsPeriod,
 } from '#/routes/d/-server/org-usage-analytics';
-import { getCatalog } from '#/services';
+import { getPlatform } from '#/services';
 
 const organizationIdSchema = z
   .string()
@@ -75,10 +75,10 @@ export const getOrgUsageForSession = createServerFn({ method: 'GET' })
     if (!userId) {
       return null;
     }
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     if (
       !(await isMemberOfOrganization(
-        catalog.memberships,
+        platform.memberships,
         userId,
         data.organizationId
       ))

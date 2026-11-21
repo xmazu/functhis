@@ -1,20 +1,9 @@
-import type {
-  AccessiblePackageListRow,
-  CatalogFunctionRow,
-  CatalogPackageRow,
-  ExecutionSummaryRow,
-  PackageListRow,
-} from './catalog/catalog-read';
 import type { HotFunctionDoc, SearchDomain } from './catalog/hot-catalog';
 import type { PackageVisibility } from './catalog/package-visibility';
 import type { IdempotencyRecord } from './execution/idempotency';
+import type { ExecutionLabels } from './execution/labels';
 import type { ParsedFunctionId } from './function-id';
-import type { MemberOrganization } from './org/org-membership-read';
 import type { SecretBinding } from './secret-binding';
-import type {
-  HostedSecretListItem,
-  HostedSecretListResult,
-} from './secrets/hosted-secrets';
 
 export interface PackageRecord {
   currentVersionId: string | null;
@@ -24,11 +13,6 @@ export interface PackageRecord {
   slug: string;
   sourceKind: string;
   visibility: PackageVisibility;
-}
-
-export interface ActiveSubscriptionRow {
-  plan: string;
-  status: string;
 }
 
 export interface CommitVersionFunctionInput {
@@ -77,35 +61,6 @@ export interface PackageHotProjection {
   package: PackageRecord;
 }
 
-export interface EncryptedSecretRow {
-  ciphertext: string;
-  id: string;
-  lastUsedAt: Date | null;
-  name: string;
-  nonce: string;
-  packageId: string | null;
-}
-
-export interface MembershipsPort {
-  listMemberOrganizations: (userId: string) => Promise<MemberOrganization[]>;
-  listOrganizationIds: (userId: string) => Promise<string[]>;
-  memberRole: (
-    userId: string,
-    organizationId: string
-  ) => Promise<string | null>;
-  isMemberOfOrganization: (
-    userId: string,
-    organizationId: string
-  ) => Promise<boolean>;
-  resolveOrganizationIdForMember: (
-    userId: string,
-    organizationSlug: string
-  ) => Promise<string | null>;
-  resolveOrganizationSlugById: (
-    organizationId: string
-  ) => Promise<string | null>;
-}
-
 export interface HotCatalogSourcePort {
   listFunctionIds: (
     domain: SearchDomain,
@@ -137,39 +92,23 @@ export interface IdempotencyStorePort {
   ) => Promise<IdempotencyRecord | null>;
 }
 
-export interface ExecutionQuotaPort {
-  countPackages: (organizationId: string) => Promise<number>;
-  readExecutionCount: (
-    organizationId: string,
-    periodKey: string
-  ) => Promise<number>;
-  readActiveSubscription: (
-    organizationId: string
-  ) => Promise<ActiveSubscriptionRow | null>;
-  tryReserve: (
-    organizationId: string,
-    periodKey: string,
-    maxExecutions: number
-  ) => Promise<'reserved' | 'full'>;
-}
-
 export interface ExecutionLogPort {
   insertStarted: (input: {
-    callerUserId?: string | null;
+    actorId?: string | null;
     executionId: string;
     functionId?: string;
-    organizationId: string;
+    labels: ExecutionLabels;
     packageVersionId: string;
     requestBytes: number;
     startedAt: Date;
   }) => Promise<void>;
   upsertCompleted: (input: {
-    callerUserId?: string | null;
+    actorId?: string | null;
     completedAt: Date;
     cpuMs: number;
     executionId: string;
     functionId?: string;
-    organizationId: string;
+    labels: ExecutionLabels;
     packageVersionId: string;
     requestBytes: number;
     responseBytes: number;
@@ -182,46 +121,9 @@ export interface RuntimeSecretsPort {
   loadPackageVersionSecretNames: (versionId: string) => Promise<string[]>;
   resolveRuntimeSecrets: (input: {
     encryptionKey: SecretBinding | undefined;
-    organizationId: string;
     packageId: string;
     secretNames: readonly string[];
   }) => Promise<Record<string, string>>;
-}
-
-export interface SecretDirectoryPort {
-  deleteOrganizationSecret: (input: {
-    name: string;
-    organizationId: string;
-    userId: string;
-  }) => Promise<void>;
-  deletePackageSecret: (input: {
-    name: string;
-    packageId: string;
-    userId: string;
-  }) => Promise<void>;
-  listOrganizationSecrets: (
-    userId: string,
-    organizationId: string
-  ) => Promise<HostedSecretListResult | null>;
-  listPackageSecrets: (
-    userId: string,
-    packageRow: { id: string; organizationId: string; ownerUserId: string }
-  ) => Promise<HostedSecretListResult | null>;
-  setOrganizationSecret: (input: {
-    encryptionKey: SecretBinding | undefined;
-    name: string;
-    organizationId: string;
-    userId: string;
-    value: string;
-  }) => Promise<HostedSecretListItem>;
-  setPackageSecret: (input: {
-    encryptionKey: SecretBinding | undefined;
-    name: string;
-    organizationId: string;
-    packageId: string;
-    userId: string;
-    value: string;
-  }) => Promise<HostedSecretListItem>;
 }
 
 export interface PackageStorePort {
@@ -262,30 +164,12 @@ export interface PackageStorePort {
   ) => Promise<void>;
 }
 
-export interface CatalogReadPort {
-  getFunctionBySlugs: (
-    handle: string,
-    packageSlug: string,
-    functionSlug: string
-  ) => Promise<CatalogFunctionRow | null>;
-  getPackageBySlugs: (
-    handle: string,
-    packageSlug: string
-  ) => Promise<CatalogPackageRow | null>;
-  listAccessiblePackagesForUser: (
-    userId: string
-  ) => Promise<AccessiblePackageListRow[]>;
-  listOrgSharedPackages: (
-    organizationIds: readonly string[]
-  ) => Promise<PackageListRow[]>;
-  listOwnerPackages: (ownerUserId: string) => Promise<PackageListRow[]>;
-  listPackageExecutions: (
-    packageId: string,
-    options?: { limit?: number; retentionCutoff?: Date }
-  ) => Promise<ExecutionSummaryRow[]>;
+export interface SourceSyncMembershipsPort {
+  resolveOrganizationSlugById: (
+    organizationId: string
+  ) => Promise<string | null>;
 }
 
-/** SQL-heavy source catalog writes (OpenAPI / remote MCP). */
 export interface SourceStorePort {
   acceptOpenApiGeneration: (input: unknown) => Promise<unknown>;
   commitOpenApiImport: (input: unknown) => Promise<unknown>;
@@ -294,16 +178,10 @@ export interface SourceStorePort {
 }
 
 export interface CatalogPorts {
-  catalogRead: CatalogReadPort;
   executionLog: ExecutionLogPort;
   hotSource: HotCatalogSourcePort;
   idempotency: IdempotencyStorePort;
-  memberships: MembershipsPort;
   packages: PackageStorePort;
-  quota: ExecutionQuotaPort;
   runtimeSecrets: RuntimeSecretsPort;
-  secretDirectory: SecretDirectoryPort;
   sources: SourceStorePort;
 }
-
-export type { OrgPlanId } from './org/org-entitlements';

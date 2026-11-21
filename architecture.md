@@ -289,7 +289,8 @@ Quotas fail closed from day one: CPU, concurrency, request/response size. Execut
 ```text
 apps/web          hosted origin: marketing, OAuth, /d owner UI, deploy API
 apps/mcp          hosted Worker shell for mcp.functhis.now (Wrangler + evlog)
-packages/core     MCP server, publish protocol, runtime isolate, catalog ports/policy, search/execute
+packages/core     runtime isolate, publish protocol, execute path, secrets/crypto, logs & Axiom telemetry
+packages/platform users, billing, org ACL, publish sharing, platform catalog ports
 apps/fumadocs     existing
 packages/auth     createAuth, CIMD fetch, CLI client seed
 packages/cli      OSS: login, publish, local run/dev

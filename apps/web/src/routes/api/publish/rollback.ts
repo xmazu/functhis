@@ -1,4 +1,4 @@
-import { handlePublishRollback } from '@functhis/core/publish';
+import { handlePublishRollback } from '@functhis/platform';
 import { createFileRoute } from '@tanstack/react-router';
 
 import { createPublishHandlerContext } from '#/routes/api/publish/-context';

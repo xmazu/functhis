@@ -2,7 +2,7 @@ import { formatFunctionId } from '@functhis/core/publish';
 import type {
   CatalogPackageRow,
   ExecutionSummaryRow,
-} from '@functhis/core/publish';
+} from '@functhis/platform';
 
 const readContractDescription = (contract: unknown): string | null => {
   if (typeof contract !== 'object' || contract === null) {

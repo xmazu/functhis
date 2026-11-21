@@ -1,15 +1,16 @@
 import type { ExecutionLogPort } from '../ports';
+import type { ExecutionLabels } from './labels';
 
 /** Update the running row when present; otherwise insert a completed row. */
 export const insertExecutionRow = async (
   executionLog: ExecutionLogPort,
   input: {
-    callerUserId?: string | null;
-    cpuMs: number;
+    actorId?: string | null;
     completedAt: Date;
+    cpuMs: number;
     executionId: string;
     functionId?: string;
-    organizationId: string;
+    labels: ExecutionLabels;
     packageVersionId: string;
     requestBytes: number;
     responseBytes: number;
@@ -19,12 +20,12 @@ export const insertExecutionRow = async (
 ): Promise<void> => {
   try {
     await executionLog.upsertCompleted({
-      callerUserId: input.callerUserId,
+      actorId: input.actorId,
       completedAt: input.completedAt,
       cpuMs: input.cpuMs,
       executionId: input.executionId,
       functionId: input.functionId,
-      organizationId: input.organizationId,
+      labels: input.labels,
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       responseBytes: input.responseBytes,
@@ -39,10 +40,10 @@ export const insertExecutionRow = async (
 export const insertStartedExecutionRow = async (
   executionLog: ExecutionLogPort,
   input: {
-    callerUserId?: string | null;
+    actorId?: string | null;
     executionId: string;
     functionId?: string;
-    organizationId: string;
+    labels: ExecutionLabels;
     packageVersionId: string;
     requestBytes: number;
     startedAt: Date;
@@ -50,10 +51,10 @@ export const insertStartedExecutionRow = async (
 ): Promise<void> => {
   try {
     await executionLog.insertStarted({
-      callerUserId: input.callerUserId,
+      actorId: input.actorId,
       executionId: input.executionId,
       functionId: input.functionId,
-      organizationId: input.organizationId,
+      labels: input.labels,
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       startedAt: input.startedAt,

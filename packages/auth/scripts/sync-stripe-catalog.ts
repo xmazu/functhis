@@ -6,8 +6,8 @@
  *   STRIPE_SECRET_KEY=sk_test_... bun packages/auth/scripts/sync-stripe-catalog.ts
  */
 
-import { FUNCTHIS_PLANS } from '@functhis/core/publish';
-import type { FuncthisPlanId } from '@functhis/core/publish';
+import { FUNCTHIS_PLANS } from '@functhis/platform';
+import type { FuncthisPlanId } from '@functhis/platform';
 import type StripeSdk from 'stripe';
 
 const paidPlanIds = [

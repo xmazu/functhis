@@ -1,7 +1,8 @@
-import type { MembershipsPort } from '../ports';
-import type { PackageVisibility } from './package-visibility';
+import type { PackageVisibility } from '@functhis/core/publish';
 
-export type { PackageVisibility } from './package-visibility';
+import type { MembershipsPort } from '../ports';
+
+export type { PackageVisibility } from '@functhis/core/publish';
 
 export interface PackageAccessRow {
   organizationId: string | null;

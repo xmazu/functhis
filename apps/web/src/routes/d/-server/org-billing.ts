@@ -8,13 +8,13 @@ import {
   limitsForPlan,
   readOrgExecutionCount,
   resolveOrgPlan,
-} from '@functhis/core/publish';
+} from '@functhis/platform';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
 import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
-import { getCatalog, getDb } from '#/services';
+import { getDb, getPlatform } from '#/services';
 
 export const getOrgBillingSummary = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -25,11 +25,11 @@ export const getOrgBillingSummary = createServerFn({ method: 'GET' })
       return null;
     }
 
-    const catalog = await getCatalog();
+    const platform = await getPlatform();
     const database = await getDb();
 
     const isMember = await isMemberOfOrganization(
-      catalog.memberships,
+      platform.memberships,
       userId,
       data.organizationId
     );
@@ -38,11 +38,11 @@ export const getOrgBillingSummary = createServerFn({ method: 'GET' })
       return null;
     }
 
-    const plan = await resolveOrgPlan(catalog.quota, data.organizationId);
+    const plan = await resolveOrgPlan(platform.quota, data.organizationId);
     const limits = limitsForPlan(plan);
     const [packageCount, executionCount, canManageBilling] = await Promise.all([
-      countOrgPackages(catalog.quota, data.organizationId),
-      readOrgExecutionCount(catalog.quota, data.organizationId),
+      countOrgPackages(platform.quota, data.organizationId),
+      readOrgExecutionCount(platform.quota, data.organizationId),
       isOrgBillingAdmin(database, userId, data.organizationId),
     ]);
 

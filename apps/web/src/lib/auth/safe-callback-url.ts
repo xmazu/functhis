@@ -1,4 +1,4 @@
 export {
   safeCallbackURL,
   safeCallbackURLFromRequest,
-} from '@functhis/core/publish';
+} from '@functhis/platform';

@@ -19,6 +19,7 @@
     "@functhis/auth": "workspace:*",
     "@functhis/core": "workspace:*",
     "@functhis/db": "workspace:*",
+    "@functhis/platform": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",

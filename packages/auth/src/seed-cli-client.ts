@@ -4,7 +4,6 @@ import {
   CURSOR_MCP_REDIRECT_URIS,
   MCP_RESOURCE_PRODUCTION,
   PUBLISH_API_RESOURCE,
-  oauthResourceIdentifierVariants,
 } from '@functhis/core/publish';
 import type { Database } from '@functhis/db';
 import {
@@ -12,6 +11,7 @@ import {
   oauthClientResource,
   oauthResource,
 } from '@functhis/db/schema/auth';
+import { oauthResourceIdentifierVariants } from '@functhis/platform';
 
 const DEVICE_CODE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 

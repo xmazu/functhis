@@ -12,7 +12,7 @@ import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
 import type { HotKvBinding } from '../http/http-context';
 import type {
   HotCatalogSourcePort,
-  MembershipsPort,
+  SourceSyncMembershipsPort,
   SourceStorePort,
 } from '../ports';
 import { buildFunctionSearchText } from '../search/function-search-text';
@@ -96,7 +96,7 @@ export const syncRemoteMcpSource = async (input: {
   headers?: Record<string, string>;
   hot: HotKvBinding;
   hotSource: HotCatalogSourcePort;
-  memberships: MembershipsPort;
+  memberships: SourceSyncMembershipsPort;
   organizationId: string;
   ownerUserId: string;
   slug: string;

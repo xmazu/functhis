@@ -1,4 +1,4 @@
-import type { ExecutionQuotaPort } from '@functhis/core/publish';
+import type { ExecutionQuotaPort } from '@functhis/platform';
 
 import { and, count, desc, eq, inArray, sql } from '../drizzle';
 import type { Database } from '../index';

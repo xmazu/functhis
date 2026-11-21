@@ -1,0 +1,23 @@
+{
+  "name": "@functhis/platform",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@functhis/core": "workspace:*",
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@functhis/config": "workspace:*",
+    "@types/bun": "latest",
+    "typescript": "catalog:"
+  }
+}

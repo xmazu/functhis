@@ -13,7 +13,7 @@ import {
   MemoryEmbeddingIndex,
   reconcileSearchIndexDebt,
 } from '@functhis/core/publish';
-import { createCatalog } from '@functhis/db/catalog';
+import { createCatalog, createPlatform } from '@functhis/db/catalog';
 import {
   capabilityGeneration,
   capabilitySource,
@@ -46,7 +46,8 @@ describe('OpenAPI import through execute and analytics', () => {
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
     const catalog = createCatalog(db);
-    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
+    const platform = createPlatform(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog, platform);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -57,7 +58,7 @@ describe('OpenAPI import through execute and analytics', () => {
     const first = await importOpenApiSource({
       hot,
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
@@ -98,7 +99,7 @@ describe('OpenAPI import through execute and analytics', () => {
     const drifted = await importOpenApiSource({
       hot,
       hotSource: catalog.hotSource,
-      memberships: catalog.memberships,
+      memberships: platform.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
@@ -131,6 +132,7 @@ describe('OpenAPI import through execute and analytics', () => {
         embedQueries: (texts) =>
           Promise.all(texts.map((text) => deterministicEmbedding(text))),
         hot,
+        loadPolicy: bindings.searchLoadPolicy,
         vectorIndex: index,
       },
       { callerUserId: userId, query: 'fetch user profile' }

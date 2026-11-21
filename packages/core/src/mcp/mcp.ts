@@ -2,7 +2,7 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { log } from 'evlog';
 import { z } from 'zod';
 
-import { ExecutePayloadTooLargeError } from '../publish/org/quotas';
+import { ExecutePayloadTooLargeError } from '../publish/execution/payload-limits';
 import type { McpBindings } from './bindings';
 import { executeOwnedFunction, FunctionNotFoundError } from './execute-owned';
 import type { ExecuteOwnedDependencies } from './execute-owned';

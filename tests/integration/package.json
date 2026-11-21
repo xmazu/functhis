@@ -12,6 +12,7 @@
     "@functhis/auth": "workspace:*",
     "@functhis/core": "workspace:*",
     "@functhis/db": "workspace:*",
+    "@functhis/platform": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

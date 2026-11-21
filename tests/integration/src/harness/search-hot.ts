@@ -2,11 +2,11 @@ import {
   asHotKvBinding,
   formatFunctionId,
   mineIndexHotKey,
-  writeHotFunctionDoc,
-  writeMembershipHot,
   projectHotDocsForSearch,
+  writeHotFunctionDoc,
 } from '@functhis/core/publish';
 import type { HotFunctionDoc } from '@functhis/core/publish';
+import { writeMembershipHot } from '@functhis/platform';
 
 import type { MemoryHotKv } from './memory-hot-kv';
 

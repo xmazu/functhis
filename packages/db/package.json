@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@functhis/core": "workspace:*",
+    "@functhis/platform": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.16.3",
     "zod": "catalog:"

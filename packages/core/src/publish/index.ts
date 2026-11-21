@@ -36,6 +36,7 @@ export {
   StoredBundleLoadError,
   type BundleLoadErrorCode,
 } from './execution/bundle-load-error';
+export type { ExecutionLabels } from './execution/labels';
 export {
   formatFunctionId,
   isValidFunctionSlug,
@@ -56,16 +57,6 @@ export {
   isValidSemver,
   type VersionBump,
 } from './semver';
-export {
-  FUNCTHIS_PLANS,
-  normalizePlanId,
-  planLimits,
-} from './org/plan-catalog';
-export type {
-  FuncthisPlan,
-  FuncthisPlanId,
-  FuncthisPlanLimits,
-} from './org/plan-catalog';
 export {
   insertExecutionRow,
   insertStartedExecutionRow,
@@ -98,27 +89,25 @@ export {
   assertExecuteResponseSize,
   executeRequestByteLength,
   ExecutePayloadTooLargeError,
-} from './org/quotas';
+} from './execution/payload-limits';
 export {
   validateContractInput,
   type ContractInputValidationIssue,
   type ContractInputValidationResult,
 } from './execution/validate-input';
 export { buildFunctionSearchText } from './search/function-search-text';
+export { buildIntentPhrases } from './search/search-projection';
 export { asHotKvBinding } from './catalog/hot-kv-binding';
 export { backfillHotCatalog } from './catalog/backfill-hot';
 export type { HotFunctionDoc, SearchDomain } from './catalog/hot-catalog';
 export type { HotKvBinding } from './http/http-context';
 export {
-  buildAccessContextFromHot,
   filterDocsByAccess,
-  getMembershipOrganizationIdsFromHot,
   loadHotFunctionDocsByIds,
   loadSearchFunctionIds,
   resolveHotFunctionDoc,
   syncPackageToHot,
   writeHotFunctionDoc,
-  writeMembershipHot,
 } from './catalog/hot-catalog';
 export {
   functionHotKey,
@@ -128,11 +117,6 @@ export {
   mcpSnapshotHotKey,
   mineIndexHotKey,
 } from './catalog/hot-keys';
-export {
-  resolveJwksVerifier,
-  verifyAccessTokenWithHotJwks,
-  writeJwksHot,
-} from './auth/jwks-hot';
 export {
   lexicalScore,
   normalizeSearchText,
@@ -169,63 +153,12 @@ export type {
   RuntimeExecuteBody,
   WorkerLoaderBundle,
 } from './schemas';
-export {
-  hasPublishSharingInput,
-  resolvePublishSharing,
-  resolvePublishSharingForPublishStart,
-  resolvePublishStartSharing,
-  resolveScopeHandle,
-  updatePackageSharing,
-  WORKSPACE_SETUP_URL,
-  type PublishSharingInput,
-  type ExistingPackageSharing,
-  type ResolvedPublishSharing,
-} from './catalog/publish-sharing';
-export {
-  isMemberOfOrganization,
-  listMemberOrganizations,
-  resolveOrganizationIdForMember,
-  resolveOrganizationSlugById,
-  type MemberOrganization,
-} from './org/org-membership-read';
-export {
-  assertOrgCanAddPackage,
-  countOrgPackages,
-  DEVELOPER_ORG_LIMITS,
-  ENTERPRISE_ORG_LIMITS,
-  insertOrgPackageIfUnderLimit,
-  limitsForPlan,
-  OrgQuotaExceededError,
-  resolveOrgPlan,
-  TEAM_ORG_LIMITS,
-  type OrgPlanId,
-  type OrgPlanLimits,
-} from './org/org-entitlements';
-export {
-  currentUsagePeriodKey,
-  readOrgExecutionCount,
-  reserveOrgExecution,
-} from './org/org-usage';
 export { type PackageVisibility } from './catalog/package-visibility';
 export {
-  canPublishPackage,
-  canWritePackageSecrets,
-  isOrgSecretsAdmin,
-  isSecretAdminRole,
-} from './secrets/secret-access';
-export {
-  deleteOrganizationSecret,
-  deletePackageSecret,
   decryptSecretRows,
-  listOrganizationSecrets,
-  listPackageSecrets,
   loadPackageVersionSecretNames,
   resolveHostedRuntimeSecrets,
-  setOrganizationSecret,
-  setPackageSecret,
-  type HostedSecretListItem,
-  type HostedSecretListResult,
-  type HostedSecretScope,
+  LAST_USED_TOUCH_INTERVAL_MS,
 } from './secrets/hosted-secrets';
 export {
   HostedSecretError,
@@ -242,40 +175,8 @@ export {
   mergeSecretValues,
   parseSecretNamesFromManifestJson,
 } from './secrets/secret-names';
-export {
-  buildPackageAccessContext,
-  canAccessPackage,
-  listMembershipOrganizationIds,
-  type PackageAccessContext,
-  type PackageAccessRow,
-} from './catalog/catalog-access';
-export {
-  canViewPackage,
-  getFunctionBySlugs,
-  getPackageBySlugs,
-  listAccessiblePackagesForUser,
-  listOrgSharedPackages,
-  listOwnerPackages,
-  listPackageExecutions,
-  type AccessiblePackageListRow,
-  type CatalogFunctionRow,
-  type CatalogPackageRow,
-  type ExecutionSummaryRow,
-  type PackageListRow,
-} from './catalog/catalog-read';
-export { normalizeOrganizationSlug } from './org/org-slug';
-export {
-  safeCallbackURL,
-  safeCallbackURLFromRequest,
-} from './auth/safe-callback-url';
 export type * from './ports';
 export { resolveSecret, type SecretBinding } from './secret-binding';
-export {
-  handlePublishFinalize,
-  handlePublishRollback,
-  handlePublishStart,
-} from './http/http-handlers';
-export type { PublishHandlerContext } from './http/http-context';
 export type { IdempotencyRecord } from './execution/idempotency';
 export {
   claimIdempotencyKey,
@@ -283,11 +184,6 @@ export {
   decideIdempotency,
   loadIdempotencyRecord,
 } from './execution/idempotency-store';
-export {
-  normalizeOAuthResourceIdentifier,
-  oauthResourceIdentifierVariants,
-} from './auth/oauth-resource';
-export { LAST_USED_TOUCH_INTERVAL_MS } from './secrets/hosted-secrets';
 export type { OpenApiOperation } from './sources/openapi-operations';
 export {
   extractOpenApiOperations,
@@ -332,3 +228,9 @@ export {
   type SearchResult,
 } from './search/search-run';
 export { projectHotDocsForSearch } from './catalog/hot-search-projection';
+export type {
+  SearchAccessContext,
+  SearchAccessPredicate,
+  SearchLoadPolicy,
+  SearchPackageAccessRow,
+} from './search/search-access';

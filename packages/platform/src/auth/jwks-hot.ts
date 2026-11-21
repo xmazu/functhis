@@ -1,8 +1,7 @@
+import { HOT_JWKS_KEY } from '@functhis/core/publish';
+import type { HotKvBinding } from '@functhis/core/publish';
 import { createLocalJWKSet, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
-
-import { HOT_JWKS_KEY } from '../catalog/hot-keys';
-import type { HotKvBinding } from '../http/http-context';
 
 type HotJwks = Parameters<typeof createLocalJWKSet>[0];
 

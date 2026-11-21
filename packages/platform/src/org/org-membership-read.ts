@@ -1,9 +1,6 @@
-import type { MembershipsPort } from '../ports';
+import type { MemberOrganization, MembershipsPort } from '../ports';
 
-export interface MemberOrganization {
-  id: string;
-  slug: string;
-}
+export type { MemberOrganization } from '../ports';
 
 export const listMemberOrganizations = (
   memberships: MembershipsPort,

@@ -1,4 +1,5 @@
 import type { CatalogPorts } from '@functhis/core/publish';
+import type { PlatformPorts } from '@functhis/platform';
 
 import type { Database } from '../index';
 import { createCatalogReadPort } from './catalog-read';
@@ -13,14 +14,18 @@ import { createSecretDirectoryPort } from './secret-directory';
 import { createSourceStorePort } from './sources';
 
 export const createCatalog = (database: Database): CatalogPorts => ({
-  catalogRead: createCatalogReadPort(database),
   executionLog: createExecutionLogPort(database),
   hotSource: createHotCatalogSourcePort(database),
   idempotency: createIdempotencyStorePort(database),
+  packages: createPackageStorePort(database),
+  runtimeSecrets: createRuntimeSecretsPort(database),
+  sources: createSourceStorePort(database),
+});
+
+export const createPlatform = (database: Database): PlatformPorts => ({
+  catalogRead: createCatalogReadPort(database),
   memberships: createMembershipsPort(database),
   packages: createPackageStorePort(database),
   quota: createExecutionQuotaPort(database),
-  runtimeSecrets: createRuntimeSecretsPort(database),
   secretDirectory: createSecretDirectoryPort(database),
-  sources: createSourceStorePort(database),
 });

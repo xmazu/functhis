@@ -12,6 +12,8 @@
     "@functhis/auth": "workspace:*",
     "@functhis/config": "workspace:*",
     "@functhis/core": "workspace:*",
+    "@functhis/db": "workspace:*",
+    "@functhis/platform": "workspace:*",
     "evlog": "^2.28.1",
     "jose": "^6.1.0"
   },
