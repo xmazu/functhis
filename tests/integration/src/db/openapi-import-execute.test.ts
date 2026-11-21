@@ -11,6 +11,7 @@ import {
 import { MemoryEmbeddingIndex } from '@functhis/core/publish/vectorize-index';
 import { reconcileSearchIndexDebt } from '@functhis/core/publish/vectorize-upsert';
 import { searchFunctionsWithContext } from '@functhis/core/search';
+import { createCatalog } from '@functhis/db/catalog';
 import {
   capabilityGeneration,
   capabilitySource,
@@ -42,7 +43,8 @@ describe('OpenAPI import through execute and analytics', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const bindings = createIntegrationMcpBindings(memoryHot);
+    const catalog = createCatalog(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -51,11 +53,13 @@ describe('OpenAPI import through execute and analytics', () => {
     const sourceSlug = `openapi-${suffix}`;
 
     const first = await importOpenApiSource({
-      database: db,
       hot,
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
+      sources: catalog.sources,
       spec: openapiUsers,
     });
     expect(first.drifted).toBe(false);
@@ -90,17 +94,22 @@ describe('OpenAPI import through execute and analytics', () => {
       info: { ...openapiUsers.info, version: '1.0.1' },
     };
     const drifted = await importOpenApiSource({
-      database: db,
       hot,
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
+      sources: catalog.sources,
       spec: driftSpec,
     });
     expect(drifted.drifted).toBe(true);
     expect(drifted.health).toBe('degraded');
 
-    await acceptOpenApiGeneration({ database: db, sourceId: first.sourceId });
+    await acceptOpenApiGeneration({
+      sourceId: first.sourceId,
+      sources: catalog.sources,
+    });
     const [sourceRow] = await db
       .select({ health: capabilitySource.health })
       .from(capabilitySource)

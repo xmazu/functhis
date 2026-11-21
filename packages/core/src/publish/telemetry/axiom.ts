@@ -1,6 +1,5 @@
-import { resolveSecret } from '@functhis/db';
-import type { SecretBinding } from '@functhis/db';
-
+import type { SecretBinding } from '../secret-binding';
+import { resolveSecret } from '../secret-binding';
 import { withTelemetryIndexFields } from './axiom-apl';
 import { redactTelemetry } from './telemetry-redaction';
 

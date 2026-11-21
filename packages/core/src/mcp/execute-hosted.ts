@@ -1,5 +1,3 @@
-import { createDb } from '@functhis/db';
-
 import type { HotFunctionDoc } from '../publish/catalog/hot-catalog';
 import { StoredBundleLoadError } from '../publish/execution/bundle-load-error';
 import { insertStartedExecutionRow } from '../publish/execution/execution-store';
@@ -9,10 +7,6 @@ import {
   loadStoredBundle,
   runDynamicWorker,
 } from '../publish/execution/worker-execute';
-import {
-  loadPackageVersionSecretNames,
-  resolveHostedRuntimeSecrets,
-} from '../publish/secrets/hosted-secrets';
 import { HostedSecretError } from '../publish/secrets/secret-crypto';
 import type { McpBindings } from './bindings';
 import type { DispatchResult } from './execute-dispatch';
@@ -97,14 +91,14 @@ export const executeHostedAdapter = async (
     throw error;
   }
 
-  const database = await createDb(bindings);
+  const { catalog } = bindings;
   let runtimeSecrets: Record<string, string> = {};
   try {
-    const secretNames = await loadPackageVersionSecretNames(
-      database,
-      input.doc.versionId
-    );
-    runtimeSecrets = await resolveHostedRuntimeSecrets(database, {
+    const secretNames =
+      await catalog.runtimeSecrets.loadPackageVersionSecretNames(
+        input.doc.versionId
+      );
+    runtimeSecrets = await catalog.runtimeSecrets.resolveRuntimeSecrets({
       encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
       organizationId: input.doc.organizationId,
       packageId: input.doc.packageId,
@@ -127,7 +121,7 @@ export const executeHostedAdapter = async (
   }
 
   const executionId = crypto.randomUUID();
-  await insertStartedExecutionRow(bindings, {
+  await insertStartedExecutionRow(catalog.executionLog, {
     callerUserId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
@@ -157,6 +151,10 @@ export const executeHostedAdapter = async (
 
   const httpResponse = await finalizeExecute(
     bindings,
+    {
+      executionLog: catalog.executionLog,
+      quota: catalog.quota,
+    },
     {
       bundleHash: input.doc.bundleHash,
       callerUserId: input.callerUserId ?? undefined,

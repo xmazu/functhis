@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 
+import type { PackageVisibility } from '../catalog/catalog-access';
+import type {
+  ExecutionQuotaPort,
+  PackageRecord,
+  PackageStorePort,
+} from '../ports';
 import {
   assertOrgCanAddPackage,
   countOrgPackages,
@@ -15,6 +21,16 @@ import {
   reserveOrgExecution,
 } from './org-usage';
 
+const quota = (
+  overrides: Partial<ExecutionQuotaPort> = {}
+): ExecutionQuotaPort => ({
+  countPackages: () => Promise.resolve(0),
+  readActiveSubscription: () => Promise.resolve(null),
+  readExecutionCount: () => Promise.resolve(0),
+  tryReserve: () => Promise.resolve('reserved' as const),
+  ...overrides,
+});
+
 describe('limitsForPlan', () => {
   test('returns developer limits for the pro plan alias', () => {
     expect(limitsForPlan('pro').maxPackages).toBeGreaterThan(
@@ -25,37 +41,22 @@ describe('limitsForPlan', () => {
 
 describe('resolveOrgPlan', () => {
   test('defaults to free without subscription row', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            orderBy: () => ({
-              limit: () => Promise.resolve([]),
-            }),
-          }),
-        }),
-      }),
-    };
-    await expect(resolveOrgPlan(database as never, 'org-1')).resolves.toBe(
-      'trial'
-    );
+    await expect(resolveOrgPlan(quota(), 'org-1')).resolves.toBe('trial');
   });
 
-  test('returns pro for active pro subscription', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            orderBy: () => ({
-              limit: () => Promise.resolve([{ plan: 'pro', status: 'active' }]),
+  test('returns developer for active pro subscription', async () => {
+    await expect(
+      resolveOrgPlan(
+        quota({
+          readActiveSubscription: () =>
+            Promise.resolve({
+              plan: 'pro',
+              status: 'active',
             }),
-          }),
         }),
-      }),
-    };
-    await expect(resolveOrgPlan(database as never, 'org-1')).resolves.toBe(
-      'developer'
-    );
+        'org-1'
+      )
+    ).resolves.toBe('developer');
   });
 });
 
@@ -80,279 +81,96 @@ describe('org usage period key', () => {
   });
 
   test('readOrgExecutionCount returns zero when missing', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([]),
-          }),
-        }),
-      }),
-    };
-    await expect(
-      readOrgExecutionCount(database as never, 'org-1')
-    ).resolves.toBe(0);
+    await expect(readOrgExecutionCount(quota(), 'org-1')).resolves.toBe(0);
   });
 });
 
 describe('countOrgPackages and assertOrgCanAddPackage', () => {
   test('countOrgPackages reads aggregate', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => Promise.resolve([{ value: 2 }]),
-        }),
-      }),
-    };
-    await expect(countOrgPackages(database as never, 'org-1')).resolves.toBe(2);
+    await expect(
+      countOrgPackages(
+        quota({ countPackages: () => Promise.resolve(2) }),
+        'org-1'
+      )
+    ).resolves.toBe(2);
   });
 
   test('assertOrgCanAddPackage passes under cap', async () => {
-    let selectCalls = 0;
-    const database = {
-      select: () => {
-        selectCalls += 1;
-        if (selectCalls === 1) {
-          return {
-            from: () => ({
-              where: () => ({
-                orderBy: () => ({
-                  limit: () => Promise.resolve([]),
-                }),
-              }),
-            }),
-          };
-        }
-        return {
-          from: () => ({
-            where: () => Promise.resolve([{ value: 0 }]),
-          }),
-        };
-      },
-    };
     await expect(
-      assertOrgCanAddPackage(database as never, 'org-1')
+      assertOrgCanAddPackage(quota(), 'org-1')
     ).resolves.toBeUndefined();
   });
 
-  test('insertOrgPackageIfUnderLimit locks and inserts under cap', async () => {
-    let selectCalls = 0;
-    let executedLock = false;
-    const insertedRow = {
+  test('insertOrgPackageIfUnderLimit calls package store', async () => {
+    const inserted: PackageRecord = {
+      currentVersionId: null,
       id: 'pkg-1',
       organizationId: 'org-1',
       ownerUserId: 'user-1',
       slug: 'demo',
-      visibility: 'private' as const,
+      sourceKind: 'hosted_function',
+      visibility: 'private',
     };
-    const database = {
-      transaction: (handler: (tx: unknown) => Promise<unknown>) => {
-        const tx = {
-          execute: () => {
-            executedLock = true;
-            return Promise.resolve();
-          },
-          insert: () => ({
-            values: () => ({
-              returning: () => Promise.resolve([insertedRow]),
-            }),
-          }),
-          select: () => {
-            selectCalls += 1;
-            if (selectCalls === 1) {
-              return {
-                from: () => ({
-                  where: () => ({
-                    orderBy: () => ({
-                      limit: () => Promise.resolve([]),
-                    }),
-                  }),
-                }),
-              };
-            }
-            return {
-              from: () => ({
-                where: () => Promise.resolve([{ value: 0 }]),
-              }),
-            };
-          },
-        };
-        return handler(tx);
-      },
+    const packages: PackageStorePort = {
+      commitVersion: () => Promise.resolve({ id: 'v1', semver: '0.0.1' }),
+      findById: () => Promise.resolve(null),
+      findByOrgAndSlug: () => Promise.resolve(null),
+      findOwnedBySlug: () => Promise.resolve(null),
+      findVersion: () => Promise.resolve(null),
+      insertIfUnderLimit: (values, decide) =>
+        Promise.resolve(decide(0)).then(() => {
+          void values;
+          return inserted;
+        }),
+      listSemvers: () => Promise.resolve([]),
+      publicHandle: () => Promise.resolve('acme'),
+      setCurrentVersion: () => Promise.resolve(),
+      setPackageVisibility: () => Promise.resolve(),
+      setVisibility: () => Promise.resolve(),
     };
     await expect(
-      insertOrgPackageIfUnderLimit(database as never, {
+      insertOrgPackageIfUnderLimit(packages, quota(), {
         organizationId: 'org-1',
         ownerUserId: 'user-1',
         slug: 'demo',
-        visibility: 'private',
+        visibility: 'private' as PackageVisibility,
       })
-    ).resolves.toEqual(insertedRow);
-    expect(executedLock).toBe(true);
-    expect(selectCalls).toBeGreaterThan(0);
+    ).resolves.toEqual(inserted);
   });
 
   test('assertOrgCanAddPackage throws when at cap', async () => {
-    let selectCalls = 0;
-    const database = {
-      select: () => {
-        selectCalls += 1;
-        if (selectCalls === 1) {
-          return {
-            from: () => ({
-              where: () => ({
-                orderBy: () => ({
-                  limit: () => Promise.resolve([]),
-                }),
-              }),
-            }),
-          };
-        }
-        return {
-          from: () => ({
-            where: () =>
-              Promise.resolve([{ value: TRIAL_ORG_LIMITS.maxPackages }]),
-          }),
-        };
-      },
-    };
     await expect(
-      assertOrgCanAddPackage(database as never, 'org-1')
+      assertOrgCanAddPackage(
+        quota({
+          countPackages: () =>
+            Promise.resolve(TRIAL_ORG_LIMITS.maxPackages ?? 999),
+        }),
+        'org-1'
+      )
     ).rejects.toBeInstanceOf(OrgQuotaExceededError);
   });
 });
 
 describe('reserveOrgExecution', () => {
-  test('updates when period row exists', async () => {
-    let updated = false;
-    const database = {
-      insert: () => ({
-        values: () => Promise.resolve(),
-      }),
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([]),
-            orderBy: () => ({
-              limit: () => Promise.resolve([]),
-            }),
-          }),
-        }),
-      }),
-      update: () => ({
-        set: () => ({
-          where: () => ({
-            returning: () => {
-              updated = true;
-              return Promise.resolve([{ executionCount: 2 }]);
-            },
-          }),
-        }),
-      }),
-    };
-    await reserveOrgExecution(database as never, 'org-1');
-    expect(updated).toBe(true);
-  });
-
-  test('inserts first execution in period', async () => {
-    const inserts: unknown[] = [];
-    let selectCalls = 0;
-    const database = {
-      insert: () => ({
-        values: (row: unknown) => {
-          inserts.push(row);
-          return Promise.resolve();
-        },
-      }),
-      select: () => {
-        selectCalls += 1;
-        return {
-          from: () => ({
-            where: () => ({
-              limit: () =>
-                Promise.resolve(
-                  selectCalls === 1 ? [] : [{ executionCount: 0 }]
-                ),
-              orderBy: () => ({
-                limit: () => Promise.resolve([]),
-              }),
-            }),
-          }),
-        };
-      },
-      update: () => ({
-        set: () => ({
-          where: () => ({
-            returning: () => Promise.resolve([]),
-          }),
-        }),
-      }),
-    };
-    await reserveOrgExecution(database as never, 'org-1');
-    expect(inserts).toHaveLength(1);
+  test('passes when quota reserves', async () => {
+    await expect(
+      reserveOrgExecution(quota(), 'org-1')
+    ).resolves.toBeUndefined();
   });
 
   test('throws when execution count is at the monthly cap', async () => {
-    const database = {
-      insert: () => ({
-        values: () => Promise.resolve(),
-      }),
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([{ executionCount: 1000 }]),
-            orderBy: () => ({
-              limit: () => Promise.resolve([]),
-            }),
-          }),
-        }),
-      }),
-      update: () => ({
-        set: () => ({
-          where: () => ({
-            returning: () => Promise.resolve([]),
-          }),
-        }),
-      }),
-    };
     await expect(
-      reserveOrgExecution(database as never, 'org-1')
-    ).rejects.toBeInstanceOf(OrgQuotaExceededError);
-  });
-
-  test('retries after a concurrent insert wins the period row', async () => {
-    let updateCalls = 0;
-    const database = {
-      insert: () => ({
-        values: () =>
-          Promise.reject(
-            Object.assign(new Error('unique violation'), { code: '23505' })
-          ),
-      }),
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([{ executionCount: 0 }]),
-            orderBy: () => ({
-              limit: () => Promise.resolve([]),
+      reserveOrgExecution(
+        quota({
+          readActiveSubscription: () =>
+            Promise.resolve({
+              plan: 'trial',
+              status: 'active',
             }),
-          }),
+          tryReserve: () => Promise.resolve('full' as const),
         }),
-      }),
-      update: () => ({
-        set: () => ({
-          where: () => ({
-            returning: () => {
-              updateCalls += 1;
-              return Promise.resolve(
-                updateCalls === 1 ? [] : [{ executionCount: 1 }]
-              );
-            },
-          }),
-        }),
-      }),
-    };
-    await reserveOrgExecution(database as never, 'org-1');
-    expect(updateCalls).toBe(2);
+        'org-1'
+      )
+    ).rejects.toBeInstanceOf(OrgQuotaExceededError);
   });
 });

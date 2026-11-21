@@ -326,13 +326,26 @@ describe('finalizeExecute', () => {
   const bindings = {
     ANALYTICS: { writeDataPoint: () => {} },
     BUNDLES: { get: () => Promise.resolve(null) },
-    HYPERDRIVE: { connectionString: 'postgres://invalid' },
     LOADER: loader,
   } as never;
+
+  const executionPorts = {
+    executionLog: {
+      insertStarted: () => Promise.resolve(),
+      upsertCompleted: () => Promise.reject(new Error('db down')),
+    },
+    quota: {
+      countPackages: () => Promise.resolve(0),
+      readActiveSubscription: () => Promise.resolve(null),
+      readExecutionCount: () => Promise.resolve(0),
+      tryReserve: () => Promise.resolve('reserved' as const),
+    },
+  };
 
   test('returns the worker response and swallows execution-row failures', async () => {
     const response = await finalizeExecute(
       bindings,
+      executionPorts,
       {
         bundleHash: 'abcdefgh',
         functionSlug: 'hello',
@@ -360,6 +373,7 @@ describe('finalizeExecute', () => {
   test('returns 413 when the run was too large', async () => {
     const response = await finalizeExecute(
       bindings,
+      executionPorts,
       {
         bundleHash: 'abcdefgh',
         versionId: 'ver_1',

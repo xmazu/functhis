@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { member } from '@functhis/db/schema/auth';
-
 import { isMemberOfOrganization } from '../org/org-membership-read';
+import type { MembershipsPort } from '../ports';
 import {
   canAccessPackage,
   buildPackageAccessContext,
@@ -114,61 +113,62 @@ describe('canAccessPackage', () => {
 });
 
 describe('isMemberOfOrganization', () => {
-  test('true when a membership row exists', async () => {
-    const database = {
-      select: () => ({
-        from: (table: unknown) => {
-          expect(table).toBe(member);
-          return {
-            where: () => ({
-              limit: () => Promise.resolve([{ organizationId: 'org-1' }]),
-            }),
-          };
-        },
-      }),
+  test('true when membership port reports member', async () => {
+    const memberships: MembershipsPort = {
+      isMemberOfOrganization: () => Promise.resolve(true),
+      listMemberOrganizations: () => Promise.resolve([]),
+      listOrganizationIds: () => Promise.resolve([]),
+      memberRole: () => Promise.resolve('member'),
+      resolveOrganizationIdForMember: () => Promise.resolve(null),
+      resolveOrganizationSlugById: () => Promise.resolve(null),
     };
     await expect(
-      isMemberOfOrganization(database as never, 'user-1', 'org-1')
+      isMemberOfOrganization(memberships, 'user-1', 'org-1')
     ).resolves.toBe(true);
   });
 
-  test('false when no membership row exists', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: () => Promise.resolve([]),
-          }),
-        }),
-      }),
+  test('false when membership port denies', async () => {
+    const memberships: MembershipsPort = {
+      isMemberOfOrganization: () => Promise.resolve(false),
+      listMemberOrganizations: () => Promise.resolve([]),
+      listOrganizationIds: () => Promise.resolve([]),
+      memberRole: () => Promise.resolve(null),
+      resolveOrganizationIdForMember: () => Promise.resolve(null),
+      resolveOrganizationSlugById: () => Promise.resolve(null),
     };
     await expect(
-      isMemberOfOrganization(database as never, 'user-1', 'org-1')
+      isMemberOfOrganization(memberships, 'user-1', 'org-1')
     ).resolves.toBe(false);
   });
 });
 
 describe('listMembershipOrganizationIds', () => {
   test('returns organization ids for the user', async () => {
-    const database = {
-      select: () => ({
-        from: (table: unknown) => {
-          expect(table).toBe(member);
-          return {
-            where: () => Promise.resolve([{ organizationId: 'org-1' }]),
-          };
-        },
-      }),
+    const memberships: MembershipsPort = {
+      isMemberOfOrganization: () => Promise.resolve(false),
+      listMemberOrganizations: () => Promise.resolve([]),
+      listOrganizationIds: () => Promise.resolve(['org-1']),
+      memberRole: () => Promise.resolve(null),
+      resolveOrganizationIdForMember: () => Promise.resolve(null),
+      resolveOrganizationSlugById: () => Promise.resolve(null),
     };
     await expect(
-      listMembershipOrganizationIds(database as never, 'user-1')
+      listMembershipOrganizationIds(memberships, 'user-1')
     ).resolves.toEqual(['org-1']);
   });
 });
 
 describe('buildPackageAccessContext', () => {
   test('returns an anonymous context when userId is null', async () => {
-    await expect(buildPackageAccessContext({} as never, null)).resolves.toEqual(
+    const memberships: MembershipsPort = {
+      isMemberOfOrganization: () => Promise.resolve(false),
+      listMemberOrganizations: () => Promise.resolve([]),
+      listOrganizationIds: () => Promise.resolve([]),
+      memberRole: () => Promise.resolve(null),
+      resolveOrganizationIdForMember: () => Promise.resolve(null),
+      resolveOrganizationSlugById: () => Promise.resolve(null),
+    };
+    await expect(buildPackageAccessContext(memberships, null)).resolves.toEqual(
       {
         organizationIds: [],
         userId: null,
@@ -177,15 +177,16 @@ describe('buildPackageAccessContext', () => {
   });
 
   test('loads memberships for an authenticated user', async () => {
-    const database = {
-      select: () => ({
-        from: () => ({
-          where: () => Promise.resolve([{ organizationId: 'org-2' }]),
-        }),
-      }),
+    const memberships: MembershipsPort = {
+      isMemberOfOrganization: () => Promise.resolve(false),
+      listMemberOrganizations: () => Promise.resolve([]),
+      listOrganizationIds: () => Promise.resolve(['org-2']),
+      memberRole: () => Promise.resolve(null),
+      resolveOrganizationIdForMember: () => Promise.resolve(null),
+      resolveOrganizationSlugById: () => Promise.resolve(null),
     };
     await expect(
-      buildPackageAccessContext(database as never, 'user-1')
+      buildPackageAccessContext(memberships, 'user-1')
     ).resolves.toEqual({
       organizationIds: ['org-2'],
       userId: 'user-1',

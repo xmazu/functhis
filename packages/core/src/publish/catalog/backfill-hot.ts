@@ -1,8 +1,5 @@
-import type { Database } from '@functhis/db';
-import { isNotNull } from '@functhis/db/drizzle';
-import { pkg } from '@functhis/db/schema/catalog';
-
 import type { HotKvBinding } from '../http/http-context';
+import type { HotCatalogSourcePort } from '../ports';
 import { syncPackageToHot } from './hot-catalog';
 
 export interface BackfillHotCatalogDeps {
@@ -12,18 +9,11 @@ export interface BackfillHotCatalogDeps {
 /** Rebuild HOT entries for every package with a current version (operator/backfill). */
 export const backfillHotCatalog = async (
   hot: HotKvBinding,
-  database: Database,
+  hotSource: HotCatalogSourcePort,
   deps: BackfillHotCatalogDeps = {}
 ): Promise<{ packagesSynced: number }> => {
   const syncPackage = deps.syncPackage ?? syncPackageToHot;
-  const packages = await database
-    .select({ id: pkg.id })
-    .from(pkg)
-    .where(isNotNull(pkg.currentVersionId));
-
-  const ids = packages
-    .map((row) => row.id)
-    .filter((id): id is string => Boolean(id));
-  await Promise.all(ids.map((id) => syncPackage(hot, database, id)));
+  const ids = await hotSource.listPackageIdsWithCurrentVersion();
+  await Promise.all(ids.map((id) => syncPackage(hot, hotSource, id)));
   return { packagesSynced: ids.length };
 };

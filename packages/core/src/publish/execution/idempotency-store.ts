@@ -1,89 +1,38 @@
-import type { Database } from '@functhis/db';
-import { and, eq } from '@functhis/db/drizzle';
-import { executeIdempotency } from '@functhis/db/schema/catalog';
-
+import type { IdempotencyStorePort } from '../ports';
 import { resolveIdempotency } from './idempotency';
 import type { IdempotencyDecision, IdempotencyRecord } from './idempotency';
 
-export const loadIdempotencyRecord = async (
-  database: Database,
+export const loadIdempotencyRecord = (
+  store: IdempotencyStorePort,
   organizationId: string,
   key: string
-): Promise<IdempotencyRecord | null> => {
-  const [row] = await database
-    .select()
-    .from(executeIdempotency)
-    .where(
-      and(
-        eq(executeIdempotency.organizationId, organizationId),
-        eq(executeIdempotency.key, key)
-      )
-    )
-    .limit(1);
-  if (!row) {
-    return null;
-  }
-  return {
-    requestHash: row.requestHash,
-    status: row.status as IdempotencyRecord['status'],
-    storedResponse:
-      row.bodyText === null || row.responseStatus === null
-        ? null
-        : { bodyText: row.bodyText, status: row.responseStatus },
-    updatedAtMs: row.updatedAt.getTime(),
-  };
-};
+): Promise<IdempotencyRecord | null> => store.load(organizationId, key);
 
-export const claimIdempotencyKey = async (input: {
-  database: Database;
+export const claimIdempotencyKey = (input: {
   key: string;
   organizationId: string;
   requestHash: string;
-}): Promise<void> => {
-  const now = new Date();
-  await input.database
-    .insert(executeIdempotency)
-    .values({
-      key: input.key,
-      organizationId: input.organizationId,
-      requestHash: input.requestHash,
-      status: 'in_progress',
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      set: {
-        bodyText: null,
-        requestHash: input.requestHash,
-        responseStatus: null,
-        status: 'in_progress',
-        updatedAt: now,
-      },
-      target: [executeIdempotency.organizationId, executeIdempotency.key],
-    });
-};
+  store: IdempotencyStorePort;
+}): Promise<void> =>
+  input.store.claim({
+    key: input.key,
+    organizationId: input.organizationId,
+    requestHash: input.requestHash,
+  });
 
-export const completeIdempotencyKey = async (input: {
+export const completeIdempotencyKey = (input: {
   bodyText: string;
-  database: Database;
   key: string;
   organizationId: string;
   status: number;
-}): Promise<void> => {
-  await input.database
-    .update(executeIdempotency)
-    .set({
-      bodyText: input.bodyText,
-      responseStatus: input.status,
-      status: 'completed',
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(executeIdempotency.organizationId, input.organizationId),
-        eq(executeIdempotency.key, input.key)
-      )
-    );
-};
+  store: IdempotencyStorePort;
+}): Promise<void> =>
+  input.store.complete({
+    bodyText: input.bodyText,
+    key: input.key,
+    organizationId: input.organizationId,
+    status: input.status,
+  });
 
 export const decideIdempotency = (
   record: IdempotencyRecord | null,

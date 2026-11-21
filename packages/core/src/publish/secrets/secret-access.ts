@@ -1,8 +1,4 @@
-import type { Database } from '@functhis/db';
-import { and, eq } from '@functhis/db/drizzle';
-import { member } from '@functhis/db/schema/auth';
-
-import { listMembershipOrganizationIds } from '../catalog/catalog-access';
+import type { MembershipsPort } from '../ports';
 
 const secretAdminRoles = new Set(['admin', 'owner']);
 
@@ -10,7 +6,7 @@ export const isSecretAdminRole = (role: string): boolean =>
   secretAdminRoles.has(role);
 
 export const canPublishPackage = async (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   packageRow: { organizationId: string; ownerUserId: string }
 ): Promise<boolean> => {
@@ -18,33 +14,26 @@ export const canPublishPackage = async (
     return true;
   }
 
-  const organizationIds = await listMembershipOrganizationIds(database, userId);
+  const organizationIds = await memberships.listOrganizationIds(userId);
   return organizationIds.includes(packageRow.organizationId);
 };
 
 export const isOrgSecretsAdmin = async (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   organizationId: string
 ): Promise<boolean> => {
-  const [membership] = await database
-    .select({ role: member.role })
-    .from(member)
-    .where(
-      and(eq(member.userId, userId), eq(member.organizationId, organizationId))
-    )
-    .limit(1);
-
-  return membership ? isSecretAdminRole(membership.role) : false;
+  const role = await memberships.memberRole(userId, organizationId);
+  return role ? isSecretAdminRole(role) : false;
 };
 
 export const canWritePackageSecrets = async (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   packageRow: { organizationId: string; ownerUserId: string }
 ): Promise<boolean> => {
-  if (await canPublishPackage(database, userId, packageRow)) {
+  if (await canPublishPackage(memberships, userId, packageRow)) {
     return true;
   }
-  return isOrgSecretsAdmin(database, userId, packageRow.organizationId);
+  return isOrgSecretsAdmin(memberships, userId, packageRow.organizationId);
 };

@@ -84,6 +84,7 @@ export const deliverLoopbackOAuthRedirect = (url: string): void => {
   frame.setAttribute('aria-hidden', 'true');
   frame.hidden = true;
   frame.src = url;
+  // @ts-expect-error DOM `append` clashes with undici fetch `Body.append` in this project's lib merge
   document.body.append(frame);
   void (async () => {
     try {

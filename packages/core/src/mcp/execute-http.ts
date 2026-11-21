@@ -1,12 +1,9 @@
-import { createDb } from '@functhis/db';
-
 import type { HotFunctionDoc } from '../publish/catalog/hot-catalog';
 import { asHotKvBinding } from '../publish/catalog/hot-kv-binding';
 import {
   insertExecutionRow,
   insertStartedExecutionRow,
 } from '../publish/execution/execution-store';
-import { resolveHostedRuntimeSecrets } from '../publish/secrets/hosted-secrets';
 import { hostAllowedForFetch } from '../publish/sources/host-allowlist';
 import { buildRemoteMcpCallToolRequest } from '../publish/sources/remote-mcp-protocol';
 import { invalidateRemoteMcpSnapshot } from '../publish/sources/remote-mcp-sync';
@@ -39,8 +36,7 @@ const loadCredential = async (
   if (!doc.sourceCredentialName || !doc.organizationId) {
     return undefined;
   }
-  const database = await createDb(bindings);
-  const secrets = await resolveHostedRuntimeSecrets(database, {
+  const secrets = await bindings.catalog.runtimeSecrets.resolveRuntimeSecrets({
     encryptionKey: bindings.FUNCTHIS_SECRETS_KEY,
     organizationId: doc.organizationId,
     packageId: doc.packageId,
@@ -65,7 +61,7 @@ const finishExecution = async (
     return;
   }
   const executionId = crypto.randomUUID();
-  await insertStartedExecutionRow(bindings, {
+  await insertStartedExecutionRow(bindings.catalog.executionLog, {
     callerUserId: input.callerUserId,
     executionId,
     functionId: input.doc.functionId,
@@ -74,7 +70,7 @@ const finishExecution = async (
     requestBytes: input.requestBytes,
     startedAt: new Date(input.started),
   });
-  await insertExecutionRow(bindings, {
+  await insertExecutionRow(bindings.catalog.executionLog, {
     callerUserId: input.callerUserId,
     completedAt: new Date(),
     cpuMs: Date.now() - input.started,

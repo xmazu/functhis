@@ -1,11 +1,8 @@
-import { createDb } from '@functhis/db';
-import type { DatabaseConfig } from '@functhis/db';
-import { eq } from '@functhis/db/drizzle';
-import { execution } from '@functhis/db/schema/catalog';
+import type { ExecutionLogPort } from '../ports';
 
 /** Update the running row when present; otherwise insert a completed row. */
 export const insertExecutionRow = async (
-  bindings: DatabaseConfig,
+  executionLog: ExecutionLogPort,
   input: {
     callerUserId?: string | null;
     cpuMs: number;
@@ -21,31 +18,12 @@ export const insertExecutionRow = async (
   }
 ): Promise<void> => {
   try {
-    const database = await createDb(bindings);
-    const updated = await database
-      .update(execution)
-      .set({
-        callerUserId: input.callerUserId ?? null,
-        completedAt: input.completedAt,
-        cpuMs: input.cpuMs,
-        functionId: input.functionId,
-        packageVersionId: input.packageVersionId,
-        requestBytes: input.requestBytes,
-        responseBytes: input.responseBytes,
-        startedAt: input.startedAt,
-        status: input.status,
-      })
-      .where(eq(execution.id, input.executionId))
-      .returning({ id: execution.id });
-    if (updated.length > 0) {
-      return;
-    }
-    await database.insert(execution).values({
-      callerUserId: input.callerUserId ?? null,
+    await executionLog.upsertCompleted({
+      callerUserId: input.callerUserId,
       completedAt: input.completedAt,
       cpuMs: input.cpuMs,
+      executionId: input.executionId,
       functionId: input.functionId,
-      id: input.executionId,
       organizationId: input.organizationId,
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
@@ -59,7 +37,7 @@ export const insertExecutionRow = async (
 };
 
 export const insertStartedExecutionRow = async (
-  bindings: DatabaseConfig,
+  executionLog: ExecutionLogPort,
   input: {
     callerUserId?: string | null;
     executionId: string;
@@ -71,16 +49,14 @@ export const insertStartedExecutionRow = async (
   }
 ): Promise<void> => {
   try {
-    const database = await createDb(bindings);
-    await database.insert(execution).values({
-      callerUserId: input.callerUserId ?? null,
+    await executionLog.insertStarted({
+      callerUserId: input.callerUserId,
+      executionId: input.executionId,
       functionId: input.functionId,
-      id: input.executionId,
       organizationId: input.organizationId,
       packageVersionId: input.packageVersionId,
       requestBytes: input.requestBytes,
       startedAt: input.startedAt,
-      status: 'running',
     });
   } catch {
     // Best-effort execution row.

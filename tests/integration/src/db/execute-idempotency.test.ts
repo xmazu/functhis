@@ -6,6 +6,7 @@ import {
   decideIdempotency,
   loadIdempotencyRecord,
 } from '@functhis/core/publish/idempotency-store';
+import { createCatalog } from '@functhis/db/catalog';
 import { organization } from '@functhis/db/schema/auth';
 import { executeIdempotency } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
@@ -16,6 +17,7 @@ import { seedIntegrationPublishAuth } from '../harness/seed';
 describe('execute idempotency persistence', () => {
   test('claims, completes, replays, and rejects a mismatched request', async () => {
     const db = await integrationDb();
+    const store = createCatalog(db).idempotency;
     const suffix = crypto.randomUUID().slice(0, 8);
     const seeded = await seedIntegrationPublishAuth(db, suffix);
     const [org] = await db
@@ -27,36 +29,45 @@ describe('execute idempotency persistence', () => {
       throw new Error('Integration organization was not seeded');
     }
 
-    const input = {
-      database: db,
-      key: `key-${suffix}`,
+    const key = `key-${suffix}`;
+    const requestHash = 'hash-a';
+    await claimIdempotencyKey({
+      key,
       organizationId: org.id,
-      requestHash: 'hash-a',
-    };
-    await claimIdempotencyKey(input);
-    expect(await loadIdempotencyRecord(db, org.id, input.key)).toMatchObject({
-      requestHash: 'hash-a',
+      requestHash,
+      store,
+    });
+    expect(await loadIdempotencyRecord(store, org.id, key)).toMatchObject({
+      requestHash,
       status: 'in_progress',
       storedResponse: null,
     });
+
     await completeIdempotencyKey({
-      ...input,
       bodyText: '{"ok":true}',
+      key,
+      organizationId: org.id,
       status: 200,
+      store,
     });
-    const completed = await loadIdempotencyRecord(db, org.id, input.key);
+    const completed = await loadIdempotencyRecord(store, org.id, key);
+    expect(completed?.status).toBe('completed');
     expect(completed?.storedResponse).toEqual({
       bodyText: '{"ok":true}',
       status: 200,
     });
-    expect(decideIdempotency(completed, 'hash-a').kind).toBe('replay');
-    expect(decideIdempotency(completed, 'hash-b').kind).toBe('mismatch');
+
+    const replay = decideIdempotency(completed, requestHash);
+    expect(replay.kind).toBe('replay');
+
+    const mismatch = decideIdempotency(completed, 'other-hash');
+    expect(mismatch.kind).toBe('mismatch');
 
     const [row] = await db
       .select()
       .from(executeIdempotency)
-      .where(eq(executeIdempotency.key, input.key))
+      .where(eq(executeIdempotency.key, key))
       .limit(1);
-    expect(row?.organizationId).toBe(org.id);
+    expect(row?.bodyText).toBe('{"ok":true}');
   });
 });

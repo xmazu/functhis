@@ -7,6 +7,10 @@ node_modules
 dist
 build
 *.tsbuildinfo
+packages/core/src/**/*.js
+packages/db/src/**/*.js
+packages/core/src/**/*.d.ts
+!packages/core/src/publish/cloudflare-env.d.ts
 
 # Generated files
 apps/web/src/routeTree.gen.ts

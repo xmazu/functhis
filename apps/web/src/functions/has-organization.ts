@@ -1,9 +1,8 @@
 import { listMemberOrganizations } from '@functhis/core/publish';
-import { createDb } from '@functhis/db';
 import { createServerFn } from '@tanstack/react-start';
 
-import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
+import { getCatalog } from '#/services';
 
 export const userHasOrganization = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -13,7 +12,10 @@ export const userHasOrganization = createServerFn({ method: 'GET' })
       return false;
     }
 
-    const database = await createDb(env);
-    const organizations = await listMemberOrganizations(database, userId);
+    const catalog = await getCatalog();
+    const organizations = await listMemberOrganizations(
+      catalog.memberships,
+      userId
+    );
     return organizations.length > 0;
   });

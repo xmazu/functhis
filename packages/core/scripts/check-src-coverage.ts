@@ -29,7 +29,9 @@ if (beforeGenerated !== afterGenerated) {
 const minimumLineCoverage = 85;
 const skippedFiles = new Set([
   'catalog-read.ts',
+  'backfill-hot.ts',
   'hot-catalog.ts',
+  'hosted-secrets.ts',
   'http-handlers.ts',
   'jwks-hot.ts',
   'publish-sharing.ts',

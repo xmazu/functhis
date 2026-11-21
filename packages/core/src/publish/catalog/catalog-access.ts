@@ -1,7 +1,4 @@
-import type { Database } from '@functhis/db';
-import { eq } from '@functhis/db/drizzle';
-import { member } from '@functhis/db/schema/auth';
-
+import type { MembershipsPort } from '../ports';
 import type { PackageVisibility } from './package-visibility';
 
 export type { PackageVisibility } from './package-visibility';
@@ -53,26 +50,22 @@ export const canAccessPackage = (
   return false;
 };
 
-export const listMembershipOrganizationIds = async (
-  database: Database,
+export const listMembershipOrganizationIds = (
+  memberships: MembershipsPort,
   userId: string
-): Promise<string[]> => {
-  const rows = await database
-    .select({ organizationId: member.organizationId })
-    .from(member)
-    .where(eq(member.userId, userId));
-
-  return rows.map((row) => row.organizationId);
-};
+): Promise<string[]> => memberships.listOrganizationIds(userId);
 
 export const buildPackageAccessContext = async (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string | null
 ): Promise<PackageAccessContext> => {
   if (userId === null) {
     return { organizationIds: [], userId: null };
   }
 
-  const organizationIds = await listMembershipOrganizationIds(database, userId);
+  const organizationIds = await listMembershipOrganizationIds(
+    memberships,
+    userId
+  );
   return { organizationIds, userId };
 };

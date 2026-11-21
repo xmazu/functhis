@@ -1,4 +1,4 @@
-import type { SecretBinding } from '@functhis/db';
+import type { SecretBinding } from '../publish/secret-binding';
 
 export const resolveOpenRouterApiKey = async (
   binding: SecretBinding | undefined

@@ -23,7 +23,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
 import { withCallCounts } from '#/routes/d/-lib/package-list';
-import { getDb } from '#/services';
+import { getCatalog, getDb } from '#/services';
 
 import { buildPackageDetailViewModel } from './package-detail-view-model';
 
@@ -65,8 +65,12 @@ export const listPackagesForSession = createServerFn({ method: 'GET' })
     if (!userId) {
       return [];
     }
+    const catalog = await getCatalog();
     const database = await getDb();
-    const packages = await listAccessiblePackagesForUser(database, userId);
+    const packages = await listAccessiblePackagesForUser(
+      catalog.catalogRead,
+      userId
+    );
     const callCounts = await countCallsByPackageIds(
       database,
       packages.map((pkg) => pkg.id)
@@ -108,35 +112,47 @@ export const getPackageDetailForSession = createServerFn({ method: 'GET' })
       return null;
     }
 
+    const ports = await getCatalog();
     const database = await getDb();
-    const catalog = await getPackageBySlugs(database, data.handle, data.slug);
+    const catalog = await getPackageBySlugs(
+      ports.catalogRead,
+      data.handle,
+      data.slug
+    );
     if (!catalog) {
       return null;
     }
 
-    const accessContext = await buildPackageAccessContext(database, userId);
+    const accessContext = await buildPackageAccessContext(
+      ports.memberships,
+      userId
+    );
     if (!canAccessPackage(catalog, accessContext)) {
       return null;
     }
 
     const organizationSlug = await resolveOrganizationSlugById(
-      database,
+      ports.memberships,
       catalog.organizationId
     );
 
     const isOwner = catalog.ownerUserId === userId;
-    const plan = await resolveOrgPlan(database, catalog.organizationId);
+    const plan = await resolveOrgPlan(ports.quota, catalog.organizationId);
     const { logRetentionDays } = limitsForPlan(plan);
     const retentionCutoff = retentionCutoffForPlan(logRetentionDays);
     const [executions, packageSecrets, orgSecrets, canWriteSecrets] =
       await Promise.all([
-        listPackageExecutions(database, catalog.id, {
+        listPackageExecutions(ports.catalogRead, catalog.id, {
           limit: 20,
           retentionCutoff,
         }),
-        listPackageSecrets(database, userId, catalog),
-        listOrganizationSecrets(database, userId, catalog.organizationId),
-        canWritePackageSecrets(database, userId, catalog),
+        listPackageSecrets(ports.secretDirectory, userId, catalog),
+        listOrganizationSecrets(
+          ports.secretDirectory,
+          userId,
+          catalog.organizationId
+        ),
+        canWritePackageSecrets(ports.memberships, userId, catalog),
       ]);
 
     const setNames = new Set([

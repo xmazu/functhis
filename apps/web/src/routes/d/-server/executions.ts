@@ -20,7 +20,7 @@ import { z } from 'zod';
 
 import { env } from '#/env.server';
 import { authMiddleware } from '#/middleware/auth';
-import { getDb } from '#/services';
+import { getCatalog, getDb } from '#/services';
 
 import {
   executionPayloadFromAxiomRecords,
@@ -78,16 +78,21 @@ const getAuthorizedPackage = async (
   handle: string,
   packageSlug: string
 ) => {
+  const ports = await getCatalog();
   const database = await getDb();
-  const catalog = await getPackageBySlugs(database, handle, packageSlug);
+  const catalog = await getPackageBySlugs(
+    ports.catalogRead,
+    handle,
+    packageSlug
+  );
   if (!catalog) {
     return null;
   }
-  const access = await buildPackageAccessContext(database, userId);
+  const access = await buildPackageAccessContext(ports.memberships, userId);
   if (!canAccessPackage(catalog, access)) {
     return null;
   }
-  return { catalog, database };
+  return { catalog, database, ports };
 };
 
 const axiomConfigured = (): boolean =>
@@ -108,8 +113,8 @@ const loadExecutionPayload = async (
   payload: ExecutionDetailViewModel['payload'];
   payloadState: ExecutionPayloadState;
 }> => {
-  const database = await getDb();
-  const plan = await resolveOrgPlan(database, organizationId);
+  const ports = await getCatalog();
+  const plan = await resolveOrgPlan(ports.quota, organizationId);
   const { logRetentionDays } = limitsForPlan(plan);
   if (logRetentionDays === 0) {
     return { payload: null, payloadState: 'expired' };
@@ -171,12 +176,12 @@ export const listExecutionsForSession = createServerFn({ method: 'GET' })
       }
 
       const plan = await resolveOrgPlan(
-        authorized.database,
+        authorized.ports.quota,
         authorized.catalog.organizationId
       );
       const { logRetentionDays } = limitsForPlan(plan);
       const rows = await listPackageExecutions(
-        authorized.database,
+        authorized.ports.catalogRead,
         authorized.catalog.id,
         {
           limit: 100,
@@ -217,7 +222,7 @@ export const getExecutionForSession = createServerFn({ method: 'GET' })
       }
 
       const plan = await resolveOrgPlan(
-        authorized.database,
+        authorized.ports.quota,
         authorized.catalog.organizationId
       );
       const { logRetentionDays } = limitsForPlan(plan);

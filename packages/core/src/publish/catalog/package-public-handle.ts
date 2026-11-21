@@ -1,14 +1,12 @@
-import type { Database } from '@functhis/db';
-
-import { resolveOrganizationSlugById } from '../org/org-membership-read';
+import type { MembershipsPort } from '../ports';
 
 /** Public `@handle` segment for MCP ids and URLs; always the owning organization slug. */
 export const resolvePackagePublicHandle = (
-  database: Database,
+  memberships: MembershipsPort,
   organizationId: string | null
 ): Promise<string | null> => {
   if (!organizationId) {
     return Promise.resolve(null);
   }
-  return resolveOrganizationSlugById(database, organizationId);
+  return memberships.resolveOrganizationSlugById(organizationId);
 };

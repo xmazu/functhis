@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
+  decryptSecretRows,
   decryptSecretValue,
   encryptSecretValue,
   HostedSecretError,
@@ -77,5 +78,32 @@ describe('encryptSecretValue', () => {
         key
       )
     ).rejects.toMatchObject({ code: 'decrypt_failed' });
+  });
+});
+
+describe('decryptSecretRows', () => {
+  test('splits organization and package secrets', async () => {
+    const key = testKeyBytes();
+    const org = await encryptSecretValue('org-token', key);
+    const pkgSecret = await encryptSecretValue('pkg-token', key);
+    const decrypted = await decryptSecretRows(
+      [
+        {
+          ciphertext: org.ciphertext,
+          name: 'API_KEY',
+          nonce: org.nonce,
+          packageId: null,
+        },
+        {
+          ciphertext: pkgSecret.ciphertext,
+          name: 'DB_URL',
+          nonce: pkgSecret.nonce,
+          packageId: 'pkg_1',
+        },
+      ],
+      key
+    );
+    expect(decrypted.organization).toEqual({ API_KEY: 'org-token' });
+    expect(decrypted.pkg).toEqual({ DB_URL: 'pkg-token' });
   });
 });

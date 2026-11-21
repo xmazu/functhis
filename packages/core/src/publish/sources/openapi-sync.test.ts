@@ -3,11 +3,13 @@ import { describe, expect, test } from 'bun:test';
 import { importOpenApiSource } from './openapi-sync';
 
 const input = (spec: unknown) => ({
-  database: {} as never,
   hot: {} as never,
+  hotSource: {} as never,
+  memberships: {} as never,
   organizationId: 'org',
   ownerUserId: 'user',
   slug: 'source',
+  sources: {} as never,
   spec,
 });
 

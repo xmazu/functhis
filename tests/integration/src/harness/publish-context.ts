@@ -1,6 +1,7 @@
 import { validatePublishBearerToken } from '@functhis/auth/publish-token';
 import type { PublishHandlerContext } from '@functhis/core/publish/http';
 import type { Database } from '@functhis/db';
+import { createCatalog } from '@functhis/db/catalog';
 
 import { createMemoryHotKv } from './memory-hot-kv';
 import { createMemoryBundles } from './memory-kv';
@@ -20,6 +21,6 @@ export const createIntegrationPublishContext = (
       consoleUrl: INTEGRATION_CONSOLE_URL,
     }),
   bundles: memoryKv.bundles,
-  db,
+  catalog: createCatalog(db),
   hot: memoryHot,
 });

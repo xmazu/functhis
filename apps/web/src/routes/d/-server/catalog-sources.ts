@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { env } from '#/env.server';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
-import { getDb } from '#/services';
+import { getCatalog } from '#/services';
 
 export const importOpenApiForSession = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
@@ -27,14 +27,16 @@ export const importOpenApiForSession = createServerFn({ method: 'POST' })
     if (!userId || !organizationId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Sign in required');
     }
-    const database = await getDb();
+    const catalog = await getCatalog();
     return importOpenApiSource({
       credentialName: data.credentialName,
-      database,
       hot: asHotKvBinding(env.HOT),
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: data.slug,
+      sources: catalog.sources,
       spec: data.spec,
     });
   });
@@ -49,8 +51,11 @@ export const acceptSourceGenerationForSession = createServerFn({
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Sign in required');
     }
-    const database = await getDb();
-    await acceptOpenApiGeneration({ database, sourceId: data.sourceId });
+    const catalog = await getCatalog();
+    await acceptOpenApiGeneration({
+      sourceId: data.sourceId,
+      sources: catalog.sources,
+    });
     return { ok: true };
   });
 
@@ -69,14 +74,16 @@ export const importRemoteMcpForSession = createServerFn({ method: 'POST' })
     if (!userId || !organizationId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Sign in required');
     }
-    const database = await getDb();
+    const catalog = await getCatalog();
     return syncRemoteMcpSource({
       credentialName: data.credentialName,
-      database,
       endpoint: data.endpoint,
       hot: asHotKvBinding(env.HOT),
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: data.slug,
+      sources: catalog.sources,
     });
   });

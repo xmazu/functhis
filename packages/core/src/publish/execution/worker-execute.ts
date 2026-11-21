@@ -1,6 +1,3 @@
-import { createDb } from '@functhis/db';
-import type { DatabaseConfig, SecretBinding } from '@functhis/db';
-
 import {
   createRuntimeModuleSource,
   dynamicWorkerLoaderId,
@@ -18,7 +15,9 @@ import {
   assertExecuteResponseSize,
   ExecutePayloadTooLargeError,
 } from '../org/quotas';
+import type { ExecutionLogPort, ExecutionQuotaPort } from '../ports';
 import type { RuntimeExecuteBody } from '../schemas';
+import type { SecretBinding } from '../secret-binding';
 import {
   AXIOM_MAX_INPUT_BYTES,
   AXIOM_MAX_OUTPUT_BYTES,
@@ -87,7 +86,7 @@ export interface ExecuteWorkerLoader {
   };
 }
 
-export type WorkerExecuteBindings = DatabaseConfig & {
+export interface WorkerExecuteBindings {
   ANALYTICS: ExecuteAnalyticsBinding;
   AXIOM_API_TOKEN?: SecretBinding;
   AXIOM_DATASET?: string;
@@ -96,7 +95,7 @@ export type WorkerExecuteBindings = DatabaseConfig & {
   BUNDLES: ExecuteBundlesKv;
   FUNCTHIS_SKIP_AXIOM_TAIL?: string;
   LOADER: ExecuteWorkerLoader;
-};
+}
 
 export const shouldSkipAxiomTail = (
   bindings: Pick<WorkerExecuteBindings, 'FUNCTHIS_SKIP_AXIOM_TAIL'>
@@ -322,6 +321,10 @@ export const runDynamicWorker = async (
 
 export const finalizeExecute = async (
   bindings: WorkerExecuteBindings,
+  executionPorts: {
+    executionLog: ExecutionLogPort;
+    quota: ExecutionQuotaPort;
+  },
   parsed: RuntimeExecuteBody & { secretValues?: readonly string[] },
   run: DynamicRunResult,
   organizationId: string,
@@ -342,7 +345,7 @@ export const finalizeExecute = async (
     versionId: parsed.versionId,
   });
 
-  await insertExecutionRow(bindings, {
+  await insertExecutionRow(executionPorts.executionLog, {
     callerUserId: parsed.callerUserId,
     completedAt: run.completedAt,
     cpuMs: run.cpuMs,
@@ -366,8 +369,7 @@ export const finalizeExecute = async (
 
   let logRetentionDays = 0;
   try {
-    const database = await createDb(bindings);
-    const plan = await resolveOrgPlan(database, organizationId);
+    const plan = await resolveOrgPlan(executionPorts.quota, organizationId);
     ({ logRetentionDays } = limitsForPlan(plan));
   } catch {
     // Best-effort plan lookup; execution response must still return.

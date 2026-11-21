@@ -1,5 +1,3 @@
-import { and, eq, notInArray } from '@functhis/db/drizzle';
-import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import type { z } from 'zod';
 
 import { artifactObjectKey, hashPublishArtifact } from '../artifact';
@@ -12,7 +10,6 @@ import {
 } from '../bundle';
 import { syncPackageToHot } from '../catalog/hot-catalog';
 import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
-import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
 import {
   resolvePublishSharingForPublishStart,
   resolvePublishStartSharing,
@@ -24,7 +21,6 @@ import {
   MAX_BUNDLE_BYTES,
   MAX_SOURCE_MANIFEST_BYTES,
   MAX_SOURCE_MANIFEST_FILES,
-  WORKER_COMPATIBILITY_DATE,
 } from '../constants';
 import {
   OrgQuotaExceededError,
@@ -106,32 +102,6 @@ const validateArtifactSize = (artifact: PublishArtifact): string | null => {
   return null;
 };
 
-const findPackageForIdentity = async (
-  database: PublishHandlerContext['db'],
-  slug: string,
-  organizationId: string
-): Promise<typeof pkg.$inferSelect | undefined> => {
-  const [row] = await database
-    .select()
-    .from(pkg)
-    .where(and(eq(pkg.organizationId, organizationId), eq(pkg.slug, slug)))
-    .limit(1);
-  return row;
-};
-
-const findOwnedPackageBySlug = async (
-  database: PublishHandlerContext['db'],
-  ownerUserId: string,
-  slug: string
-): Promise<typeof pkg.$inferSelect | undefined> => {
-  const [row] = await database
-    .select()
-    .from(pkg)
-    .where(and(eq(pkg.ownerUserId, ownerUserId), eq(pkg.slug, slug)))
-    .limit(1);
-  return row;
-};
-
 type PublishStartBody = z.infer<typeof publishStartBodySchema>;
 
 const readPublishStartBody = async (
@@ -167,7 +137,7 @@ export const handlePublishStart = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const database = ctx.db;
+  const { catalog } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -185,8 +155,7 @@ export const handlePublishStart = async (
     visibility: parsed.data.visibility,
   };
 
-  const ownedRow = await findOwnedPackageBySlug(
-    database,
+  const ownedRow = await catalog.packages.findOwnedBySlug(
     auth.userId,
     parsed.data.slug
   );
@@ -200,7 +169,7 @@ export const handlePublishStart = async (
   let orgPackageInTargetOrg: ExistingPackageSharing | null = null;
   if (!ownedPackage) {
     const preview = await resolvePublishStartSharing(
-      database,
+      catalog.memberships,
       auth.userId,
       sharingInput,
       null,
@@ -209,10 +178,9 @@ export const handlePublishStart = async (
     if (!preview.ok) {
       return badRequest(preview.error);
     }
-    const orgRow = await findPackageForIdentity(
-      database,
-      parsed.data.slug,
-      preview.value.organizationId
+    const orgRow = await catalog.packages.findByOrgAndSlug(
+      preview.value.organizationId,
+      parsed.data.slug
     );
     if (orgRow) {
       orgPackageInTargetOrg = {
@@ -223,7 +191,7 @@ export const handlePublishStart = async (
   }
 
   const sharing = await resolvePublishStartSharing(
-    database,
+    catalog.memberships,
     auth.userId,
     sharingInput,
     ownedPackage,
@@ -240,27 +208,27 @@ export const handlePublishStart = async (
   }
 
   let packageRow =
-    (await findPackageForIdentity(
-      database,
-      parsed.data.slug,
-      organizationId
+    (await catalog.packages.findByOrgAndSlug(
+      organizationId,
+      parsed.data.slug
     )) ?? undefined;
   if (packageRow) {
     if (packageRow.visibility !== visibility) {
-      await database
-        .update(pkg)
-        .set({ visibility })
-        .where(eq(pkg.id, packageRow.id));
+      await catalog.packages.setVisibility(packageRow.id, visibility);
       packageRow = { ...packageRow, visibility };
     }
   } else {
     try {
-      packageRow = await insertOrgPackageIfUnderLimit(database, {
-        organizationId,
-        ownerUserId: auth.userId,
-        slug: parsed.data.slug,
-        visibility,
-      });
+      packageRow = await insertOrgPackageIfUnderLimit(
+        catalog.packages,
+        catalog.quota,
+        {
+          organizationId,
+          ownerUserId: auth.userId,
+          slug: parsed.data.slug,
+          visibility,
+        }
+      );
     } catch (error) {
       if (error instanceof OrgQuotaExceededError) {
         return badRequest(error.message);
@@ -284,7 +252,7 @@ export const handlePublishFinalize = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const database = ctx.db;
+  const { catalog } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -324,24 +292,19 @@ export const handlePublishFinalize = async (
     return badRequest('contentHash does not match artifact contents');
   }
 
-  const [packageRow] = await database
-    .select()
-    .from(pkg)
-    .where(eq(pkg.id, parsed.data.packageId))
-    .limit(1);
+  const packageRow = await catalog.packages.findById(parsed.data.packageId);
 
   if (!packageRow) {
     return new Response('Not Found', { status: 404 });
   }
 
-  if (!(await canPublishPackage(database, auth.userId, packageRow))) {
+  if (
+    !(await canPublishPackage(catalog.memberships, auth.userId, packageRow))
+  ) {
     return new Response('Not Found', { status: 404 });
   }
 
-  const handle = await resolvePackagePublicHandle(
-    database,
-    packageRow.organizationId
-  );
+  const handle = await catalog.packages.publicHandle(packageRow.organizationId);
   if (!handle) {
     return new Response('Organization scope not found', { status: 500 });
   }
@@ -391,12 +354,9 @@ export const handlePublishFinalize = async (
     });
   }
 
-  const previousVersions = await database
-    .select({ semver: packageVersion.semver })
-    .from(packageVersion)
-    .where(eq(packageVersion.packageId, packageRow.id));
+  const previousVersions = await catalog.packages.listSemvers(packageRow.id);
   const nextSemver = bumpSemver(
-    highestSemver(previousVersions.map((row) => row.semver)),
+    highestSemver(previousVersions),
     parsed.data.bump ?? 'patch'
   );
 
@@ -415,75 +375,31 @@ export const handlePublishFinalize = async (
     return { fn, searchText };
   });
 
+  const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
+
   let version;
   try {
-    version = await database.transaction(async (tx) => {
-      const [insertedVersion] = await tx
-        .insert(packageVersion)
-        .values({
-          artifactKey,
-          bundleHash: parsed.data.bundleHash,
-          contracts: parsed.data.contracts,
-          createdBy: auth.userId,
-          gitDirty: parsed.data.gitDirty ?? false,
-          gitSha: parsed.data.gitSha?.toLowerCase() ?? null,
-          packageId: packageRow.id,
-          runtimeVersion: WORKER_COMPATIBILITY_DATE,
-          secretNames: parseSecretNamesFromManifestJson(
-            parsed.data.artifact.manifestJson
-          ),
-          semver: nextSemver,
-          sourceHash: parsed.data.sourceHash.toLowerCase(),
-        })
-        .returning();
-
-      if (!insertedVersion) {
-        throw new Error('Failed to create package version');
-      }
-
-      const deployedSlugs = parsed.data.contracts.map((fn) => fn.slug);
-
-      await Promise.all(
-        preparedFunctions.map((row) => {
-          const { fn } = row;
-          return tx
-            .insert(pkgFunction)
-            .values({
-              contract: fn.contract,
-              exportName: fn.exportName,
-              packageId: packageRow.id,
-              path: fn.path,
-              searchText: row.searchText,
-              slug: fn.slug,
-            })
-            .onConflictDoUpdate({
-              set: {
-                contract: fn.contract,
-                exportName: fn.exportName,
-                path: fn.path,
-                searchText: row.searchText,
-                updatedAt: new Date(),
-              },
-              target: [pkgFunction.packageId, pkgFunction.slug],
-            });
-        })
-      );
-
-      await tx
-        .delete(pkgFunction)
-        .where(
-          and(
-            eq(pkgFunction.packageId, packageRow.id),
-            notInArray(pkgFunction.slug, deployedSlugs)
-          )
-        );
-
-      await tx
-        .update(pkg)
-        .set({ currentVersionId: insertedVersion.id })
-        .where(eq(pkg.id, packageRow.id));
-
-      return insertedVersion;
+    version = await catalog.packages.commitVersion({
+      artifactKey,
+      bundleHash: parsed.data.bundleHash,
+      contracts: parsed.data.contracts,
+      createdBy: auth.userId,
+      deployedSlugs,
+      functions: preparedFunctions.map((row) => ({
+        contract: row.fn.contract,
+        exportName: row.fn.exportName,
+        path: row.fn.path,
+        searchText: row.searchText,
+        slug: row.fn.slug,
+      })),
+      gitDirty: parsed.data.gitDirty ?? false,
+      gitSha: parsed.data.gitSha?.toLowerCase() ?? null,
+      packageId: packageRow.id,
+      secretNames: parseSecretNamesFromManifestJson(
+        parsed.data.artifact.manifestJson
+      ),
+      semver: nextSemver,
+      sourceHash: parsed.data.sourceHash.toLowerCase(),
     });
   } catch {
     return new Response('Failed to record package version', { status: 500 });
@@ -491,7 +407,7 @@ export const handlePublishFinalize = async (
 
   try {
     const docs = await retryHotWrite(() =>
-      syncPackageToHot(ctx.hot, database, packageRow.id)
+      syncPackageToHot(ctx.hot, catalog.hotSource, packageRow.id)
     );
     await retryHotWrite(() => projectHotDocsForSearch(ctx.hot, docs));
   } catch {
@@ -522,7 +438,7 @@ export const handlePublishRollback = async (
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const database = ctx.db;
+  const { catalog } = ctx;
   const auth = await ctx.authenticatePublish(request);
   if (!auth.ok) {
     return auth.response;
@@ -540,17 +456,13 @@ export const handlePublishRollback = async (
     return badRequest(parsed.error.message);
   }
 
-  let packageRow: typeof pkg.$inferSelect | undefined;
-  if (parsed.data.packageId) {
-    const [row] = await database
-      .select()
-      .from(pkg)
-      .where(eq(pkg.id, parsed.data.packageId))
-      .limit(1);
-    packageRow = row;
-  } else if (parsed.data.slug) {
+  let packageRow =
+    parsed.data.packageId === undefined
+      ? undefined
+      : await catalog.packages.findById(parsed.data.packageId);
+  if (!packageRow && parsed.data.slug) {
     const sharing = await resolvePublishSharingForPublishStart(
-      database,
+      catalog.memberships,
       auth.userId,
       { scope: parsed.data.scope },
       null
@@ -558,52 +470,42 @@ export const handlePublishRollback = async (
     if (!sharing.ok) {
       return badRequest(sharing.error);
     }
-    packageRow = await findPackageForIdentity(
-      database,
-      parsed.data.slug,
-      sharing.value.organizationId
-    );
+    packageRow =
+      (await catalog.packages.findByOrgAndSlug(
+        sharing.value.organizationId,
+        parsed.data.slug
+      )) ?? undefined;
   }
 
   if (!packageRow) {
     return new Response('Not Found', { status: 404 });
   }
 
-  if (!(await canPublishPackage(database, auth.userId, packageRow))) {
+  if (
+    !(await canPublishPackage(catalog.memberships, auth.userId, packageRow))
+  ) {
     return new Response('Not Found', { status: 404 });
   }
 
-  const [version] = await database
-    .select()
-    .from(packageVersion)
-    .where(
-      and(
-        eq(packageVersion.packageId, packageRow.id),
-        eq(packageVersion.semver, parsed.data.semver)
-      )
-    )
-    .limit(1);
+  const version = await catalog.packages.findVersion(
+    packageRow.id,
+    parsed.data.semver
+  );
 
   if (!version) {
     return badRequest(`Unknown version ${parsed.data.semver}`);
   }
 
-  await database
-    .update(pkg)
-    .set({ currentVersionId: version.id })
-    .where(eq(pkg.id, packageRow.id));
+  await catalog.packages.setCurrentVersion(packageRow.id, version.id);
 
-  const handle = await resolvePackagePublicHandle(
-    database,
-    packageRow.organizationId
-  );
+  const handle = await catalog.packages.publicHandle(packageRow.organizationId);
   if (!handle) {
     return new Response('Organization scope not found', { status: 500 });
   }
 
   try {
     const docs = await retryHotWrite(() =>
-      syncPackageToHot(ctx.hot, database, packageRow.id)
+      syncPackageToHot(ctx.hot, catalog.hotSource, packageRow.id)
     );
     await retryHotWrite(() => projectHotDocsForSearch(ctx.hot, docs));
   } catch {
@@ -616,7 +518,7 @@ export const handlePublishRollback = async (
     currentVersionId: version.id,
     handle,
     packageId: packageRow.id,
-    semver: version.semver,
+    semver: parsed.data.semver,
     slug: packageRow.slug,
   });
 };

@@ -1,5 +1,5 @@
 import { isMemberOfOrganization } from '@functhis/core/publish';
-import type { Database } from '@functhis/db';
+import type { MembershipsPort } from '@functhis/core/publish/ports';
 
 import { createAuth } from '#/services';
 
@@ -26,7 +26,7 @@ export const resolveDashboardOrganizationId = async (
 
 export const requireDashboardOrganizationId = async (
   request: Request,
-  database: Database,
+  memberships: MembershipsPort,
   session: SessionForOrgResolve | null
 ): Promise<string | null> => {
   const userId = session?.user.id;
@@ -37,7 +37,7 @@ export const requireDashboardOrganizationId = async (
   if (!organizationId) {
     return null;
   }
-  if (!(await isMemberOfOrganization(database, userId, organizationId))) {
+  if (!(await isMemberOfOrganization(memberships, userId, organizationId))) {
     return null;
   }
   return organizationId;

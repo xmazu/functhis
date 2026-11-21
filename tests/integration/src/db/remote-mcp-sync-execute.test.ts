@@ -7,6 +7,7 @@ import {
   functionHotKeyFromId,
 } from '@functhis/core/publish/hot-keys';
 import { syncRemoteMcpSource } from '@functhis/core/publish/remote-mcp-sync';
+import { createCatalog } from '@functhis/db/catalog';
 import { pkg } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
@@ -31,7 +32,8 @@ describe('remote MCP sync and execute', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const bindings = createIntegrationMcpBindings(memoryHot);
+    const catalog = createCatalog(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -40,12 +42,14 @@ describe('remote MCP sync and execute', () => {
     const sourceSlug = `mcp-${suffix}`;
 
     const synced = await syncRemoteMcpSource({
-      database: db,
       endpoint: 'https://mcp.example.test/mcp',
       hot,
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
+      sources: catalog.sources,
       tools: [
         {
           description: 'Echo input back',
@@ -97,7 +101,8 @@ describe('remote MCP sync and execute', () => {
     const db = await integrationDb();
     const memoryHot = createMemoryHotKv();
     const hot = integrationHotBinding(memoryHot);
-    const bindings = createIntegrationMcpBindings(memoryHot);
+    const catalog = createCatalog(db);
+    const bindings = createIntegrationMcpBindings(memoryHot, catalog);
     const suffix = crypto.randomUUID().slice(0, 8);
     const { handle, organizationId, userId } = await seedIntegrationPublishAuth(
       db,
@@ -108,12 +113,14 @@ describe('remote MCP sync and execute', () => {
     restoreFetch = stubGlobalFetch(() => new Response('fail', { status: 500 }));
 
     const synced = await syncRemoteMcpSource({
-      database: db,
       endpoint: 'https://mcp.example.test/mcp',
       hot,
+      hotSource: catalog.hotSource,
+      memberships: catalog.memberships,
       organizationId,
       ownerUserId: userId,
       slug: sourceSlug,
+      sources: catalog.sources,
     });
     expect(synced.health).toBe('failed');
 

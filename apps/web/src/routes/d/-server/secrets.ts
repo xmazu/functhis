@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { env } from '#/env.server';
 import { dashboardApiErrors } from '#/lib/errors/dashboard';
 import { authMiddleware } from '#/middleware/auth';
-import { getDb } from '#/services';
+import { getCatalog } from '#/services';
 
 const secretNameSchema = z
   .string()
@@ -36,8 +36,12 @@ export const listOrgSecretsForSession = createServerFn({ method: 'GET' })
     if (!userId) {
       return null;
     }
-    const database = await getDb();
-    return listOrganizationSecrets(database, userId, data.organizationId);
+    const catalog = await getCatalog();
+    return listOrganizationSecrets(
+      catalog.secretDirectory,
+      userId,
+      data.organizationId
+    );
   });
 
 export const setOrgSecretForSession = createServerFn({ method: 'POST' })
@@ -54,9 +58,9 @@ export const setOrgSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const database = await getDb();
+    const catalog = await getCatalog();
     try {
-      return await setOrganizationSecret(database, {
+      return await setOrganizationSecret(catalog.secretDirectory, {
         encryptionKey: env.FUNCTHIS_SECRETS_KEY,
         name: data.name,
         organizationId: data.organizationId,
@@ -81,9 +85,9 @@ export const deleteOrgSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const database = await getDb();
+    const catalog = await getCatalog();
     try {
-      await deleteOrganizationSecret(database, {
+      await deleteOrganizationSecret(catalog.secretDirectory, {
         name: data.name,
         organizationId: data.organizationId,
         userId,
@@ -109,9 +113,9 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const database = await getDb();
+    const ports = await getCatalog();
     const catalog = await getPackageBySlugs(
-      database,
+      ports.catalogRead,
       data.handle,
       data.packageSlug
     );
@@ -119,7 +123,7 @@ export const setPackageSecretForSession = createServerFn({ method: 'POST' })
       throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
-      return await setPackageSecret(database, {
+      return await setPackageSecret(ports.secretDirectory, {
         encryptionKey: env.FUNCTHIS_SECRETS_KEY,
         name: data.name,
         packageRow: catalog,
@@ -145,9 +149,9 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
     if (!userId) {
       throw dashboardApiErrors.apiError('UNAUTHORIZED', 'Unauthorized');
     }
-    const database = await getDb();
+    const ports = await getCatalog();
     const catalog = await getPackageBySlugs(
-      database,
+      ports.catalogRead,
       data.handle,
       data.packageSlug
     );
@@ -155,7 +159,7 @@ export const deletePackageSecretForSession = createServerFn({ method: 'POST' })
       throw dashboardApiErrors.apiError('NOT_FOUND', 'Package not found');
     }
     try {
-      await deletePackageSecret(database, {
+      await deletePackageSecret(ports.secretDirectory, {
         name: data.name,
         packageRow: catalog,
         userId,

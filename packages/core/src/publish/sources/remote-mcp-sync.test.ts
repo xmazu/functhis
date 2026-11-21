@@ -66,6 +66,6 @@ describe('remote MCP sync helpers', () => {
       Promise.resolve(new Response('failed', { status: 503 }));
     await expect(
       fetchRemoteMcpTools('https://remote.test/mcp', {})
-    ).rejects.toThrow('Remote MCP list failed (503)');
+    ).rejects.toThrow('Remote MCP list_tools failed (503)');
   });
 });

@@ -1,12 +1,13 @@
+import type { SecretBinding } from '@functhis/core/publish/secret-binding';
 import type { WorkerExecuteBindings } from '@functhis/core/publish/worker-execute';
-import type { SecretBinding } from '@functhis/db';
 
 interface CloudflareEnv extends WorkerExecuteBindings {
   AI: Ai;
   CAPABILITY_VECTOR_INDEX?: Vectorize;
   CONSOLE_URL: string;
-  FUNCTHIS_SECRETS_KEY?: SecretBinding;
+  FUNCTHIS_SECRETS_KEY: SecretBinding;
   HOT: KVNamespace;
+  HYPERDRIVE: Hyperdrive;
   MCP_RESOURCE: string;
   OPENROUTER_API_KEY?: SecretBinding;
 }

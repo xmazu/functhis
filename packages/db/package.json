@@ -25,15 +25,20 @@
     "./drizzle": {
       "types": "./dist/src/drizzle.d.ts",
       "default": "./src/drizzle.ts"
+    },
+    "./catalog": {
+      "types": "./src/catalog/index.ts",
+      "default": "./src/catalog/index.ts"
     }
   },
   "scripts": {
     "build": "tsc -b",
-    "check-types": "tsc -b",
+    "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate:deploy": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@functhis/core": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.16.3",
     "zod": "catalog:"

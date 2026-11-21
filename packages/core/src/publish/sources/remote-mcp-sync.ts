@@ -1,14 +1,4 @@
-/* eslint-disable complexity, no-await-in-loop, no-nested-ternary -- remote MCP snapshot sync writes tools then projects functions */
-import type { Database } from '@functhis/db';
-import { and, eq } from '@functhis/db/drizzle';
-import {
-  capabilityGeneration,
-  capabilitySource,
-  pkg,
-  pkgFunction,
-  packageVersion,
-} from '@functhis/db/schema/catalog';
-
+/* eslint-disable no-await-in-loop -- sequential HOT doc writes per tool */
 import { sha256Hex } from '../bundle';
 import { writeHotFunctionDoc } from '../catalog/hot-catalog';
 import type { HotFunctionDoc } from '../catalog/hot-catalog';
@@ -19,9 +9,12 @@ import {
   orgIndexHotKey,
 } from '../catalog/hot-keys';
 import { projectHotDocsForSearch } from '../catalog/hot-search-projection';
-import { resolvePackagePublicHandle } from '../catalog/package-public-handle';
-import { WORKER_COMPATIBILITY_DATE } from '../constants';
 import type { HotKvBinding } from '../http/http-context';
+import type {
+  HotCatalogSourcePort,
+  MembershipsPort,
+  SourceStorePort,
+} from '../ports';
 import { buildFunctionSearchText } from '../search/function-search-text';
 import {
   buildRemoteMcpListToolsRequest,
@@ -57,14 +50,6 @@ export const peekRemoteMcpSnapshot = async (
   return snapshot;
 };
 
-const writeSnapshot = async (
-  hot: HotKvBinding,
-  sourceId: string,
-  snapshot: RemoteMcpSnapshot
-): Promise<void> => {
-  await hot.put(mcpSnapshotHotKey(sourceId), JSON.stringify(snapshot));
-};
-
 export const invalidateRemoteMcpSnapshot = async (
   hot: HotKvBinding,
   sourceId: string
@@ -74,69 +59,50 @@ export const invalidateRemoteMcpSnapshot = async (
 
 export const fetchRemoteMcpTools = async (
   endpoint: string,
-  headers: Record<string, string>
+  headers: Record<string, string> = {}
 ): Promise<RemoteMcpTool[]> => {
   const response = await fetch(endpoint, {
     body: JSON.stringify(buildRemoteMcpListToolsRequest()),
     headers: {
       Accept: 'application/json, text/event-stream',
-      'Content-Type': 'application/json',
+      'content-type': 'application/json',
       ...headers,
     },
     method: 'POST',
   });
   if (!response.ok) {
-    throw new Error(`Remote MCP list failed (${String(response.status)})`);
+    throw new Error(`Remote MCP list_tools failed (${response.status})`);
   }
   return parseRemoteMcpTools(await response.json());
 };
 
-export const syncRemoteMcpSource = async (input: {
-  credentialName?: string;
-  database: Database;
-  endpoint: string;
-  headers?: Record<string, string>;
-  hot: HotKvBinding;
-  organizationId: string;
-  ownerUserId: string;
-  peek?: boolean;
-  slug: string;
-  tools?: RemoteMcpTool[];
-}): Promise<{
+const writeSnapshot = async (
+  hot: HotKvBinding,
+  sourceId: string,
+  snapshot: RemoteMcpSnapshot
+): Promise<void> => {
+  await hot.put(mcpSnapshotHotKey(sourceId), JSON.stringify(snapshot));
+};
+
+interface SyncRemoteMcpPersistResult {
   health: 'degraded' | 'failed' | 'ready';
   packageId: string;
   sourceId: string;
-}> => {
-  const handle = await resolvePackagePublicHandle(
-    input.database,
-    input.organizationId
-  );
-  if (!handle) {
-    throw new Error('Organization handle is missing');
-  }
+}
 
-  const [existing] = await input.database
-    .select()
-    .from(capabilitySource)
-    .where(
-      and(
-        eq(capabilitySource.organizationId, input.organizationId),
-        eq(capabilitySource.slug, input.slug)
-      )
-    )
-    .limit(1);
-
-  if (input.peek && existing) {
-    const snapshot = await peekRemoteMcpSnapshot(input.hot, existing.id);
-    if (snapshot && remoteMcpCacheFresh(snapshot, Date.now())) {
-      return {
-        health: snapshot.health === 'ready' ? 'ready' : 'degraded',
-        packageId: existing.packageId ?? '',
-        sourceId: existing.id,
-      };
-    }
-  }
-
+export const syncRemoteMcpSource = async (input: {
+  credentialName?: string;
+  endpoint: string;
+  headers?: Record<string, string>;
+  hot: HotKvBinding;
+  hotSource: HotCatalogSourcePort;
+  memberships: MembershipsPort;
+  organizationId: string;
+  ownerUserId: string;
+  slug: string;
+  sources: SourceStorePort;
+  tools?: RemoteMcpTool[];
+}): Promise<SyncRemoteMcpPersistResult> => {
   let { tools } = input;
   let health: 'degraded' | 'failed' | 'ready' = 'ready';
   let lastError: string | null = null;
@@ -150,164 +116,46 @@ export const syncRemoteMcpSource = async (input: {
     }
   }
 
-  const schemaHash = await sha256Hex(JSON.stringify(tools));
-  const drifted = Boolean(
-    existing?.schemaHash && existing.schemaHash !== schemaHash
-  );
-  if (drifted && health === 'ready') {
-    health = 'degraded';
-    lastError = 'schema_drift';
-  }
+  const result = (await input.sources.syncRemoteMcpSource({
+    credentialName: input.credentialName,
+    endpoint: input.endpoint,
+    health,
+    lastError,
+    organizationId: input.organizationId,
+    ownerUserId: input.ownerUserId,
+    slug: input.slug,
+    tools,
+  })) as SyncRemoteMcpPersistResult;
 
-  let packageId = existing?.packageId;
-  if (!packageId) {
-    const [created] = await input.database
-      .insert(pkg)
-      .values({
-        organizationId: input.organizationId,
-        ownerUserId: input.ownerUserId,
-        slug: input.slug,
-        sourceKind: 'remote_mcp_tool',
-        visibility: 'organization',
-      })
-      .returning({ id: pkg.id });
-    packageId = created?.id;
-    if (!packageId) {
-      throw new Error('Failed to create remote MCP package');
-    }
-  }
-
-  const generation = (existing?.currentGeneration ?? 0) + 1;
-  const [version] = await input.database
-    .insert(packageVersion)
-    .values({
-      artifactKey: `mcp:${input.slug}`,
-      bundleHash: `mcp:${schemaHash}`,
-      contracts: tools,
-      createdBy: input.ownerUserId,
-      packageId,
-      runtimeVersion: WORKER_COMPATIBILITY_DATE,
-      secretNames: input.credentialName ? [input.credentialName] : [],
-      semver: `0.0.${generation}`,
-      sourceHash: schemaHash.slice(0, 40),
-    })
-    .returning({ id: packageVersion.id });
-  if (!version) {
-    throw new Error('Failed to record MCP generation');
-  }
-  if (health === 'ready') {
-    await input.database
-      .update(pkg)
-      .set({ currentVersionId: version.id })
-      .where(eq(pkg.id, packageId));
-  }
-
-  let sourceId = existing?.id;
-  if (sourceId) {
-    await input.database
-      .update(capabilitySource)
-      .set({
-        credentialName: input.credentialName ?? existing?.credentialName,
-        currentGeneration:
-          health === 'ready' ? generation : existing?.currentGeneration,
-        endpoint: input.endpoint,
-        health,
-        lastError,
-        packageId,
-        schemaHash: health === 'ready' ? schemaHash : existing?.schemaHash,
-      })
-      .where(eq(capabilitySource.id, sourceId));
-  } else {
-    const [createdSource] = await input.database
-      .insert(capabilitySource)
-      .values({
-        credentialName: input.credentialName,
-        currentGeneration: generation,
-        endpoint: input.endpoint,
-        health,
-        kind: 'mcp',
-        lastError,
-        organizationId: input.organizationId,
-        packageId,
-        schemaHash,
-        slug: input.slug,
-      })
-      .returning({ id: capabilitySource.id });
-    sourceId = createdSource?.id;
-    if (!sourceId) {
-      throw new Error('Failed to create MCP source');
-    }
-  }
-
-  await input.database.insert(capabilityGeneration).values({
-    contractBundle: { tools },
-    contractHash: schemaHash,
-    generation,
-    sourceId,
-  });
-
-  await writeSnapshot(input.hot, sourceId, {
+  await writeSnapshot(input.hot, result.sourceId, {
     fetchedAtMs: Date.now(),
-    health:
-      health === 'failed'
-        ? 'failed'
-        : health === 'degraded'
-          ? 'degraded'
-          : 'ready',
+    health: health === 'failed' ? 'failed' : result.health,
     tools,
   });
 
   if (health !== 'ready') {
-    return { health, packageId, sourceId };
+    return result;
   }
+
+  const handle = await input.memberships.resolveOrganizationSlugById(
+    input.organizationId
+  );
+  if (!handle) {
+    throw new Error('Organization handle is missing');
+  }
+
+  const schemaHash = await sha256Hex(JSON.stringify(tools));
+  const projection = await input.hotSource.loadPackageProjection(
+    result.packageId
+  );
+  const fnBySlug = new Map(
+    (projection?.functions ?? []).map((fn) => [fn.functionSlug, fn])
+  );
 
   const functionIds: string[] = [];
   const projectedDocs: HotFunctionDoc[] = [];
   for (const tool of tools) {
-    await input.database
-      .insert(pkgFunction)
-      .values({
-        contract: {
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        },
-        exportName: tool.name,
-        packageId,
-        path: tool.name,
-        searchText: buildFunctionSearchText({
-          contract: {
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-          },
-          slug: tool.name,
-        }),
-        slug: tool.name,
-      })
-      .onConflictDoUpdate({
-        set: {
-          contract: {
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-          },
-          exportName: tool.name,
-          path: tool.name,
-          updatedAt: new Date(),
-        },
-        target: [pkgFunction.packageId, pkgFunction.slug],
-      });
-    const [row] = await input.database
-      .select({
-        functionId: pkgFunction.id,
-        searchText: pkgFunction.searchText,
-      })
-      .from(pkgFunction)
-      .where(
-        and(
-          eq(pkgFunction.packageId, packageId),
-          eq(pkgFunction.slug, tool.name)
-        )
-      )
-      .limit(1);
+    const row = fnBySlug.get(tool.name);
     if (!row) {
       continue;
     }
@@ -325,17 +173,23 @@ export const syncRemoteMcpSource = async (input: {
       },
       functionId: row.functionId,
       functionSlug: tool.name,
-      generation,
       handle,
       organizationId: input.organizationId,
       ownerUserId: input.ownerUserId,
-      packageId,
+      packageId: result.packageId,
       packageSlug: input.slug,
-      searchText: row.searchText ?? tool.name,
+      searchText:
+        buildFunctionSearchText({
+          contract: {
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+          },
+          slug: tool.name,
+        }) || tool.name,
       sourceCredentialName: input.credentialName,
       sourceEndpoint: input.endpoint,
       sourceKind: 'remote_mcp_tool',
-      versionId: version.id,
+      versionId: row.versionId,
       visibility: 'organization',
     };
     await writeHotFunctionDoc(input.hot, doc);
@@ -365,5 +219,9 @@ export const syncRemoteMcpSource = async (input: {
   );
   await projectHotDocsForSearch(input.hot, projectedDocs);
 
-  return { health: 'ready', packageId, sourceId };
+  return {
+    health: 'ready',
+    packageId: result.packageId,
+    sourceId: result.sourceId,
+  };
 };

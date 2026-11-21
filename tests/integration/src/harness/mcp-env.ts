@@ -1,21 +1,33 @@
 import type { McpBindings } from '@functhis/core';
-import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
+import type { HotKvBinding } from '@functhis/core/publish';
+import type { CatalogPorts } from '@functhis/core/publish/ports';
 
-import { integrationDatabaseUrl } from './env';
 import type { MemoryHotKv } from './memory-hot-kv';
 
 const INTEGRATION_SECRETS_KEY = 'integration-test-secrets-key-32b!';
 
+export const integrationHotBinding = (memoryHot: MemoryHotKv): HotKvBinding =>
+  memoryHot;
+
 export const createIntegrationMcpBindings = (
-  memoryHot: MemoryHotKv
+  memoryHot: MemoryHotKv,
+  catalog: CatalogPorts
 ): McpBindings =>
   ({
+    ANALYTICS: {
+      writeDataPoint: () => {
+        /* integration noop */
+      },
+    },
+    BUNDLES: { get: () => Promise.resolve(null) },
     FUNCTHIS_SECRETS_KEY: INTEGRATION_SECRETS_KEY,
     HOT: memoryHot,
-    HYPERDRIVE: {
-      connectionString: integrationDatabaseUrl(),
+    LOADER: {
+      get: () => ({
+        getEntrypoint: () => ({
+          fetch: () => Promise.resolve(new Response('{}')),
+        }),
+      }),
     },
+    catalog,
   }) as McpBindings;
-
-export const integrationHotBinding = (memoryHot: MemoryHotKv) =>
-  asHotKvBinding(memoryHot);

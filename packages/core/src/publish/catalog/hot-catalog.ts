@@ -1,15 +1,8 @@
-import type { Database } from '@functhis/db';
-import { and, eq, inArray, isNotNull } from '@functhis/db/drizzle';
-import { organization, user } from '@functhis/db/schema/auth';
-import { pkg, pkgFunction, packageVersion } from '@functhis/db/schema/catalog';
-
 import { formatFunctionId, parseFunctionId } from '../function-id';
 import type { ParsedFunctionId } from '../function-id';
 import type { HotKvBinding } from '../http/http-context';
-import {
-  canAccessPackage,
-  listMembershipOrganizationIds,
-} from './catalog-access';
+import type { HotCatalogSourcePort, MembershipsPort } from '../ports';
+import { canAccessPackage } from './catalog-access';
 import type { PackageAccessContext } from './catalog-access';
 import { stripPackageFunctionIds } from './hot-index';
 import {
@@ -21,7 +14,6 @@ import {
   mineIndexHotKey,
   orgIndexHotKey,
 } from './hot-keys';
-import { resolvePackagePublicHandle } from './package-public-handle';
 import type { PackageVisibility } from './package-visibility';
 
 export interface HotFunctionDoc {
@@ -113,63 +105,24 @@ export const tombstoneHotFunction = async (
 
 export const syncPackageToHot = async (
   hot: HotKvBinding,
-  database: Database,
+  hotSource: HotCatalogSourcePort,
   packageId: string
 ): Promise<HotFunctionDoc[]> => {
-  const [packageRow] = await database
-    .select()
-    .from(pkg)
-    .where(eq(pkg.id, packageId))
-    .limit(1);
-  if (!packageRow?.currentVersionId) {
+  const projection = await hotSource.loadPackageProjection(packageId);
+  if (!projection) {
     return [];
   }
 
-  const handle = await resolvePackagePublicHandle(
-    database,
-    packageRow.organizationId
-  );
-  if (!handle) {
-    return [];
-  }
-
-  const [ownerRow] = await database
-    .select({ handle: user.handle })
-    .from(user)
-    .where(eq(user.id, packageRow.ownerUserId))
-    .limit(1);
-  const indexHandles = [
-    ...new Set(
-      [handle, ownerRow?.handle].filter((value): value is string =>
-        Boolean(value)
-      )
-    ),
-  ];
-
-  const functions = await database
-    .select({
-      bundleHash: packageVersion.bundleHash,
-      contract: pkgFunction.contract,
-      functionId: pkgFunction.id,
-      functionSlug: pkgFunction.slug,
-      hostAllowlist: packageVersion.hostAllowlist,
-      searchText: pkgFunction.searchText,
-      strictOutput: packageVersion.strictOutput,
-      versionId: packageVersion.id,
-    })
-    .from(pkgFunction)
-    .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
-    .where(eq(pkg.id, packageId));
+  const { functions, handle, indexHandles, package: packageRow } = projection;
+  const sourceKind =
+    packageRow.sourceKind === 'openapi_operation' ||
+    packageRow.sourceKind === 'remote_mcp_tool'
+      ? packageRow.sourceKind
+      : 'hosted_function';
 
   const docs: HotFunctionDoc[] = [];
   const newIds = await Promise.all(
     functions.map(async (row) => {
-      const sourceKind =
-        packageRow.sourceKind === 'openapi_operation' ||
-        packageRow.sourceKind === 'remote_mcp_tool'
-          ? packageRow.sourceKind
-          : 'hosted_function';
       const doc: HotFunctionDoc = {
         availability: 'ready',
         bundleHash: row.bundleHash,
@@ -184,7 +137,7 @@ export const syncPackageToHot = async (
         packageSlug: packageRow.slug,
         searchText: row.searchText ?? row.functionSlug,
         sourceKind,
-        strictOutput: row.strictOutput,
+        strictOutput: row.strictOutput ?? undefined,
         versionId: row.versionId,
         visibility: packageRow.visibility,
       };
@@ -229,7 +182,7 @@ export const syncPackageToHot = async (
 
 export const getMembershipOrganizationIdsFromHot = async (
   hot: HotKvBinding,
-  database: Database,
+  memberships: MembershipsPort,
   userId: string
 ): Promise<string[]> => {
   const raw = await hot.get(memberHotKey(userId));
@@ -243,7 +196,7 @@ export const getMembershipOrganizationIdsFromHot = async (
       // fall through to postgres
     }
   }
-  const organizationIds = await listMembershipOrganizationIds(database, userId);
+  const organizationIds = await memberships.listOrganizationIds(userId);
   await putJson(hot, memberHotKey(userId), { organizationIds });
   return organizationIds;
 };
@@ -258,7 +211,7 @@ export const writeMembershipHot = async (
 
 export const resolveHotFunctionDoc = async (
   hot: HotKvBinding,
-  database: Database,
+  hotSource: HotCatalogSourcePort,
   parsed: ParsedFunctionId
 ): Promise<HotFunctionDoc | null> => {
   const key = functionHotKey(parsed);
@@ -271,60 +224,19 @@ export const resolveHotFunctionDoc = async (
     return doc;
   }
 
-  const [row] = await database
-    .select({
-      bundleHash: packageVersion.bundleHash,
-      contract: pkgFunction.contract,
-      functionId: pkgFunction.id,
-      functionSlug: pkgFunction.slug,
-      handle: organization.slug,
-      organizationId: pkg.organizationId,
-      ownerUserId: pkg.ownerUserId,
-      packageId: pkg.id,
-      packageSlug: pkg.slug,
-      searchText: pkgFunction.searchText,
-      versionId: packageVersion.id,
-      visibility: pkg.visibility,
-    })
-    .from(pkgFunction)
-    .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(organization, eq(pkg.organizationId, organization.id))
-    .innerJoin(packageVersion, eq(pkg.currentVersionId, packageVersion.id))
-    .where(
-      and(
-        eq(organization.slug, parsed.handle),
-        eq(pkg.slug, parsed.packageSlug),
-        eq(pkgFunction.slug, parsed.functionSlug)
-      )
-    )
-    .limit(1);
-
-  if (!row?.handle) {
+  const doc = await hotSource.loadFunctionDoc(parsed);
+  if (!doc) {
     await tombstoneHotFunction(hot, parsed);
     return null;
   }
 
-  const doc: HotFunctionDoc = {
-    bundleHash: row.bundleHash,
-    contract: row.contract,
-    functionId: row.functionId,
-    functionSlug: row.functionSlug,
-    handle: row.handle,
-    organizationId: row.organizationId,
-    ownerUserId: row.ownerUserId,
-    packageId: row.packageId,
-    packageSlug: row.packageSlug,
-    searchText: row.searchText ?? row.functionSlug,
-    versionId: row.versionId,
-    visibility: row.visibility,
-  };
   await writeHotFunctionDoc(hot, doc);
   return doc;
 };
 
 export const buildAccessContextFromHot = async (
   hot: HotKvBinding,
-  database: Database,
+  memberships: MembershipsPort,
   userId: string | null
 ): Promise<PackageAccessContext> => {
   if (!userId) {
@@ -332,7 +244,7 @@ export const buildAccessContextFromHot = async (
   }
   const organizationIds = await getMembershipOrganizationIdsFromHot(
     hot,
-    database,
+    memberships,
     userId
   );
   return { organizationIds, userId };
@@ -340,91 +252,16 @@ export const buildAccessContextFromHot = async (
 
 export type SearchDomain = 'library' | 'mine' | 'org';
 
-const loadFunctionIdsForDomainFromPostgres = async (
-  database: Database,
-  domain: SearchDomain,
-  callerUserId: string,
-  organizationIds: string[]
-): Promise<string[]> => {
-  if (domain === 'mine') {
-    const rows = await database
-      .select({
-        functionSlug: pkgFunction.slug,
-        handle: organization.slug,
-        packageSlug: pkg.slug,
-      })
-      .from(pkgFunction)
-      .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-      .innerJoin(organization, eq(pkg.organizationId, organization.id))
-      .where(
-        and(eq(pkg.ownerUserId, callerUserId), isNotNull(pkg.currentVersionId))
-      );
-    return rows.map((row) =>
-      formatFunctionId({
-        functionSlug: row.functionSlug,
-        handle: row.handle,
-        packageSlug: row.packageSlug,
-      })
-    );
-  }
-  if (domain === 'library') {
-    const rows = await database
-      .select({
-        functionSlug: pkgFunction.slug,
-        handle: organization.slug,
-        packageSlug: pkg.slug,
-      })
-      .from(pkgFunction)
-      .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-      .innerJoin(organization, eq(pkg.organizationId, organization.id))
-      .where(
-        and(eq(pkg.visibility, 'library'), isNotNull(pkg.currentVersionId))
-      );
-    return rows.map((row) =>
-      formatFunctionId({
-        functionSlug: row.functionSlug,
-        handle: row.handle,
-        packageSlug: row.packageSlug,
-      })
-    );
-  }
-  if (organizationIds.length === 0) {
-    return [];
-  }
-  const rows = await database
-    .select({
-      functionSlug: pkgFunction.slug,
-      handle: organization.slug,
-      packageSlug: pkg.slug,
-    })
-    .from(pkgFunction)
-    .innerJoin(pkg, eq(pkgFunction.packageId, pkg.id))
-    .innerJoin(organization, eq(pkg.organizationId, organization.id))
-    .where(
-      and(
-        inArray(pkg.organizationId, organizationIds),
-        eq(pkg.visibility, 'organization'),
-        isNotNull(pkg.currentVersionId)
-      )
-    );
-  return rows.map((row) =>
-    formatFunctionId({
-      functionSlug: row.functionSlug,
-      handle: row.handle,
-      packageSlug: row.packageSlug,
-    })
-  );
-};
-
 export const loadSearchFunctionIds = async (
   hot: HotKvBinding,
-  database: Database,
+  hotSource: HotCatalogSourcePort,
+  memberships: MembershipsPort,
   domain: SearchDomain,
   callerUserId: string
 ): Promise<string[]> => {
   const organizationIds = await getMembershipOrganizationIdsFromHot(
     hot,
-    database,
+    memberships,
     callerUserId
   );
 
@@ -434,7 +271,6 @@ export const loadSearchFunctionIds = async (
   } else if (domain === 'library') {
     indexKey = HOT_IDX_LIBRARY_KEY;
   } else if (organizationIds.length > 0) {
-    // org domain merges all org indexes
     const indexChunks = await Promise.all(
       organizationIds.map((orgId) => readIndex(hot, orgIndexHotKey(orgId)))
     );
@@ -442,12 +278,7 @@ export const loadSearchFunctionIds = async (
     if (merged.length > 0) {
       return [...new Set(merged)];
     }
-    return loadFunctionIdsForDomainFromPostgres(
-      database,
-      domain,
-      callerUserId,
-      organizationIds
-    );
+    return hotSource.listFunctionIds(domain, callerUserId, organizationIds);
   } else {
     return [];
   }
@@ -461,8 +292,7 @@ export const loadSearchFunctionIds = async (
     return ids;
   }
 
-  const fromDb = await loadFunctionIdsForDomainFromPostgres(
-    database,
+  const fromDb = await hotSource.listFunctionIds(
     domain,
     callerUserId,
     organizationIds
@@ -475,14 +305,14 @@ export const loadSearchFunctionIds = async (
 
 export const loadHotFunctionDocsByIds = async (
   hot: HotKvBinding,
-  database: Database,
+  hotSource: HotCatalogSourcePort,
   ids: string[]
 ): Promise<HotFunctionDoc[]> => {
   const parsedIds = ids
     .map((id) => parseFunctionId(id))
     .filter((parsed): parsed is ParsedFunctionId => parsed !== null);
   const resolved = await Promise.all(
-    parsedIds.map((parsed) => resolveHotFunctionDoc(hot, database, parsed))
+    parsedIds.map((parsed) => resolveHotFunctionDoc(hot, hotSource, parsed))
   );
   return resolved.filter((doc): doc is HotFunctionDoc => doc !== null);
 };

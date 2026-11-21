@@ -86,6 +86,26 @@
       "types": "./src/publish/catalog/catalog-access.ts",
       "default": "./src/publish/catalog/catalog-access.ts"
     },
+    "./publish/catalog-read": {
+      "types": "./src/publish/catalog/catalog-read.ts",
+      "default": "./src/publish/catalog/catalog-read.ts"
+    },
+    "./publish/catalog-errors": {
+      "types": "./src/publish/catalog-errors.ts",
+      "default": "./src/publish/catalog-errors.ts"
+    },
+    "./publish/catalog/hot-catalog": {
+      "types": "./src/publish/catalog/hot-catalog.ts",
+      "default": "./src/publish/catalog/hot-catalog.ts"
+    },
+    "./publish/execution/idempotency": {
+      "types": "./src/publish/execution/idempotency.ts",
+      "default": "./src/publish/execution/idempotency.ts"
+    },
+    "./publish/search/function-search-text": {
+      "types": "./src/publish/search/function-search-text.ts",
+      "default": "./src/publish/search/function-search-text.ts"
+    },
     "./publish/hot-catalog": {
       "types": "./src/publish/catalog/hot-catalog.ts",
       "default": "./src/publish/catalog/hot-catalog.ts"
@@ -129,6 +149,10 @@
     "./publish/secret-crypto": {
       "types": "./src/publish/secrets/secret-crypto.ts",
       "default": "./src/publish/secrets/secret-crypto.ts"
+    },
+    "./publish/secret-names": {
+      "types": "./src/publish/secrets/secret-names.ts",
+      "default": "./src/publish/secrets/secret-names.ts"
     },
     "./publish/worker-execute": {
       "types": "./src/publish/execution/worker-execute.ts",
@@ -206,6 +230,14 @@
       "types": "./src/publish/execution/idempotency-store.ts",
       "default": "./src/publish/execution/idempotency-store.ts"
     },
+    "./publish/ports": {
+      "types": "./src/publish/ports.ts",
+      "default": "./src/publish/ports.ts"
+    },
+    "./publish/secret-binding": {
+      "types": "./src/publish/secret-binding.ts",
+      "default": "./src/publish/secret-binding.ts"
+    },
     "./publish/host-allowlist": {
       "types": "./src/publish/sources/host-allowlist.ts",
       "default": "./src/publish/sources/host-allowlist.ts"
@@ -233,7 +265,6 @@
     "test": "bun scripts/check-src-coverage.ts"
   },
   "dependencies": {
-    "@functhis/db": "workspace:*",
     "@modelcontextprotocol/server": "2.0.0",
     "@openrouter/ai-sdk-provider": "^3.1.0",
     "ai": "^7",

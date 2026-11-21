@@ -2,11 +2,12 @@ import { validatePublishBearerToken } from '@functhis/auth/publish-token';
 import type { PublishHandlerContext } from '@functhis/core/publish/http';
 
 import { env } from '#/env.server';
-import { getDb } from '#/services';
+import { getCatalog, getDb } from '#/services';
 
 export const createPublishHandlerContext =
   async (): Promise<PublishHandlerContext> => {
     const db = await getDb();
+    const catalog = await getCatalog();
     const consoleUrl = env.BETTER_AUTH_URL;
     return {
       artifacts: {
@@ -17,7 +18,7 @@ export const createPublishHandlerContext =
       authenticatePublish: (request) =>
         validatePublishBearerToken(db, request, { consoleUrl }),
       bundles: env.BUNDLES,
-      db,
+      catalog,
       hot: env.HOT,
     };
   };

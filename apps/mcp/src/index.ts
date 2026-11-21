@@ -1,19 +1,29 @@
 import { createEvlogWorkerFetch } from '@functhis/config/evlog-workers';
 import type { McpBindings } from '@functhis/core';
 import { reconcileMcpSearchIndex } from '@functhis/core';
+import { asHotKvBinding } from '@functhis/core/publish/hot-kv-binding';
+import { createDb } from '@functhis/db';
+import { createCatalog } from '@functhis/db/catalog';
 import type { AuditableLogger } from 'evlog';
 
 import { handleFuncthisMcpWorkerRequest } from './functhis-worker';
 
-const asMcpBindings = (env: Env): McpBindings => env as McpBindings;
+const asMcpBindings = async (env: Env): Promise<McpBindings> => {
+  const database = await createDb({ HYPERDRIVE: env.HYPERDRIVE });
+  return {
+    ...env,
+    HOT: asHotKvBinding(env.HOT),
+    catalog: createCatalog(database),
+  } satisfies McpBindings;
+};
 
-const routeFetch = (
+const routeFetch = async (
   request: Request,
   env: Env,
   _ctx: unknown,
   log: AuditableLogger
-): Response | Promise<Response> =>
-  handleFuncthisMcpWorkerRequest(request, asMcpBindings(env), log);
+): Promise<Response> =>
+  handleFuncthisMcpWorkerRequest(request, await asMcpBindings(env), log);
 
 const instrumented = createEvlogWorkerFetch('functhis-mcp', routeFetch);
 
@@ -24,6 +34,11 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): void {
-    ctx.waitUntil(reconcileMcpSearchIndex(asMcpBindings(env)));
+    ctx.waitUntil(
+      (async () => {
+        const bindings = await asMcpBindings(env);
+        await reconcileMcpSearchIndex(bindings);
+      })()
+    );
   },
 };

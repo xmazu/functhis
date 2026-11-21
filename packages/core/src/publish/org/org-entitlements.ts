@@ -1,13 +1,7 @@
-import type { Database } from '@functhis/db';
-import { and, count, desc, eq, inArray, sql } from '@functhis/db/drizzle';
-import { subscription } from '@functhis/db/schema/auth';
-import { pkg } from '@functhis/db/schema/catalog';
-
 import type { PackageVisibility } from '../catalog/catalog-access';
+import type { ExecutionQuotaPort, PackageStorePort } from '../ports';
 import { normalizePlanId, planLimits } from './plan-catalog';
 import type { FuncthisPlanLimits } from './plan-catalog';
-
-type EntitlementsDb = Pick<Database, 'select'>;
 
 export type OrgPlanId =
   | 'trial'
@@ -40,20 +34,10 @@ export const limitsForPlan = (plan: OrgPlanId): OrgPlanLimits =>
   planLimits(normalizePlanId(plan));
 
 export const resolveOrgPlan = async (
-  database: EntitlementsDb,
+  quota: ExecutionQuotaPort,
   organizationId: string
 ): Promise<OrgPlanId> => {
-  const [row] = await database
-    .select({ plan: subscription.plan, status: subscription.status })
-    .from(subscription)
-    .where(
-      and(
-        eq(subscription.referenceId, organizationId),
-        inArray(subscription.status, [...ACTIVE_SUBSCRIPTION_STATUSES])
-      )
-    )
-    .orderBy(desc(subscription.periodEnd))
-    .limit(1);
+  const row = await quota.readActiveSubscription(organizationId);
 
   if (
     row &&
@@ -67,17 +51,10 @@ export const resolveOrgPlan = async (
   return 'trial';
 };
 
-export const countOrgPackages = async (
-  database: EntitlementsDb,
+export const countOrgPackages = (
+  quota: ExecutionQuotaPort,
   organizationId: string
-): Promise<number> => {
-  const [row] = await database
-    .select({ value: count() })
-    .from(pkg)
-    .where(eq(pkg.organizationId, organizationId));
-
-  return row?.value ?? 0;
-};
+): Promise<number> => quota.countPackages(organizationId);
 
 export class OrgQuotaExceededError extends Error {
   readonly code: 'package_limit' | 'execution_limit';
@@ -99,12 +76,12 @@ export class OrgQuotaExceededError extends Error {
 }
 
 export const assertOrgCanAddPackage = async (
-  database: EntitlementsDb,
+  quota: ExecutionQuotaPort,
   organizationId: string
 ): Promise<void> => {
-  const plan = await resolveOrgPlan(database, organizationId);
+  const plan = await resolveOrgPlan(quota, organizationId);
   const limits = limitsForPlan(plan);
-  const packageCount = await countOrgPackages(database, organizationId);
+  const packageCount = await countOrgPackages(quota, organizationId);
   if (limits.maxPackages !== null && packageCount >= limits.maxPackages) {
     throw new OrgQuotaExceededError(
       'package_limit',
@@ -116,30 +93,24 @@ export const assertOrgCanAddPackage = async (
 };
 
 export const insertOrgPackageIfUnderLimit = (
-  database: Database,
+  packages: PackageStorePort,
+  quota: ExecutionQuotaPort,
   values: {
     organizationId: string;
     ownerUserId: string;
     slug: string;
     visibility: PackageVisibility;
   }
-): Promise<typeof pkg.$inferSelect> =>
-  database.transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtext(${values.organizationId}))`
-    );
-    await assertOrgCanAddPackage(tx, values.organizationId);
-    const [inserted] = await tx
-      .insert(pkg)
-      .values({
-        organizationId: values.organizationId,
-        ownerUserId: values.ownerUserId,
-        slug: values.slug,
-        visibility: values.visibility,
-      })
-      .returning();
-    if (!inserted) {
-      throw new Error('Failed to create package');
+) =>
+  packages.insertIfUnderLimit(values, async (packageCount) => {
+    const plan = await resolveOrgPlan(quota, values.organizationId);
+    const limits = limitsForPlan(plan);
+    if (limits.maxPackages !== null && packageCount >= limits.maxPackages) {
+      throw new OrgQuotaExceededError(
+        'package_limit',
+        values.organizationId,
+        plan,
+        `Organization package limit reached (${limits.maxPackages} on ${plan})`
+      );
     }
-    return inserted;
   });

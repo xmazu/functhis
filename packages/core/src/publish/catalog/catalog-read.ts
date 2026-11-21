@@ -1,31 +1,7 @@
-import type { Database } from '@functhis/db';
-import {
-  and,
-  desc,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  sql,
-} from '@functhis/db/drizzle';
-import type { SQL } from '@functhis/db/drizzle';
-import { organization } from '@functhis/db/schema/auth';
-import {
-  execution,
-  pkg,
-  pkgFunction,
-  packageVersion,
-} from '@functhis/db/schema/catalog';
-
-import {
-  canAccessPackage,
-  listMembershipOrganizationIds,
-} from './catalog-access';
-import type {
-  PackageAccessContext,
-  PackageAccessRow,
-  PackageVisibility,
-} from './catalog-access';
+import type { CatalogReadPort } from '../ports';
+import { canAccessPackage } from './catalog-access';
+import type { PackageAccessContext, PackageAccessRow } from './catalog-access';
+import type { PackageVisibility } from './package-visibility';
 
 export interface CatalogFunctionRow {
   contract: unknown;
@@ -84,221 +60,40 @@ export type AccessiblePackageListRow = PackageListRow & {
   shared: boolean;
 };
 
-const packageHandleExpr = sql<string>`${organization.slug}`;
-
-const listPackagesGrouped = async (
-  database: Database,
-  where: SQL | undefined
-): Promise<PackageListRow[]> => {
-  const rows = await database
-    .select({
-      functionCount: sql<number>`count(${pkgFunction.id})`.mapWith(Number),
-      handle: packageHandleExpr,
-      id: pkg.id,
-      organizationId: pkg.organizationId,
-      ownerUserId: pkg.ownerUserId,
-      packageSlug: pkg.slug,
-      sourceKind: pkg.sourceKind,
-      visibility: pkg.visibility,
-    })
-    .from(pkg)
-    .innerJoin(organization, eq(pkg.organizationId, organization.id))
-    .leftJoin(pkgFunction, eq(pkgFunction.packageId, pkg.id))
-    .where(where)
-    .groupBy(
-      pkg.id,
-      organization.slug,
-      pkg.slug,
-      pkg.sourceKind,
-      pkg.visibility,
-      pkg.organizationId,
-      pkg.ownerUserId
-    )
-    .orderBy(pkg.slug);
-
-  return rows;
-};
-
-export const getPackageBySlugs = async (
-  database: Database,
+export const getPackageBySlugs = (
+  read: CatalogReadPort,
   handle: string,
   packageSlug: string
-): Promise<CatalogPackageRow | null> => {
-  const [org] = await database
-    .select({ id: organization.id, slug: organization.slug })
-    .from(organization)
-    .where(eq(organization.slug, handle))
-    .limit(1);
-
-  if (!org) {
-    return null;
-  }
-
-  const [packageRow] = await database
-    .select({
-      currentVersionId: pkg.currentVersionId,
-      id: pkg.id,
-      organizationId: pkg.organizationId,
-      ownerUserId: pkg.ownerUserId,
-      slug: pkg.slug,
-      visibility: pkg.visibility,
-    })
-    .from(pkg)
-    .where(and(eq(pkg.organizationId, org.id), eq(pkg.slug, packageSlug)))
-    .limit(1);
-
-  const publicHandle = org.slug;
-
-  if (!packageRow?.id || !packageRow.currentVersionId || !publicHandle) {
-    return null;
-  }
-
-  const [versionRow] = await database
-    .select({
-      createdAt: packageVersion.createdAt,
-      secretNames: packageVersion.secretNames,
-      semver: packageVersion.semver,
-    })
-    .from(packageVersion)
-    .where(eq(packageVersion.id, packageRow.currentVersionId))
-    .limit(1);
-
-  if (!versionRow) {
-    return null;
-  }
-
-  const functions = await database
-    .select({
-      contract: pkgFunction.contract,
-      exportName: pkgFunction.exportName,
-      functionSlug: pkgFunction.slug,
-      id: pkgFunction.id,
-      path: pkgFunction.path,
-    })
-    .from(pkgFunction)
-    .where(eq(pkgFunction.packageId, packageRow.id));
-
-  return {
-    currentVersion: {
-      // `package_version` has no separate published_at; version row creation time is the catalog publish instant.
-      publishedAt: versionRow.createdAt,
-      secretNames: versionRow.secretNames,
-      semver: versionRow.semver,
-    },
-    functions: functions.map((fn) => ({
-      contract: fn.contract,
-      exportName: fn.exportName,
-      functionSlug: fn.functionSlug,
-      handle: publicHandle,
-      id: fn.id,
-      packageId: packageRow.id,
-      packageSlug: packageRow.slug,
-      path: fn.path,
-      visibility: packageRow.visibility,
-    })),
-    handle: publicHandle,
-    id: packageRow.id,
-    organizationId: packageRow.organizationId,
-    ownerUserId: packageRow.ownerUserId,
-    packageSlug: packageRow.slug,
-    visibility: packageRow.visibility,
-  };
-};
+): Promise<CatalogPackageRow | null> =>
+  read.getPackageBySlugs(handle, packageSlug);
 
 export const listOrgSharedPackages = (
-  database: Database,
+  read: CatalogReadPort,
   organizationIds: readonly string[]
-): Promise<PackageListRow[]> => {
-  if (organizationIds.length === 0) {
-    return Promise.resolve([]);
-  }
+): Promise<PackageListRow[]> => read.listOrgSharedPackages(organizationIds);
 
-  return listPackagesGrouped(
-    database,
-    and(
-      isNotNull(pkg.currentVersionId),
-      inArray(pkg.organizationId, [...organizationIds]),
-      eq(pkg.visibility, 'organization')
-    )
-  );
-};
-
-export const getFunctionBySlugs = async (
-  database: Database,
+export const getFunctionBySlugs = (
+  read: CatalogReadPort,
   handle: string,
   packageSlug: string,
   functionSlug: string
-): Promise<CatalogFunctionRow | null> => {
-  const catalog = await getPackageBySlugs(database, handle, packageSlug);
-  if (!catalog) {
-    return null;
-  }
-
-  return (
-    catalog.functions.find((fn) => fn.functionSlug === functionSlug) ?? null
-  );
-};
+): Promise<CatalogFunctionRow | null> =>
+  read.getFunctionBySlugs(handle, packageSlug, functionSlug);
 
 export const listOwnerPackages = (
-  database: Database,
+  read: CatalogReadPort,
   ownerUserId: string
-): Promise<PackageListRow[]> =>
-  listPackagesGrouped(
-    database,
-    and(eq(pkg.ownerUserId, ownerUserId), isNotNull(pkg.currentVersionId))
-  );
+): Promise<PackageListRow[]> => read.listOwnerPackages(ownerUserId);
 
-export const listAccessiblePackagesForUser = async (
-  database: Database,
+export const listAccessiblePackagesForUser = (
+  read: CatalogReadPort,
   userId: string
-): Promise<AccessiblePackageListRow[]> => {
-  const owned = await listOwnerPackages(database, userId);
-  const organizationIds = await listMembershipOrganizationIds(database, userId);
-  const shared = await listOrgSharedPackages(database, organizationIds);
-  const ownedIds = new Set(owned.map((row) => row.id));
-  const merged: AccessiblePackageListRow[] = [
-    ...owned.map((row) => ({ ...row, shared: false as const })),
-    ...shared
-      .filter((row) => !ownedIds.has(row.id))
-      .map((row) => ({ ...row, shared: true as const })),
-  ];
-  return merged.toSorted((a, b) => a.packageSlug.localeCompare(b.packageSlug));
-};
+): Promise<AccessiblePackageListRow[]> =>
+  read.listAccessiblePackagesForUser(userId);
 
-export const listPackageExecutions = async (
-  database: Database,
+export const listPackageExecutions = (
+  read: CatalogReadPort,
   packageId: string,
-  options: { limit?: number; retentionCutoff?: Date } = {}
-): Promise<ExecutionSummaryRow[]> => {
-  const { limit = 20, retentionCutoff } = options;
-  const conditions = [eq(pkg.id, packageId)];
-  if (retentionCutoff) {
-    conditions.push(
-      gte(
-        sql`coalesce(${execution.startedAt}, ${execution.createdAt})`,
-        retentionCutoff
-      )
-    );
-  }
-
-  return await database
-    .select({
-      cpuMs: execution.cpuMs,
-      createdAt: execution.createdAt,
-      functionSlug: pkgFunction.slug,
-      id: execution.id,
-      requestBytes: execution.requestBytes,
-      responseBytes: execution.responseBytes,
-      status: execution.status,
-    })
-    .from(execution)
-    .innerJoin(
-      packageVersion,
-      eq(execution.packageVersionId, packageVersion.id)
-    )
-    .innerJoin(pkg, eq(packageVersion.packageId, pkg.id))
-    .leftJoin(pkgFunction, eq(execution.functionId, pkgFunction.id))
-    .where(and(...conditions))
-    .orderBy(desc(execution.createdAt))
-    .limit(limit);
-};
+  options?: { limit?: number; retentionCutoff?: Date }
+): Promise<ExecutionSummaryRow[]> =>
+  read.listPackageExecutions(packageId, options);

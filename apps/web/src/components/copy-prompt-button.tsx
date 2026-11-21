@@ -63,6 +63,7 @@ export const CopyPromptButton = ({
       field.setAttribute('readonly', '');
       field.style.position = 'fixed';
       field.style.left = '-9999px';
+      // @ts-expect-error DOM `append` clashes with undici fetch `Body.append` in this project's lib merge
       document.body.append(field);
       field.select();
       const copiedFallback = document.execCommand('copy');

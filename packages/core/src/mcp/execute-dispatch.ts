@@ -1,5 +1,3 @@
-import { createDb } from '@functhis/db';
-
 import { canAccessPackage } from '../publish/catalog/catalog-access';
 import {
   buildAccessContextFromHot,
@@ -94,10 +92,10 @@ export const dispatchExecute = async (
   const signal = getInboundRequestSignal();
 
   const hot = asHotKvBinding(bindings.HOT);
-  const database = await createDb(bindings);
+  const { catalog } = bindings;
   const [row, accessContext] = await Promise.all([
-    resolveHotFunctionDoc(hot, database, parsedId),
-    buildAccessContextFromHot(hot, database, callerUserId),
+    resolveHotFunctionDoc(hot, catalog.hotSource, parsedId),
+    buildAccessContextFromHot(hot, catalog.memberships, callerUserId),
   ]);
 
   if (!row) {
@@ -149,7 +147,7 @@ export const dispatchExecute = async (
       id: input.id,
     });
     const existing = await loadIdempotencyRecord(
-      database,
+      catalog.idempotency,
       row.organizationId,
       input.idempotencyKey
     );
@@ -169,15 +167,15 @@ export const dispatchExecute = async (
       };
     }
     await claimIdempotencyKey({
-      database,
       key: input.idempotencyKey,
       organizationId: row.organizationId,
       requestHash,
+      store: catalog.idempotency,
     });
   }
 
   try {
-    await reserveOrgExecution(database, row.organizationId);
+    await reserveOrgExecution(catalog.quota, row.organizationId);
   } catch (error) {
     if (error instanceof OrgQuotaExceededError) {
       return jsonError(started, error.message, 429);
@@ -217,10 +215,10 @@ export const dispatchExecute = async (
   if (input.idempotencyKey && !signal?.aborted) {
     await completeIdempotencyKey({
       bodyText: result.bodyText,
-      database,
       key: input.idempotencyKey,
       organizationId: row.organizationId,
       status: result.status,
+      store: catalog.idempotency,
     });
   }
 

@@ -1,4 +1,4 @@
-import type { Database } from '@functhis/db';
+import type { CatalogPorts } from '../ports';
 
 export type PublishAuthResult =
   | { ok: true; userId: string }
@@ -18,6 +18,6 @@ export interface PublishHandlerContext {
   artifacts: { put: (key: string, value: string) => Promise<void> };
   authenticatePublish: (request: Request) => Promise<PublishAuthResult>;
   bundles: { put: (key: string, value: string) => Promise<void> };
-  db: Database;
+  catalog: CatalogPorts;
   hot: HotKvBinding;
 }

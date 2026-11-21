@@ -1,5 +1,6 @@
 // Vite and Bun may import this barrel. Wrangler workers import the subpath
 // for the module they need (`@functhis/core/publish/quotas`, and so on).
+export { CatalogWriteError, PackageSlugTakenError } from './catalog-errors';
 export {
   bundleKvKey,
   hashSourceTree,

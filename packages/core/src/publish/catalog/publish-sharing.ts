@@ -1,11 +1,12 @@
-import type { Database } from '@functhis/db';
-import { and, eq } from '@functhis/db/drizzle';
-import { pkg } from '@functhis/db/schema/catalog';
-
 import {
   listMemberOrganizations,
   resolveOrganizationIdForMember,
 } from '../org/org-membership-read';
+import type {
+  CatalogReadPort,
+  MembershipsPort,
+  PackageStorePort,
+} from '../ports';
 import type { PackageVisibility } from './catalog-access';
 import { getPackageBySlugs } from './catalog-read';
 
@@ -41,7 +42,7 @@ export const resolveScopeHandle = (
 ): string | undefined => input.scope ?? input.organizationSlug;
 
 export const resolvePublishSharing = async (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   input: PublishSharingInput
 ): Promise<ResolvePublishSharingResult> => {
@@ -52,7 +53,7 @@ export const resolvePublishSharing = async (
 
   if (scopeHandle) {
     organizationId = await resolveOrganizationIdForMember(
-      database,
+      memberships,
       userId,
       scopeHandle
     );
@@ -63,7 +64,7 @@ export const resolvePublishSharing = async (
       };
     }
   } else {
-    const organizations = await listMemberOrganizations(database, userId);
+    const organizations = await listMemberOrganizations(memberships, userId);
     if (organizations.length === 0) {
       return {
         error: `Create a workspace at ${WORKSPACE_SETUP_URL} before publishing`,
@@ -97,7 +98,7 @@ export const resolvePublishSharing = async (
 
 /** Apply publish/start sharing: new packages default to private; republish preserves DB values unless flags are sent. */
 export const resolvePublishSharingForPublishStart = (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   input: PublishSharingInput,
   existing: ExistingPackageSharing | null
@@ -134,12 +135,12 @@ export const resolvePublishSharingForPublishStart = (
       }
     : input;
 
-  return resolvePublishSharing(database, userId, effectiveInput);
+  return resolvePublishSharing(memberships, userId, effectiveInput);
 };
 
 /** Single sharing resolution for publish/start (avoids duplicate preview + final calls). */
 export const resolvePublishStartSharing = (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string,
   input: PublishSharingInput,
   ownedPackage: ExistingPackageSharing | null,
@@ -147,7 +148,7 @@ export const resolvePublishStartSharing = (
 ): Promise<ResolvePublishSharingResult> => {
   if (ownedPackage) {
     return resolvePublishSharingForPublishStart(
-      database,
+      memberships,
       userId,
       input,
       ownedPackage
@@ -156,29 +157,31 @@ export const resolvePublishStartSharing = (
 
   if (orgPackageInTargetOrg) {
     return resolvePublishSharingForPublishStart(
-      database,
+      memberships,
       userId,
       input,
       orgPackageInTargetOrg
     );
   }
 
-  return resolvePublishSharingForPublishStart(database, userId, input, null);
+  return resolvePublishSharingForPublishStart(memberships, userId, input, null);
 };
 
 export const updatePackageSharing = async (
-  database: Database,
+  catalogRead: CatalogReadPort,
+  memberships: MembershipsPort,
+  packages: PackageStorePort,
   userId: string,
   handle: string,
   packageSlug: string,
   input: PublishSharingInput
 ): Promise<{ ok: true } | { error: string; ok: false }> => {
-  const catalog = await getPackageBySlugs(database, handle, packageSlug);
+  const catalog = await getPackageBySlugs(catalogRead, handle, packageSlug);
   if (!catalog || catalog.ownerUserId !== userId) {
     return { error: 'Package not found', ok: false };
   }
 
-  const sharing = await resolvePublishSharing(database, userId, {
+  const sharing = await resolvePublishSharing(memberships, userId, {
     ...input,
     scope: input.scope ?? handle,
   });
@@ -190,12 +193,11 @@ export const updatePackageSharing = async (
     return { error: 'Cannot change package organization', ok: false };
   }
 
-  await database
-    .update(pkg)
-    .set({
-      visibility: sharing.value.visibility,
-    })
-    .where(and(eq(pkg.id, catalog.id), eq(pkg.ownerUserId, userId)));
+  await packages.setPackageVisibility(
+    catalog.id,
+    userId,
+    sharing.value.visibility
+  );
 
   return { ok: true };
 };

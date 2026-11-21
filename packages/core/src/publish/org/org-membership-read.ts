@@ -1,6 +1,4 @@
-import type { Database } from '@functhis/db';
-import { and, eq } from '@functhis/db/drizzle';
-import { member, organization } from '@functhis/db/schema/auth';
+import type { MembershipsPort } from '../ports';
 
 export interface MemberOrganization {
   id: string;
@@ -8,57 +6,26 @@ export interface MemberOrganization {
 }
 
 export const listMemberOrganizations = (
-  database: Database,
+  memberships: MembershipsPort,
   userId: string
-): Promise<MemberOrganization[]> =>
-  database
-    .select({ id: organization.id, slug: organization.slug })
-    .from(member)
-    .innerJoin(organization, eq(member.organizationId, organization.id))
-    .where(eq(member.userId, userId));
+): Promise<MemberOrganization[]> => memberships.listMemberOrganizations(userId);
 
-export const isMemberOfOrganization = async (
-  database: Database,
+export const isMemberOfOrganization = (
+  memberships: MembershipsPort,
   userId: string,
   organizationId: string
-): Promise<boolean> => {
-  const [row] = await database
-    .select({ organizationId: member.organizationId })
-    .from(member)
-    .where(
-      and(eq(member.userId, userId), eq(member.organizationId, organizationId))
-    )
-    .limit(1);
+): Promise<boolean> =>
+  memberships.isMemberOfOrganization(userId, organizationId);
 
-  return row !== undefined;
-};
-
-export const resolveOrganizationIdForMember = async (
-  database: Database,
+export const resolveOrganizationIdForMember = (
+  memberships: MembershipsPort,
   userId: string,
   organizationSlug: string
-): Promise<string | null> => {
-  const [row] = await database
-    .select({ id: organization.id })
-    .from(organization)
-    .innerJoin(member, eq(member.organizationId, organization.id))
-    .where(
-      and(eq(organization.slug, organizationSlug), eq(member.userId, userId))
-    )
-    .limit(1);
+): Promise<string | null> =>
+  memberships.resolveOrganizationIdForMember(userId, organizationSlug);
 
-  return row?.id ?? null;
-};
-
-export const resolveOrganizationSlugById = async (
-  database: Database,
+export const resolveOrganizationSlugById = (
+  memberships: MembershipsPort,
   organizationId: string
-): Promise<string | null> => {
-  const [row] = await database
-    .select({ slug: organization.slug })
-    .from(organization)
-    .where(eq(organization.id, organizationId))
-    .limit(1);
-
-  return row?.slug ?? null;
-};
+): Promise<string | null> =>
+  memberships.resolveOrganizationSlugById(organizationId);

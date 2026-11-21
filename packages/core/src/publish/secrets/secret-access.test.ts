@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { member } from '@functhis/db/schema/auth';
-
+import type { MembershipsPort } from '../ports';
 import {
   canPublishPackage,
   canWritePackageSecrets,
@@ -14,27 +13,17 @@ const packageRow = {
   ownerUserId: 'owner-1',
 };
 
-const membershipDb = (rows: { organizationId?: string; role?: string }[]) => ({
-  select: () => ({
-    from: (table: unknown) => {
-      expect(table).toBe(member);
-      return {
-        where: () => {
-          const mapped = rows.map((row) => ({
-            organizationId: row.organizationId ?? 'org-1',
-            role: row.role ?? 'member',
-          }));
-          const result = Promise.resolve(mapped) as Promise<
-            { organizationId: string; role: string }[]
-          > & {
-            limit: () => Promise<{ organizationId: string; role: string }[]>;
-          };
-          result.limit = () => Promise.resolve(mapped.slice(0, 1));
-          return result;
-        },
-      };
-    },
-  }),
+const membershipsPort = (input: {
+  organizationIds?: string[];
+  role?: string | null;
+}): MembershipsPort => ({
+  isMemberOfOrganization: () =>
+    Promise.resolve((input.organizationIds ?? []).length > 0),
+  listMemberOrganizations: () => Promise.resolve([]),
+  listOrganizationIds: () => Promise.resolve(input.organizationIds ?? []),
+  memberRole: () => Promise.resolve(input.role ?? null),
+  resolveOrganizationIdForMember: () => Promise.resolve(null),
+  resolveOrganizationSlugById: () => Promise.resolve(null),
 });
 
 describe('isSecretAdminRole', () => {
@@ -48,14 +37,14 @@ describe('isSecretAdminRole', () => {
 describe('canPublishPackage', () => {
   test('allows the package owner without a membership lookup', async () => {
     await expect(
-      canPublishPackage({} as never, 'owner-1', packageRow)
+      canPublishPackage(membershipsPort({}), 'owner-1', packageRow)
     ).resolves.toBe(true);
   });
 
   test('allows organization members', async () => {
     await expect(
       canPublishPackage(
-        membershipDb([{ organizationId: 'org-1' }]) as never,
+        membershipsPort({ organizationIds: ['org-1'] }),
         'member-1',
         packageRow
       )
@@ -64,7 +53,11 @@ describe('canPublishPackage', () => {
 
   test('denies strangers', async () => {
     await expect(
-      canPublishPackage(membershipDb([]) as never, 'stranger', packageRow)
+      canPublishPackage(
+        membershipsPort({ organizationIds: [] }),
+        'stranger',
+        packageRow
+      )
     ).resolves.toBe(false);
   });
 });
@@ -72,31 +65,19 @@ describe('canPublishPackage', () => {
 describe('isOrgSecretsAdmin', () => {
   test('true for owner and admin memberships', async () => {
     await expect(
-      isOrgSecretsAdmin(
-        membershipDb([{ role: 'owner' }]) as never,
-        'user-1',
-        'org-1'
-      )
+      isOrgSecretsAdmin(membershipsPort({ role: 'owner' }), 'user-1', 'org-1')
     ).resolves.toBe(true);
     await expect(
-      isOrgSecretsAdmin(
-        membershipDb([{ role: 'admin' }]) as never,
-        'user-1',
-        'org-1'
-      )
+      isOrgSecretsAdmin(membershipsPort({ role: 'admin' }), 'user-1', 'org-1')
     ).resolves.toBe(true);
   });
 
   test('false for members and missing rows', async () => {
     await expect(
-      isOrgSecretsAdmin(
-        membershipDb([{ role: 'member' }]) as never,
-        'user-1',
-        'org-1'
-      )
+      isOrgSecretsAdmin(membershipsPort({ role: 'member' }), 'user-1', 'org-1')
     ).resolves.toBe(false);
     await expect(
-      isOrgSecretsAdmin(membershipDb([]) as never, 'user-1', 'org-1')
+      isOrgSecretsAdmin(membershipsPort({ role: null }), 'user-1', 'org-1')
     ).resolves.toBe(false);
   });
 });
@@ -104,7 +85,7 @@ describe('isOrgSecretsAdmin', () => {
 describe('canWritePackageSecrets', () => {
   test('allows publishers', async () => {
     await expect(
-      canWritePackageSecrets({} as never, 'owner-1', packageRow)
+      canWritePackageSecrets(membershipsPort({}), 'owner-1', packageRow)
     ).resolves.toBe(true);
   });
 });

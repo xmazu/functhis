@@ -1,5 +1,5 @@
-import { resolveSecret } from '@functhis/db';
-import type { SecretBinding } from '@functhis/db';
+import type { SecretBinding } from '../secret-binding';
+import { resolveSecret } from '../secret-binding';
 
 export const SECRETS_KEY_VERSION = 1;
 export const SECRETS_KEY_BYTES = 32;
@@ -126,4 +126,41 @@ export const decryptSecretValue = async (
       'decrypt_failed'
     );
   }
+};
+
+export const decryptSecretRows = async (
+  rows: {
+    ciphertext: string;
+    name: string;
+    nonce: string;
+    packageId: string | null;
+  }[],
+  keyBytes: Uint8Array
+): Promise<{
+  organization: Record<string, string>;
+  pkg: Record<string, string>;
+}> => {
+  const organization: Record<string, string> = {};
+  const pkg: Record<string, string> = {};
+
+  const decrypted = await Promise.all(
+    rows.map(async (row) => ({
+      name: row.name,
+      packageId: row.packageId,
+      value: await decryptSecretValue(
+        { ciphertext: row.ciphertext, nonce: row.nonce },
+        keyBytes
+      ),
+    }))
+  );
+
+  for (const row of decrypted) {
+    if (row.packageId === null) {
+      organization[row.name] = row.value;
+    } else {
+      pkg[row.name] = row.value;
+    }
+  }
+
+  return { organization, pkg };
 };

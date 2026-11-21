@@ -11,6 +11,7 @@ import {
   handlePublishFinalize,
   handlePublishStart,
 } from '@functhis/core/publish/http';
+import { createCatalog } from '@functhis/db/catalog';
 import { pkg, packageVersion, pkgFunction } from '@functhis/db/schema/catalog';
 import { eq } from 'drizzle-orm';
 
@@ -161,7 +162,11 @@ describe('deploy start and finalize', () => {
       .where(eq(pkgFunction.packageId, startBody.packageId));
     expect(functions.map((fn) => fn.slug)).toEqual(['hello']);
 
-    const catalog = await getPackageBySlugs(db, handle, slug);
+    const catalog = await getPackageBySlugs(
+      createCatalog(db).catalogRead,
+      handle,
+      slug
+    );
     expect(catalog?.organizationId).toBeDefined();
     expect(catalog?.currentVersion.semver).toBe('1.0.0');
     expect(catalog?.currentVersion.publishedAt).toBeInstanceOf(Date);
@@ -344,7 +349,11 @@ describe('deploy start and finalize', () => {
     expect(packageRow?.organizationId).toBe(org.organizationId);
     expect(packageRow?.visibility).toBe('library');
 
-    const catalog = await getPackageBySlugs(db, org.slug, slug);
+    const catalog = await getPackageBySlugs(
+      createCatalog(db).catalogRead,
+      org.slug,
+      slug
+    );
     expect(catalog?.handle).toBe(org.slug);
   });
 

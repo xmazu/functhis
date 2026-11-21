@@ -10,8 +10,10 @@ import {
   writeJwksHot,
   writeMembershipHot,
 } from '@functhis/core/publish';
+import type { CatalogPorts } from '@functhis/core/publish/ports';
 import { createDb, resolveSecret } from '@functhis/db';
 import type { Database } from '@functhis/db';
+import { createCatalog } from '@functhis/db/catalog';
 
 import { env } from './env.server';
 
@@ -38,6 +40,9 @@ const parseTrustedOrigins = (value: string): string[] =>
     .filter((origin) => origin.length > 0);
 
 export const getDb = (): Promise<Database> => createDb(env);
+
+export const getCatalog = async (): Promise<CatalogPorts> =>
+  createCatalog(await getDb());
 
 let cliClientSeeded = false;
 let cliSeedPromise: Promise<void> | null = null;
@@ -132,7 +137,10 @@ const resolveAuthConfig = (): Promise<AuthConfig> => {
       TRUSTED_ORIGINS: parseTrustedOrigins(env.TRUSTED_ORIGINS),
       syncMembershipHot: async (userId) => {
         const db = await getDb();
-        const organizationIds = await listMembershipOrganizationIds(db, userId);
+        const organizationIds = await listMembershipOrganizationIds(
+          createCatalog(db).memberships,
+          userId
+        );
         await writeMembershipHot(
           asHotKvBinding(env.HOT),
           userId,

@@ -7,7 +7,7 @@ import {
 } from '@functhis/core/publish';
 
 import { env } from '#/env.server';
-import { getDb } from '#/services';
+import { getCatalog } from '#/services';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -83,15 +83,15 @@ export const fetchDashboardLogs = async (
   | 'not_configured'
   | 'unavailable'
 > => {
-  const database = await getDb();
+  const catalog = await getCatalog();
   const accessiblePackages = await listAccessiblePackagesForUser(
-    database,
+    catalog.catalogRead,
     userId
   );
   const packages = accessiblePackages.filter(
     (pkg) => pkg.organizationId === organizationId
   );
-  const plan = await resolveOrgPlan(database, organizationId);
+  const plan = await resolveOrgPlan(catalog.quota, organizationId);
   const { logRetentionDays } = limitsForPlan(plan);
   if (logRetentionDays === 0 || packages.length === 0) {
     if (input.executionId) {
